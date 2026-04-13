@@ -1,133 +1,149 @@
 using System;
+using Cysharp.Threading.Tasks;
+using TechC.Core.Manager;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Battle
 {
     /// <summary>
     /// バトル全体の司令塔（MonoBehaviour）。
-    /// BattleLogic（純粋C#）と BattleView（表示）を所有し、橋渡しする。
+    /// BattleLogic（純粋C#）と BattleView（表示）を所有し橋渡しする。
+    /// アニメーション待ちは UniTask で順序を保証する。
     /// </summary>
     public class BattleController : MonoBehaviour
     {
         // -------------------------------------------------------
         // MainManager へ通知するイベント
         // -------------------------------------------------------
-
         public event Action OnBattleWon;
         public event Action OnBattleLost;
 
-        // -------------------------------------------------------
-        // Inspector 設定
-        // -------------------------------------------------------
-
         [Header("View")]
         [SerializeField] private BattleView battleView;
+        [SerializeField] private PlayZonePresenter playZonePresenter;
 
-        // -------------------------------------------------------
-        // 内部：ロジック
-        // -------------------------------------------------------
-
-        private BattleLogic _battleLogic;
-
-        // -------------------------------------------------------
-        // 初期化（MainManager から呼ばれる）
-        // -------------------------------------------------------
+        private BattleLogic battleLogic;
 
         public void Initialize()
         {
-            // _battleLogic = new BattleLogic();
-
-            // // BattleLogic → BattleController へのコールバック購読
-            // _battleLogic.OnTurnStarted       += HandleTurnStarted;
-            // _battleLogic.OnCardResolved      += HandleCardResolved;
-            // _battleLogic.OnLuckGaugeChanged  += HandleLuckGaugeChanged;
-            // _battleLogic.OnBattleWon         += HandleBattleWon;
-            // _battleLogic.OnBattleLost        += HandleBattleLost;
+            battleLogic = new BattleLogic();
 
             // battleView.Initialize();
 
-            // _battleLogic.StartBattle();
+            // バトル開始（非同期で回す）
+            RunBattleAsync().Forget();
         }
 
         // -------------------------------------------------------
-        // BattleLogic コールバックハンドラ → View に橋渡し
+        // バトルループ
         // -------------------------------------------------------
 
-        // private void HandleTurnStarted(TurnData turnData)
-        // {
-        //     battleView.ShowHand(turnData.Hand);
-        //     battleView.ShowPlayZone(turnData.PlayZone);
-        // }
+        /// <summary>
+        /// バトル全体を非同期で回すメインループ。
+        /// ターン開始 → ユーザー入力待ち → カード解決 → を繰り返す。
+        /// </summary>
+        private async UniTaskVoid RunBattleAsync()
+        {
+            battleLogic.StartBattle(MainManager.I?.GameContext);
+            bool isFirstTurn = true;
+            while (battleLogic.IsBattleActive)
+            {
+                // 1. ターン開始：ドロー・敵カード配置
+                var turnData = battleLogic.BeginTurn();
+                // プレイゾーンのカード配置を View に反映
+                playZonePresenter.SetupTurn(turnData, turnData.Hand);
 
-        // private void HandleCardResolved(CardResolveResult result)
-        // {
-        //     battleView.PlayCardAnimation(result);
-        // }
+                // 1ターン目だけバトル開始演出を再生する
+                if (isFirstTurn)
+                {
+                    await battleView.PlayBattleStartAsync(turnData, MainManager.I?.GameContext.CurrentEnemy);
+                    isFirstTurn = false;
+                    break; // とりあえず1ターン目だけでループ抜ける（以降は仮でターン開始アニメだけ再生してる）
+                }
+                else
+                    await battleView.ShowTurnStartAsync(turnData);
 
-        // private void HandleLuckGaugeChanged(float gauge)
-        // {
-        //     battleView.UpdateLuckGauge(gauge);
-        // }
+                // 2. View に手札・プレイゾーンを表示（アニメーション待ち）
+                // await battleView.ShowTurnStartAsync(turnData);
 
-        // private void HandleBattleWon()
-        // {
-        //     battleView.ShowWinEffect();
-        //     OnBattleWon?.Invoke();
-        // }
+            //     // 3. プレイヤーの入力待ち（ターン確定ボタンが押されるまでブロック）
+            //     await battleView.WaitForPlayerConfirmAsync();
 
-        // private void HandleBattleLost()
-        // {
-        //     battleView.ShowLoseEffect();
-        //     OnBattleLost?.Invoke();
-        // }
+            //     // 4. ターン確定：プレイゾーンのカードを左から順に解決
+            //     var resolveResults = battleLogic.ConfirmTurn();
 
-        // // -------------------------------------------------------
-        // // View（UI操作）→ BattleLogic へ橋渡し
-        // // -------------------------------------------------------
+            //     foreach (var result in resolveResults)
+            //     {
+            //         // カード1枚ごとにアニメーションを待つ
+            //         await battleView.PlayCardResolveAsync(result);
 
-        // /// <summary>カードを「使用」状態にセット（UIから呼ぶ）</summary>
+            //         // 運ゲージ変動があれば更新
+            //         if (result.LuckGaugeChanged)
+            //             await battleView.UpdateLuckGaugeAsync(battleLogic.LuckGauge);
+
+            //         // HP 変動があれば更新
+            //         if (result.DamageDealt > 0)
+            //             await battleView.UpdateHpAsync(battleLogic.PlayerHp, battleLogic.EnemyHp);
+
+            //         // 途中で勝敗が確定したらループを抜ける
+            //         if (!battleLogic.IsBattleActive) break;
+            //     }
+
+            //     // 5. ターン終了処理（激アツゲージ減少など）
+            //     battleLogic.EndTurn();
+
+            //     if (battleLogic.IsHotMode)
+            //         await battleView.UpdateLuckGaugeAsync(battleLogic.LuckGauge);
+            // }
+
+            // // 6. 勝敗演出 → MainManager へ通知
+            // if (battleLogic.IsWon)
+            // {
+            //     await battleView.ShowWinEffectAsync();
+            //     OnBattleWon?.Invoke();
+            // }
+            // else
+            // {
+            //     await battleView.ShowLoseEffectAsync();
+            //     OnBattleLost?.Invoke();
+            }
+        }
+
+        // -------------------------------------------------------
+        // View（UI操作）→ BattleLogic へ橋渡し
+        // BattleView の入力コールバックから呼ばれる
+        // -------------------------------------------------------
+
         // public void OnCardSetToUse(int slotIndex, int handIndex)
-        // {
-        //     _battleLogic.SetCardToUse(slotIndex, handIndex);
-        // }
+        //     => battleLogic.SetCardToUse(slotIndex, handIndex);
 
-        // /// <summary>カードを「破壊」状態にセット（UIから呼ぶ）</summary>
         // public void OnCardSetToBreak(int slotIndex, int handIndex)
-        // {
-        //     _battleLogic.SetCardToBreak(slotIndex, handIndex);
-        // }
+        //     => battleLogic.SetCardToBreak(slotIndex, handIndex);
 
-        // /// <summary>運ゲージを確率強化に消費（UIから呼ぶ）</summary>
         // public void OnSpendLuckForProbability(int slotIndex, float amount)
         // {
-        //     _battleLogic.SpendLuckForProbability(slotIndex, amount);
+        //     battleLogic.SpendLuckForProbability(slotIndex, amount);
+        //     battleView.UpdateLuckGaugeImmediate(battleLogic.LuckGauge); // 即時反映でOK
         // }
 
-        // /// <summary>運ゲージをダメージ強化に消費（UIから呼ぶ）</summary>
         // public void OnSpendLuckForDamage(int slotIndex, float amount)
         // {
-        //     _battleLogic.SpendLuckForDamage(slotIndex, amount);
+        //     battleLogic.SpendLuckForDamage(slotIndex, amount);
+        //     battleView.UpdateLuckGaugeImmediate(battleLogic.LuckGauge);
         // }
 
-        // /// <summary>ターン確定ボタン（UIから呼ぶ）</summary>
-        // public void OnConfirmTurn()
-        // {
-        //     _battleLogic.ConfirmTurn();
-        // }
+        // ターン確定は WaitForPlayerConfirmAsync の完了トリガーなので
+        // BattleView 内部で UniTaskCompletionSource を完了させる形にする
+        // （BattleView.ConfirmTurn() を BattleView 側のボタンが呼ぶ）
 
-        // // -------------------------------------------------------
-        // // クリーンアップ
-        // // -------------------------------------------------------
+        // -------------------------------------------------------
+        // クリーンアップ
+        // -------------------------------------------------------
 
-        // private void OnDestroy()
-        // {
-        //     if (_battleLogic == null) return;
-
-        //     _battleLogic.OnTurnStarted      -= HandleTurnStarted;
-        //     _battleLogic.OnCardResolved     -= HandleCardResolved;
-        //     _battleLogic.OnLuckGaugeChanged -= HandleLuckGaugeChanged;
-        //     _battleLogic.OnBattleWon        -= HandleBattleWon;
-        //     _battleLogic.OnBattleLost       -= HandleBattleLost;
-        // }
+        private void OnDestroy()
+        {
+            // UniTaskVoid は CancellationToken で止める方が丁寧だが
+            // Prefab ごと Destroy される設計なので GameObject 破棄で自然に止まる
+        }
     }
 }

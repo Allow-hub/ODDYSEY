@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb8114f5bb3a42c4f983d3d271a3d9ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stagePrefab: {fileID: 3077319054221993599, guid: af2dc0b3a94734c4a931adf291ed5bc5,
+  mapPrefab: {fileID: 3077319054221993599, guid: af2dc0b3a94734c4a931adf291ed5bc5,
     type: 3}
   battlePrefab: {fileID: 6184345255735731045, guid: a581df6dba48b2c449bc6e850af49eb3,
     type: 3}
@@ -53,3 +53,9 @@ MonoBehaviour:
   eventPrefab: {fileID: 2731581732393259310, guid: 1b11d86faaa841542a368fa0d386a891,
     type: 3}
   debugStartPhase: 1
+  debugContext:
+    PlayerHp: 30
+    PlayerHpMax: 30
+    InitialDeck:
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    DebugEnemy: {fileID: 11400000, guid: 4c700648c5e5ada408c3b33c685f8978, type: 2}

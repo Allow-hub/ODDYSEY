@@ -5,6 +5,7 @@ using TechC.ODDESEY.Battle;
 using UnityEngine;
 using TechC.ODDESEY.Reward;
 using TechC.ODDESEY.Event;
+using TechC.ODDESEY;
 
 namespace TechC.Core.Manager
 {
@@ -12,41 +13,32 @@ namespace TechC.Core.Manager
     /// <summary>
     /// MainScene の司令塔。
     /// Prefab の生成・破棄・切り替えを一手に担う。
-    /// BattlePrefab / StagePrefab / rewardPrefab / EventPrefab を知っている唯一のクラス。
+    /// BattlePrefab / MapPrefab / rewardPrefab / EventPrefab を知っている唯一のクラス。
     /// </summary>
     public class MainManager : Singleton<MainManager>
     {
-        // -------------------------------------------------------
-        // Inspector 設定
-        // -------------------------------------------------------
-
-        [Header("Prefab references")]
-        [SerializeField] private GameObject stagePrefab;
+        [Header("プレハブ")]
+        [SerializeField] private GameObject mapPrefab;
         [SerializeField] private GameObject battlePrefab;
         [SerializeField] private GameObject rewardPrefab;
         [SerializeField] private GameObject eventPrefab;
 
-        [Header("Debug")]
-        [SerializeField] private StartPhase debugStartPhase = StartPhase.Stage;
-
-        // -------------------------------------------------------
-        // 内部状態
-        // -------------------------------------------------------
+        [Header("デバッグ用設定")]
+        [SerializeField] private StartPhase debugStartPhase = StartPhase.Map;
 
         private GameObject currentPrefab;
-
-        private StageController stageController;
+        private MapController stageController;
         private BattleController battleController;
         private RewardController rewardController;
         private EventController eventController;
 
-        // -------------------------------------------------------
-        // フェーズ定義
-        // -------------------------------------------------------
-
+        public GameContext GameContext => gameContext;
+        [SerializeField] private DebugGameContext debugContext  = new();
+        private GameContext gameContext;
+        
         public enum StartPhase
         {
-            Stage,
+            Map,
             Battle,
             Result,
             Event,
@@ -56,11 +48,8 @@ namespace TechC.Core.Manager
         protected override void OnInit()
         {
             base.OnInit();
+            gameContext = debugContext.ToGameContext();
         }
-
-        // -------------------------------------------------------
-        // ライフサイクル
-        // -------------------------------------------------------
 
         private void Awake()
         {
@@ -72,38 +61,40 @@ namespace TechC.Core.Manager
             EnterPhase(debugStartPhase);
         }
 
-        // -------------------------------------------------------
-        // フェーズ切り替え
-        // -------------------------------------------------------
-
+        /// <summary>
+        /// 各フェーズ（ステージ選択・バトル・リザルト・イベント）へ遷移するためのメソッド。
+        /// </summary>
+        /// <param name="phase"></param>
         public void EnterPhase(StartPhase phase)
         {
             DestroyCurrentPrefab();
 
             switch (phase)
             {
-                case StartPhase.Stage: EnterStage(); break;
+                case StartPhase.Map: EnterMap(); break;
                 case StartPhase.Battle: EnterBattle(); break;
                 case StartPhase.Result: EnterResult(); break;
                 case StartPhase.Event: EnterEvent(); break;
             }
         }
 
-        // -------------------------------------------------------
-        // 各フェーズ開始
-        // -------------------------------------------------------
-
-        private void EnterStage()
+        /// <summary>
+        /// マップ選択肢
+        /// </summary>
+        private void EnterMap()
         {
-            currentPrefab = Instantiate(stagePrefab);
-            stageController = currentPrefab.GetComponent<StageController>();
+            currentPrefab = Instantiate(mapPrefab);
+            stageController = currentPrefab.GetComponent<MapController>();
 
-            stageController.OnStageCompleted += HandleStageCompleted;
+            stageController.OnStageCompleted += HandleMapCompleted;
             stageController.OnBattleRequested += HandleBattleRequested;
 
             stageController.Initialize();
         }
 
+        /// <summary>
+        /// バトル開始
+        /// </summary>
         private void EnterBattle()
         {
             currentPrefab = Instantiate(battlePrefab);
@@ -115,6 +106,9 @@ namespace TechC.Core.Manager
             battleController.Initialize();
         }
 
+        /// <summary>
+        /// リザルト表示
+        /// </summary>
         private void EnterResult()
         {
             currentPrefab = Instantiate(rewardPrefab);
@@ -125,6 +119,9 @@ namespace TechC.Core.Manager
             rewardController.Initialize();
         }
 
+        /// <summary>
+        /// イベント開始
+        /// </summary>
         private void EnterEvent()
         {
             currentPrefab = Instantiate(eventPrefab);
@@ -135,26 +132,21 @@ namespace TechC.Core.Manager
             eventController.Initialize();
         }
 
-        // -------------------------------------------------------
-        // コールバックハンドラ
-        // -------------------------------------------------------
-
-        private void HandleStageCompleted() => EnterPhase(StartPhase.Result);
+        private void HandleMapCompleted() => EnterPhase(StartPhase.Result);
         private void HandleBattleRequested() => EnterPhase(StartPhase.Battle);
         private void HandleBattleWon() => EnterPhase(StartPhase.Result);
         private void HandleBattleLost() => EnterPhase(StartPhase.Result); // 必要なら敗北フェーズへ分岐
-        private void HandleResultClosed() => EnterPhase(StartPhase.Stage);
-        private void HandleEventCompleted() => EnterPhase(StartPhase.Stage);
+        private void HandleResultClosed() => EnterPhase(StartPhase.Map);
+        private void HandleEventCompleted() => EnterPhase(StartPhase.Map);
 
-        // -------------------------------------------------------
-        // クリーンアップ（フェーズ切り替え前に必ず呼ぶ）
-        // -------------------------------------------------------
-
+        /// <summary>
+        /// クリーンアップ（フェーズ切り替え前に必ず呼ぶ）
+        /// </summary>
         private void DestroyCurrentPrefab()
         {
             if (stageController != null)
             {
-                stageController.OnStageCompleted -= HandleStageCompleted;
+                stageController.OnStageCompleted -= HandleMapCompleted;
                 stageController.OnBattleRequested -= HandleBattleRequested;
                 stageController = null;
             }

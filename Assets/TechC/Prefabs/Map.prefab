@@ -60,7 +60,7 @@ GameObject:
   - component: {fileID: 2772306547981742157}
   - component: {fileID: 4741031611966249307}
   m_Layer: 0
-  m_Name: Stage
+  m_Name: Map
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -96,6 +96,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f74c78676c30ccb4bb23d80cde2888ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  nodeSelectUI: {fileID: 0}
 --- !u!1 &7733606458419856037
 GameObject:
   m_ObjectHideFlags: 0

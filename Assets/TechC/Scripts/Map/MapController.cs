@@ -7,7 +7,7 @@ namespace TechC.ODDESEY.Stage
     /// ステージマップの管理。
     /// ノード選択UI・進行状態を担当し、次フェーズを MainManager に通知する。
     /// </summary>
-    public class StageController : MonoBehaviour
+    public class MapController : MonoBehaviour
     {
         // -------------------------------------------------------
         // MainManager へ通知するイベント
