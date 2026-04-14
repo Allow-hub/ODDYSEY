@@ -31,7 +31,6 @@ namespace TechC.ODDESEY.Battle
         private CardData cardData;
         private int instanceId;
 
-        private UniTaskCompletionSource breakTcs;
 
         public Transform OriginalParent => originalParent;
         private Transform originalParent;
@@ -103,21 +102,21 @@ namespace TechC.ODDESEY.Battle
             isDealing = false;
         }
 
-        // -------------------------------------------------------
-        // 破壊演出
-        // -------------------------------------------------------
-
-        public async UniTask PlayBreakAnimationAsync()
+        /// <summary>
+        /// カードを砕くアニメーション。砕ける演出を再生してから完了通知を送る
+        /// </summary>
+        /// <returns></returns>
+        public UniTask PlayBreakAnimationAsync()
         {
-            breakTcs = new UniTaskCompletionSource();
-            await breakTcs.Task;
-        }
-
-        public void OnBreakAnimationComplete()
-        {
-            breakTcs?.TrySetResult();
             Destroy(gameObject);
+            return UniTask.CompletedTask;
         }
+
+        // public void OnBreakAnimationComplete()
+        // {
+        //     breakTcs?.TrySetResult();
+        //     Destroy(gameObject);
+        // }
 
         public void OnBeginDrag(PointerEventData eventData)
         {
@@ -174,6 +173,7 @@ namespace TechC.ODDESEY.Battle
             }
             else
             {
+                CardDetailView.I.Show(cardData);
                 CustomLogger.Info($"TODO:カード情報を表示: {cardData.CardName} (InstanceId: {instanceId})", LogTagUtil.TagCard);
             }
         }

@@ -53,11 +53,6 @@ MonoBehaviour:
   probabilityText: {fileID: 0}
   damageText: {fileID: 0}
   cardImage: {fileID: 1628214694697326076}
-  frameImage: {fileID: 0}
-  holdBadge: {fileID: 0}
-  normalColor: {r: 1, g: 1, b: 1, a: 1}
-  useColor: {r: 0.6, g: 1, b: 0.6, a: 1}
-  breakColor: {r: 1, g: 0.6, b: 0.6, a: 1}
   moveDuration: 1
 --- !u!1 &4584447164320611765
 GameObject:
@@ -94,7 +89,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 180, y: 400}
+  m_SizeDelta: {x: 250, y: 300}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7784006712152333628
 CanvasRenderer:

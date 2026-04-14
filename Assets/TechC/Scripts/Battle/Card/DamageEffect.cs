@@ -14,20 +14,5 @@ namespace TechC.ODDESEY.Battle
         [Header("ダメージ（範囲）")]
         public int DamageMin = 3;
         public int DamageMax = 6;
-
-        /// <summary>手札に来た時点で確定した基礎ダメージ</summary>
-        public int BaseDamage { get; private set; }
-
-        /// <summary>運ゲージ消費で上乗せされたダメージボーナス（上限なし）</summary>
-        public int BonusDamage { get; set; }
-
-        /// <summary>実効ダメージ（基礎 + ボーナス）</summary>
-        public int EffectiveDamage => BaseDamage + BonusDamage;
-
-        /// <summary>手札に来たタイミングでダメージをロールする</summary>
-        public void RollDamage(bool isHotMode)
-        {
-            BaseDamage = isHotMode ? DamageMax : Random.Range(DamageMin, DamageMax + 1);
-        }
     }
 }

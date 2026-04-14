@@ -31,6 +31,7 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private CanvasGroup fadePanel;
         [SerializeField] private GameObject battleStartText;
         [SerializeField] private Transform enemySpawnPoint;  // 敵を生成する位置
+        [SerializeField] private Button confirmButton;  // ターン確定ボタン
 
         [Header("Effects")]
         [SerializeField] private GameObject winEffectObj;
@@ -52,7 +53,7 @@ namespace TechC.ODDESEY.Battle
         private UniTaskCompletionSource confirmTcs;
         private List<CardData> previousHand = new();  // 差分検出用
 
-        public void Initialize()
+        public void Init()
         {
             // winEffectObj?.SetActive(false);
             // loseEffectObj?.SetActive(false);
@@ -61,6 +62,8 @@ namespace TechC.ODDESEY.Battle
             // enemyObject?.SetActive(false);
 
             if (fadePanel != null) fadePanel.alpha = 1f;
+            if (confirmButton != null)
+                confirmButton.onClick.AddListener(ConfirmTurn);
         }
 
         /// <summary>
@@ -99,7 +102,7 @@ namespace TechC.ODDESEY.Battle
             // UpdateLuckGaugeImmediate(firstTurnData.LuckGauge, firstTurnData.IsHotMode);
 
             await UpdateHandAsync(firstTurnData.Hand);
-            ShowPlayZone(firstTurnData.PlayZone);
+            // ShowPlayZone(firstTurnData.PlayZone);
         }
 
         /// <summary>
@@ -107,12 +110,12 @@ namespace TechC.ODDESEY.Battle
         /// </summary>
         public async UniTask ShowTurnStartAsync(TurnData turnData)
         {
-            UpdateHpImmediate(turnData.PlayerHp, turnData.PlayerHpMax,
-                              turnData.EnemyHp, turnData.EnemyHpMax);
-            UpdateLuckGaugeImmediate(turnData.LuckGauge, turnData.IsHotMode);
+            // UpdateHpImmediate(turnData.PlayerHp, turnData.PlayerHpMax,
+            //                   turnData.EnemyHp, turnData.EnemyHpMax);
+            // UpdateLuckGaugeImmediate(turnData.LuckGauge, turnData.IsHotMode);
 
             await UpdateHandAsync(turnData.Hand);
-            ShowPlayZone(turnData.PlayZone);
+            // ShowPlayZone(turnData.PlayZone);
         }
 
         /// <summary>
@@ -165,16 +168,17 @@ namespace TechC.ODDESEY.Battle
             await UniTask.WhenAll(tasks);
 
             previousHand = new List<CardData>(newHand.ConvertAll(ci => ci.OriginalData));
+            CustomLogger.Info($"手札を更新: {string.Join(", ", newHand.ConvertAll(ci => ci.OriginalData.CardName))}", LogTagUtil.TagBattle);
         }
 
-        private void ShowPlayZone(PlayZoneSlot[] slots)
-        {
-            for (int i = 0; i < slotTransforms.Length; i++)
-            {
-                if (i >= slots.Length || slots[i].IsEmpty) continue;
-                // TODO: スロットの CardView を生成して slotTransforms[i] に配置する
-            }
-        }
+        // private void ShowPlayZone(PlayZoneSlot[] slots)
+        // {
+        //     for (int i = 0; i < slotTransforms.Length; i++)
+        //     {
+        //         if (i >= slots.Length || slots[i].IsEmpty) continue;
+        //         // TODO: スロットの CardView を生成して slotTransforms[i] に配置する
+        //     }
+        // }
 
         public UniTask WaitForPlayerConfirmAsync()
         {

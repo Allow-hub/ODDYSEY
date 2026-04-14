@@ -20,11 +20,5 @@ namespace TechC.ODDESEY.Battle
  
         /// <summary>実効確率（基礎 + ボーナス、上限 1f）</summary>
         public float EffectiveProbability => Mathf.Min(BaseProbability + BonusProbability, 1f);
-
-        /// <summary>手札に来たタイミングで確率をロールする</summary>
-        public void RollProbability(bool isHotMode) => BaseProbability = isHotMode ? ProbabilityMax : Random.Range(ProbabilityMin, ProbabilityMax);
-
-        /// <summary>ロールした乱数が確率を超えているかを判定して結果を返す</summary>
-        public bool TryExecute() => Random.value <= EffectiveProbability;
     }
 }

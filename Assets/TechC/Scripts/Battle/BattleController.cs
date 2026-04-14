@@ -1,6 +1,8 @@
 using System;
 using Cysharp.Threading.Tasks;
 using TechC.Core.Manager;
+using TechC.ODDESEY.Util;
+using TechC.VBattle.Core.Extensions;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Battle
@@ -28,15 +30,11 @@ namespace TechC.ODDESEY.Battle
         {
             battleLogic = new BattleLogic();
 
-            // battleView.Initialize();
+            battleView.Init();
 
             // バトル開始（非同期で回す）
             RunBattleAsync().Forget();
         }
-
-        // -------------------------------------------------------
-        // バトルループ
-        // -------------------------------------------------------
 
         /// <summary>
         /// バトル全体を非同期で回すメインループ。
@@ -58,7 +56,6 @@ namespace TechC.ODDESEY.Battle
                 {
                     await battleView.PlayBattleStartAsync(turnData, MainManager.I?.GameContext.CurrentEnemy);
                     isFirstTurn = false;
-                    break; // とりあえず1ターン目だけでループ抜ける（以降は仮でターン開始アニメだけ再生してる）
                 }
                 else
                     await battleView.ShowTurnStartAsync(turnData);
@@ -66,11 +63,11 @@ namespace TechC.ODDESEY.Battle
                 // 2. View に手札・プレイゾーンを表示（アニメーション待ち）
                 // await battleView.ShowTurnStartAsync(turnData);
 
-            //     // 3. プレイヤーの入力待ち（ターン確定ボタンが押されるまでブロック）
-            //     await battleView.WaitForPlayerConfirmAsync();
+                // 3. プレイヤーの入力待ち（ターン確定ボタンが押されるまでブロック）
+                await battleView.WaitForPlayerConfirmAsync();
 
-            //     // 4. ターン確定：プレイゾーンのカードを左から順に解決
-            //     var resolveResults = battleLogic.ConfirmTurn();
+                // 4. ターン確定：プレイゾーンのカードを左から順に解決
+                var resolveResults = battleLogic.ConfirmTurn();
 
             //     foreach (var result in resolveResults)
             //     {

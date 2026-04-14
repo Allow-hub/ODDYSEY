@@ -10,7 +10,7 @@ namespace TechC.ODDESEY.Battle
     {
         // イベント
         public event Action<TurnData> OnTurnStarted;
-        // public event Action<CardResolveResult> OnCardResolved;
+        public event Action<CardResolveResult> OnCardResolved;
         // public event Action<float>             OnLuckGaugeChanged;
         public event Action OnBattleWon;
         public event Action OnBattleLost;
@@ -30,7 +30,8 @@ namespace TechC.ODDESEY.Battle
         private bool isBattleActive;
         private bool isWon;
         private int turnCount;
-
+        private EnemyData currentEnemy;
+        private IEnemyCardPlacementStrategy enemyPlacementStrategy;
         // -------------------------------------------------------
         // 公開プロパティ
         // -------------------------------------------------------
@@ -64,6 +65,9 @@ namespace TechC.ODDESEY.Battle
 
             enemyHp = 20;//test
             enemyHpMax = 20;
+            // 敵データと配置戦略を初期化
+            currentEnemy = context?.CurrentEnemy;
+            enemyPlacementStrategy = currentEnemy?.CardDeck?.CreateStrategy();
 
             isBattleActive = true;
             isWon = false;
@@ -94,26 +98,53 @@ namespace TechC.ODDESEY.Battle
             };
         }
 
-        // -------------------------------------------------------
-        // カード配置
-        // -------------------------------------------------------
-
-        public void SetCardToUse(int slotIndex, int handIndex)
+        /// <summary>
+        /// ターン確定：プレイゾーンのカードを左から順に解決する。BattleController から呼ぶ。
+        /// </summary>
+        /// <returns></returns>
+        public List<CardResolveResult> ConfirmTurn()
         {
-            if (!IsValidSlot(slotIndex) || !IsValidHand(handIndex)) return;
+            var results = new List<CardResolveResult>();
 
-            playZone[slotIndex] ??= new PlayZoneSlot();
-            playZone[slotIndex].PlayerCardInstance = hand[handIndex];  // CardInstance を設定
-            playZone[slotIndex].IsEnemyCard = false;
-        }
+            for (int i = 0; i < playZone.Length; i++)
+            {
+                var slot = playZone[i];
+                if (slot == null || slot.IsEmpty) continue;
 
-        public void SetCardToBreak(int slotIndex, int handIndex)
-        {
-            if (!IsValidSlot(slotIndex) || !IsValidHand(handIndex)) return;
+                var instance = slot.IsEnemyCard
+                    ? slot.EnemyCardInstance
+                    : slot.PlayerCardInstance;
 
-            playZone[slotIndex] ??= new PlayZoneSlot();
-            playZone[slotIndex].PlayerCardInstance = hand[handIndex];  // CardInstance を設定
-            playZone[slotIndex].IsEnemyCard = false;
+                bool isHit = instance.TryExecuteEffect(0);
+                int damage = 0;
+
+                if (isHit)
+                {
+                    damage = instance.GetEffectiveDamage(0);
+
+                    if (slot.IsEnemyCard)
+                        playerHp -= damage;
+                    else
+                        enemyHp -= damage;
+                    
+                    CustomLogger.Info(
+                        $"カード効果ヒット: Slot {i}, カード {instance.OriginalData.CardName}, ダメージ {damage}, プレイヤーHP {playerHp}/{PlayerHpMax}, 敵HP {enemyHp}/{enemyHpMax}",
+                        LogTagUtil.TagBattle);
+                }else
+                {
+                    damage = 0;
+                    CustomLogger.Info(
+                        $"カード効果ミス: Slot {i}, カード {instance.OriginalData.CardName}",LogTagUtil.TagBattle);
+                }
+
+                // -------------------------
+                // 勝敗チェック（途中終了）
+                // -------------------------
+                // CheckBattleEnd();
+                if (!isBattleActive) break;
+            }
+
+            return results;
         }
 
         // -------------------------------------------------------
@@ -224,14 +255,35 @@ namespace TechC.ODDESEY.Battle
 
         private void PlaceEnemyCards()
         {
-            // TODO
+            // 前ターンの敵カードをクリア
+            for (int i = 0; i < playZone.Length; i++)
+            {
+                if (playZone[i] != null && playZone[i].IsEnemyCard)
+                    playZone[i].Clear();
+            }
+ 
+            // デッキ・戦略がなければスキップ
+            if (enemyPlacementStrategy == null || currentEnemy?.CardDeck == null) return;
+            if (currentEnemy.CardDeck.Cards == null || currentEnemy.CardDeck.Cards.Count == 0) return;
+ 
+            var placements = enemyPlacementStrategy.SelectCards(
+                currentEnemy.CardDeck.Cards,
+                playZone.Length,
+                currentEnemy.CardDeck.CardsPerTurn);
+ 
+            foreach (var (slotIndex, cardData) in placements)
+            {
+                if (slotIndex < 0 || slotIndex >= playZone.Length) continue;
+                var instance = new CardInstance(cardData);
+                instance.RollValues();
+                playZone[slotIndex] ??= new PlayZoneSlot();
+                playZone[slotIndex].EnemyCardInstance = instance;
+                playZone[slotIndex].IsEnemyCard = true;
+ 
+                CustomLogger.Info(
+                    $"敵カード配置: {cardData.CardName} → Slot {slotIndex}",
+                    LogTagUtil.TagBattle);
+            }
         }
-
-        // -------------------------------------------------------
-        // バリデーション
-        // -------------------------------------------------------
-
-        private bool IsValidSlot(int index) => index >= 0 && index < playZone.Length;
-        private bool IsValidHand(int index) => index >= 0 && index < hand.Count;
     }
 }

@@ -16,3 +16,4 @@ MonoBehaviour:
   Hp: 120
   EnemyPrefab: {fileID: 4010116763971566608, guid: adc13e9e96de69b4fbebbf57c7f6a711,
     type: 3}
+  CardDeck: {fileID: 11400000, guid: 2558ccf8c05b73643b6972d5bad4760c, type: 2}

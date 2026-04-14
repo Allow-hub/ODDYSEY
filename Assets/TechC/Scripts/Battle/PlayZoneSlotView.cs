@@ -45,6 +45,21 @@ namespace TechC.ODDESEY.Battle
         public void SetSlotData(PlayZoneSlot slot)
         {
             slotData = slot;
+
+            if (slot != null && slot.IsEnemyCard && slot.EnemyCardInstance != null)
+            {
+                // cardAnchor 配下に既にある backgroundImage などを使って表示するだけ
+                // 例：背景色を変えて「敵カード」と分かるようにする
+                CustomLogger.Info($"スロット {slotIndex} に敵カード配置: {slot.EnemyCardInstance.OriginalData.CardName}", LogTagUtil.TagCard);
+
+                // カード名・スプライトも既存の UI に流し込める
+                // （CardView を使わず直接 Image/TMP を参照する設計ならそちらへ）
+            }
+            else
+            {
+                if (backgroundImage != null)
+                    backgroundImage.color = Color.white;
+            }
         }
 
         public void ClearSlot()
