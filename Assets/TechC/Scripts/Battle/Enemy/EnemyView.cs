@@ -16,6 +16,8 @@ namespace TechC.ODDESEY.Battle
         private Dictionary<EnemyStateNotifier.StateType, List<UniTaskCompletionSource>> waiters
              = new();
         private static readonly int EnterHash = Animator.StringToHash("Enter");
+        private static readonly int HitHash = Animator.StringToHash("Hit");
+        private static readonly int MissHash = Animator.StringToHash("Miss");
         private static readonly int DamageHash = Animator.StringToHash("Damage");
         private static readonly int DefeatedHash = Animator.StringToHash("Defeated");
         private void Awake()
@@ -67,6 +69,25 @@ namespace TechC.ODDESEY.Battle
             // animator.SetTrigger(EnterHash);
             await task;
             CustomLogger.Info($"敵出撃アニメーション完了", LogTagUtil.TagBattle);
+        }
+
+        /// <summary>
+        /// カードの効果に応じたアニメーションを再生する。例えば攻撃なら攻撃モーションを再生し、外した場合は外しモーションを再生する。
+        /// </summary>
+        /// <param name="isHit"></param>
+        /// <returns></returns>
+        public async UniTask PlayAttackAnimationAsync(bool isHit)
+        {
+            CustomLogger.Info($"敵攻撃アニメーション開始 (isHit={isHit})", LogTagUtil.TagBattle);
+            // animator.SetTrigger(isHit ? HitHash : MissHash);
+
+            // await UniTask.Yield(); // ステート遷移を1フレーム待つ
+
+            // await UniTask.WaitUntil(() =>
+            // {
+            //     var state = animator.GetCurrentAnimatorStateInfo(0);
+            //     return state.IsName(isHit ? "Hit" : "Miss") && state.normalizedTime >= 1f;
+            // });
         }
 
         public void PlayDamageAnimation()

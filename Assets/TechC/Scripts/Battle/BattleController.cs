@@ -68,6 +68,7 @@ namespace TechC.ODDESEY.Battle
 
                 // 4. ターン確定：プレイゾーンのカードを左から順に解決
                 var resolveResults = battleLogic.ConfirmTurn();
+                Debug.Log($"カード解決開始: {resolveResults.Count}枚");
 
                 foreach (var result in resolveResults)
                 {
@@ -83,7 +84,8 @@ namespace TechC.ODDESEY.Battle
                     //     await battleView.UpdateHpAsync(battleLogic.PlayerHp, battleLogic.EnemyHp);
 
                     // 途中で勝敗が確定したらループを抜ける
-                    if (!battleLogic.IsBattleActive) break;
+                    // if (!battleLogic.IsBattleActive) break;
+                    CustomLogger.Info($"カード「{result.CardInstanceId}」解決完了 (isHit={result.IsHit}, Player={result.IsPlayer})", LogTagUtil.TagBattle);
                 }
 
                 //     // 5. ターン終了処理（激アツゲージ減少など）
