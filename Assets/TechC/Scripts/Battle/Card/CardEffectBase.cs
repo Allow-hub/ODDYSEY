@@ -11,14 +11,33 @@ namespace TechC.ODDESEY.Battle
         [Header("確率（範囲）")]
         [Range(0f, 1f)] public float ProbabilityMin = 1f;
         [Range(0f, 1f)] public float ProbabilityMax = 1f;
- 
+
         /// <summary>手札に来た時点で確定した基礎確率（0〜1）</summary>
         public float BaseProbability { get; private set; }
- 
+
         /// <summary>運ゲージ消費で上乗せされた確率ボーナス</summary>
         public float BonusProbability { get; set; }
- 
+
         /// <summary>実効確率（基礎 + ボーナス、上限 1f）</summary>
         public float EffectiveProbability => Mathf.Min(BaseProbability + BonusProbability, 1f);
+
+        /// <summary>
+        /// カードが効力を発揮するタイミングで呼ばれる実行メソッド
+        /// </summary>
+        /// <param name="context">バトルのデータ</param>
+        /// <param name="effectIndex"></param>
+        public abstract void Execute(EffectContext context, int effectIndex);
+    }
+
+    /// <summary>
+    /// 実行用のコンテキスト
+    /// </summary>
+    public class EffectContext
+    {
+        public BattleLogic Logic;
+        public CardInstance Source;
+        public bool IsEnemy;
+        public int SlotIndex;
+        public CardResolveResult Result;
     }
 }

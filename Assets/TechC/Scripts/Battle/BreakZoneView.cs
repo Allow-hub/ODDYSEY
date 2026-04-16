@@ -1,4 +1,5 @@
 using System;
+using Cysharp.Threading.Tasks;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
 using UnityEngine;
@@ -18,6 +19,8 @@ namespace TechC.ODDESEY.Battle
 
         [Header("ハイライトカラー")]
         [SerializeField] private Color highlightColor = new Color(0.9f, 0.5f, 0.1f, 0.8f);
+
+        [SerializeField] private BattleView battleView;
 
         /// <summary>
         /// カードが砕かれたときに呼ばれるコールバック。
@@ -81,6 +84,7 @@ namespace TechC.ODDESEY.Battle
         private async Cysharp.Threading.Tasks.UniTaskVoid PlayBreakAndNotify(CardView cardView, float luckGain)
         {
             await cardView.PlayBreakAnimationAsync();
+            battleView.RemoveCardAsync(cardView.InstanceId).Forget(); // アニメーション完了後にカードを View から削除
 
             // アニメーション完了後にロジック側へ通知
             // （PlayBreakAnimationAsync の中で Destroy まで行う）

@@ -106,10 +106,10 @@ namespace TechC.ODDESEY.Battle
         /// カードを砕くアニメーション。砕ける演出を再生してから完了通知を送る
         /// </summary>
         /// <returns></returns>
-        public UniTask PlayBreakAnimationAsync()
+        public async  UniTask PlayBreakAnimationAsync()
         {
-            Destroy(gameObject);
-            return UniTask.CompletedTask;
+            // Destroy(gameObject);
+            await UniTask.Delay(1); // 仮
         }
 
         // public void OnBreakAnimationComplete()

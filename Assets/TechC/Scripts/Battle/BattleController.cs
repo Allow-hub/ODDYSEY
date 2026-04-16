@@ -69,40 +69,41 @@ namespace TechC.ODDESEY.Battle
                 // 4. ターン確定：プレイゾーンのカードを左から順に解決
                 var resolveResults = battleLogic.ConfirmTurn();
 
-            //     foreach (var result in resolveResults)
-            //     {
-            //         // カード1枚ごとにアニメーションを待つ
-            //         await battleView.PlayCardResolveAsync(result);
+                foreach (var result in resolveResults)
+                {
+                    // カード1枚ごとにアニメーションを待つ
+                    await battleView.PlayCardResolveAsync(result);
 
-            //         // 運ゲージ変動があれば更新
-            //         if (result.LuckGaugeChanged)
-            //             await battleView.UpdateLuckGaugeAsync(battleLogic.LuckGauge);
+                    // 運ゲージ変動があれば更新
+                    // if (result.LuckGaugeChanged)
+                    //     await battleView.UpdateLuckGaugeAsync(battleLogic.LuckGauge);
 
-            //         // HP 変動があれば更新
-            //         if (result.DamageDealt > 0)
-            //             await battleView.UpdateHpAsync(battleLogic.PlayerHp, battleLogic.EnemyHp);
+                    // // HP 変動があれば更新
+                    // if (result.DamageDealt > 0)
+                    //     await battleView.UpdateHpAsync(battleLogic.PlayerHp, battleLogic.EnemyHp);
 
-            //         // 途中で勝敗が確定したらループを抜ける
-            //         if (!battleLogic.IsBattleActive) break;
-            //     }
+                    // 途中で勝敗が確定したらループを抜ける
+                    if (!battleLogic.IsBattleActive) break;
+                }
 
-            //     // 5. ターン終了処理（激アツゲージ減少など）
-            //     battleLogic.EndTurn();
+                //     // 5. ターン終了処理（激アツゲージ減少など）
+                await battleView.RemoveUsedCardsAsync(resolveResults);
+                battleLogic.EndTurn();
 
-            //     if (battleLogic.IsHotMode)
-            //         await battleView.UpdateLuckGaugeAsync(battleLogic.LuckGauge);
-            // }
+                //     if (battleLogic.IsHotMode)
+                //         await battleView.UpdateLuckGaugeAsync(battleLogic.LuckGauge);
+                // }
 
-            // // 6. 勝敗演出 → MainManager へ通知
-            // if (battleLogic.IsWon)
-            // {
-            //     await battleView.ShowWinEffectAsync();
-            //     OnBattleWon?.Invoke();
-            // }
-            // else
-            // {
-            //     await battleView.ShowLoseEffectAsync();
-            //     OnBattleLost?.Invoke();
+                // // 6. 勝敗演出 → MainManager へ通知
+                // if (battleLogic.IsWon)
+                // {
+                //     await battleView.ShowWinEffectAsync();
+                //     OnBattleWon?.Invoke();
+                // }
+                // else
+                // {
+                //     await battleView.ShowLoseEffectAsync();
+                //     OnBattleLost?.Invoke();
             }
         }
 

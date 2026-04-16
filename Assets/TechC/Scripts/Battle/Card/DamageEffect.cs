@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using TechC.ODDESEY.Util;
+using TechC.VBattle.Core.Extensions;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Battle
@@ -14,5 +16,28 @@ namespace TechC.ODDESEY.Battle
         [Header("ダメージ（範囲）")]
         public int DamageMin = 3;
         public int DamageMax = 6;
+
+        public override void Execute(EffectContext context, int effectIndex)
+        {
+            var instance = context.Source;
+
+            bool isHit = instance.TryExecuteEffect(effectIndex);
+
+            if (!isHit)
+            {
+                context.Result.IsHit = false;
+                return;
+            }
+
+            int damage = instance.GetEffectiveDamage(effectIndex);
+
+            if (context.IsEnemy)
+                context.Logic.TakePlayerDamage(damage);
+            else
+                context.Logic.TakeEnemyDamage(damage);
+
+            context.Result.IsHit = true;
+            context.Result.DamageDealt += damage;
+        }
     }
 }

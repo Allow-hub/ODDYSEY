@@ -1,4 +1,6 @@
-namespace TechC.ODDESEY
+using System.Collections.Generic;
+
+namespace TechC.ODDESEY.Battle
 {
     /// <summary>
     /// カード1枚の解決結果を表すクラス。
@@ -9,9 +11,7 @@ namespace TechC.ODDESEY
         public bool IsPlayer;
         public bool IsHit;
         public int DamageDealt;
-
-        // 拡張用
-        public bool WasBroken;
-        public bool LuckGaugeChanged;
+        public int CardInstanceId;
+        public List<AppliedStatusInfo> AppliedStatuses = new();
     }
 }

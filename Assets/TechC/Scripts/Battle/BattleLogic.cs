@@ -32,10 +32,10 @@ namespace TechC.ODDESEY.Battle
         private int turnCount;
         private EnemyData currentEnemy;
         private IEnemyCardPlacementStrategy enemyPlacementStrategy;
+
         // -------------------------------------------------------
         // 公開プロパティ
         // -------------------------------------------------------
-
         public bool IsBattleActive => isBattleActive;
         public bool IsWon => isWon;
         // public bool IsHotMode      => luckGauge?.IsHotMode ?? false;
@@ -115,32 +115,36 @@ namespace TechC.ODDESEY.Battle
                     ? slot.EnemyCardInstance
                     : slot.PlayerCardInstance;
 
-                bool isHit = instance.TryExecuteEffect(0);
-                int damage = 0;
-
-                if (isHit)
+                var context = new EffectContext
                 {
-                    damage = instance.GetEffectiveDamage(0);
+                    Logic = this,
+                    Source = instance,
+                    IsEnemy = slot.IsEnemyCard,
+                    SlotIndex = i,
+                    Result = new CardResolveResult
+                    {
+                        SlotIndex = i,
+                        IsPlayer = !slot.IsEnemyCard,
+                        IsHit = false,
+                        DamageDealt = 0,
+                        CardInstanceId = instance.InstanceId,
+                    }
+                };
 
-                    if (slot.IsEnemyCard)
-                        playerHp -= damage;
-                    else
-                        enemyHp -= damage;
-                    
-                    CustomLogger.Info(
-                        $"カード効果ヒット: Slot {i}, カード {instance.OriginalData.CardName}, ダメージ {damage}, プレイヤーHP {playerHp}/{PlayerHpMax}, 敵HP {enemyHp}/{enemyHpMax}",
-                        LogTagUtil.TagBattle);
-                }else
+                for (int e = 0; e < instance.OriginalData.Effects.Count; e++)
                 {
-                    damage = 0;
-                    CustomLogger.Info(
-                        $"カード効果ミス: Slot {i}, カード {instance.OriginalData.CardName}",LogTagUtil.TagBattle);
+                    var effect = instance.OriginalData.Effects[e];
+                    effect.Execute(context, e);
                 }
 
-                // -------------------------
-                // 勝敗チェック（途中終了）
-                // -------------------------
-                // CheckBattleEnd();
+                results.Add(context.Result);//結果をBattleControllerを介してViewに渡したいため
+
+                //捨て札へ移行
+                if (!slot.IsEnemyCard)
+                {
+                    discardPile.Add(instance.OriginalData);
+                    hand.Remove(instance);
+                }
                 if (!isBattleActive) break;
             }
 
@@ -180,12 +184,6 @@ namespace TechC.ODDESEY.Battle
             if (luckGauge.IsHotMode)
                 luckGauge.TickDown();
             */
-
-            // CardInstance.OriginalData（CardData）を discardPile に戻す
-            foreach (var instance in hand)
-                discardPile.Add(instance.OriginalData);
-
-            hand.Clear();
 
             for (int i = 0; i < playZone.Length; i++)
                 playZone[i]?.Clear();
@@ -284,6 +282,22 @@ namespace TechC.ODDESEY.Battle
                     $"敵カード配置: {cardData.CardName} → Slot {slotIndex}",
                     LogTagUtil.TagBattle);
             }
+        }
+
+        /// <summary>敵にダメージを与える</summary>
+        public void TakeEnemyDamage(int damage) => enemyHp -= damage;
+
+        /// <summary>プレイヤーにダメージを与える</summary>
+        public void TakePlayerDamage(int damage) => playerHp -= damage;
+
+        public void ApplyStatusToEnemy(StatusType type, int duration, int stackCount)
+        {
+            
+        }
+
+        public void ApplyStatusToPlayer(StatusType type, int duration, int stackCount)
+        {
+            
         }
     }
 }

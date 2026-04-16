@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 using System;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
@@ -12,38 +11,22 @@ namespace TechC.ODDESEY.Battle
     public class BattleView : MonoBehaviour
     {
         [SerializeField] private PlayZonePresenter playZonePresenter;
+
         [Header("Hand")]
         [SerializeField] private Transform handContainer;
         [SerializeField] private GameObject cardViewPrefab;
 
-        [Header("Play zone")]
-        [SerializeField] private Transform[] slotTransforms;
-
-        [Header("HP")]
-        [SerializeField] private Slider playerHpSlider;
-        [SerializeField] private Slider enemyHpSlider;
-
-        [Header("Luck gauge")]
-        [SerializeField] private Slider luckGaugeSlider;
-        [SerializeField] private GameObject hotModeEffect;
-
-        [Header("バトル開始演出")]
+        [Header("UI")]
         [SerializeField] private CanvasGroup fadePanel;
         [SerializeField] private GameObject battleStartText;
-        [SerializeField] private Transform enemySpawnPoint;  // 敵を生成する位置
-        [SerializeField] private Button confirmButton;  // ターン確定ボタン
+        [SerializeField] private Transform enemySpawnPoint;
+        [SerializeField] private Button confirmButton;
 
-        [Header("Effects")]
-        [SerializeField] private GameObject winEffectObj;
-        [SerializeField] private GameObject loseEffectObj;
-
-        [Header("アニメ設定")]
-        [SerializeField] private float sliderDuration = 0.3f;
-        [SerializeField] private float effectDuration = 1.5f;
+        [Header("Animation")]
         [SerializeField] private float fadeDuration = 0.4f;
         [SerializeField] private float textFadeDuration = 0.3f;
 
-        [Header("手札レイアウト")]
+        [Header("Hand Layout")]
         [SerializeField] private float startX = -400f;
         [SerializeField] private float spacing = 200f;
         [SerializeField] private float y = -300f;
@@ -51,32 +34,29 @@ namespace TechC.ODDESEY.Battle
 
         private EnemyView currentEnemyView;
         private UniTaskCompletionSource confirmTcs;
-        private List<CardData> previousHand = new();  // 差分検出用
+
+        // 🔥 コア：InstanceId → CardView
+        private Dictionary<int, CardView> handViews = new();
 
         public void Init()
         {
-            // winEffectObj?.SetActive(false);
-            // loseEffectObj?.SetActive(false);
-            // hotModeEffect?.SetActive(false);
-            // battleStartText?.SetActive(false);
-            // enemyObject?.SetActive(false);
-
             if (fadePanel != null) fadePanel.alpha = 1f;
-            if (confirmButton != null)
-                confirmButton.onClick.AddListener(ConfirmTurn);
+            confirmButton?.onClick.AddListener(ConfirmTurn);
         }
 
         /// <summary>
-        /// バトル開始演出。暗転 → 敵登場 → テキスト表示 → 手札ドロー の順で再生する。
+        /// バトル開始演出。フェードイン → 敵登場 → テキスト表示 → テキストフェードアウト。
         /// </summary>
+        /// <param name="firstTurnData"></param>
+        /// <param name="enemyData"></param>
+        /// <returns></returns>
         public async UniTask PlayBattleStartAsync(TurnData firstTurnData, EnemyData enemyData)
         {
             battleStartText.SetActive(false);
-            // 1. 暗転状態から明転
+
             await FadeAsync(1f, 0f, fadeDuration);
 
-            // 2. 敵を登場させる
-            if (enemyData != null && enemyData.EnemyPrefab != null)
+            if (enemyData?.EnemyPrefab != null)
             {
                 var obj = Instantiate(enemyData.EnemyPrefab, enemySpawnPoint);
                 currentEnemyView = obj.GetComponent<EnemyView>();
@@ -84,188 +64,196 @@ namespace TechC.ODDESEY.Battle
                 await currentEnemyView.PlayEnterAnimationAsync();
             }
 
-            // 3. "Battle Start" テキストを表示して消す
             if (battleStartText != null)
             {
-                float activeWaitDuration = 0.5f;
-                await UniTask.Delay(TimeSpan.FromSeconds(activeWaitDuration));
+                await UniTask.Delay(TimeSpan.FromSeconds(0.5f));
                 battleStartText.SetActive(true);
-                float activeTextDuration = 0.3f;
-                await UniTask.Delay(TimeSpan.FromSeconds(activeTextDuration));
+                await UniTask.Delay(TimeSpan.FromSeconds(0.3f));
                 await FadeObjectAsync(battleStartText, 1f, 0f, textFadeDuration);
                 battleStartText.SetActive(false);
             }
 
-            // 4. HP・ゲージを初期値にセットしてから手札をドロー
-            // UpdateHpImmediate(firstTurnData.PlayerHp, firstTurnData.PlayerHpMax,
-            //                   firstTurnData.EnemyHp,  firstTurnData.EnemyHpMax);
-            // UpdateLuckGaugeImmediate(firstTurnData.LuckGauge, firstTurnData.IsHotMode);
-
             await UpdateHandAsync(firstTurnData.Hand);
-            // ShowPlayZone(firstTurnData.PlayZone);
         }
 
         /// <summary>
-        /// ターン開始時の表示更新。2ターン目以降はこちらを使う。
+        /// ターン開始演出。テキスト表示 → テキストフェードアウト。
         /// </summary>
+        /// <param name="turnData"></param>
+        /// <returns></returns>
         public async UniTask ShowTurnStartAsync(TurnData turnData)
         {
-            // UpdateHpImmediate(turnData.PlayerHp, turnData.PlayerHpMax,
-            //                   turnData.EnemyHp, turnData.EnemyHpMax);
-            // UpdateLuckGaugeImmediate(turnData.LuckGauge, turnData.IsHotMode);
-
             await UpdateHandAsync(turnData.Hand);
-            // ShowPlayZone(turnData.PlayZone);
         }
 
         /// <summary>
-        /// 手札を更新。新しく追加されたカードだけドロー演出する（差分検出版）。
-        /// previousHand を保持して、増減したカードのみ処理。
+        /// カード解決演出。カードの効果に応じたアニメーションを再生する。
         /// </summary>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        public async UniTask PlayCardResolveAsync(CardResolveResult result)
+        {
+        }
+
+        /// <summary>
+        /// 手札の内容を View に反映する。カードの追加・削除・移動をアニメーション付きで行う。
+        /// </summary>
+        /// <param name="newHand"></param>
+        /// <returns></returns>
         private async UniTask UpdateHandAsync(List<CardInstance> newHand)
         {
-            // -----------------------------
-            // 減った分削除
-            // -----------------------------
-            for (int i = newHand.Count; i < previousHand.Count; i++)
-            {
-                if (i < handContainer.childCount)
-                    Destroy(handContainer.GetChild(i).gameObject);
-            }
-
             var tasks = new List<UniTask>();
 
+            var newIds = new HashSet<int>();
+
             // -----------------------------
-            // 既存カードの位置更新
+            // 生成・更新
             // -----------------------------
-            for (int i = 0; i < Mathf.Min(previousHand.Count, newHand.Count); i++)
+            for (int i = 0; i < newHand.Count; i++)
             {
-                var view = handContainer.GetChild(i).GetComponent<CardView>();
+                var instance = newHand[i];
+                newIds.Add(instance.InstanceId);
+
                 var targetPos = HandLayoutUtility.GetLinearPosition(i, startX, spacing, y);
 
-                tasks.Add(view.PlayDealAnimationAsync(
-                    view.GetComponent<RectTransform>().anchoredPosition,
-                    targetPos
-                ));
+                CardView view;
+
+                if (handViews.TryGetValue(instance.InstanceId, out view))
+                {
+                    // 既存カード → 現在位置から移動
+                    var currentPos = view.GetComponent<RectTransform>().anchoredPosition;
+
+                    tasks.Add(view.PlayDealAnimationAsync(currentPos, targetPos));
+                }
+                else
+                {
+                    // 新規カード → デッキから
+                    var obj = Instantiate(cardViewPrefab, handContainer);
+                    view = obj.GetComponent<CardView>();
+
+                    view.Setup(
+                        instance.OriginalData,
+                        instance.InstanceId,
+                        playZonePresenter.OnCardReturnRequested
+                    );
+
+                    handViews[instance.InstanceId] = view;
+
+                    tasks.Add(view.PlayDealAnimationAsync(deckStartPos, targetPos));
+                }
+
+                view.transform.SetParent(handContainer);
             }
 
             // -----------------------------
-            // 新規カード追加
+            // 削除（存在しないもの）
             // -----------------------------
-            for (int i = previousHand.Count; i < newHand.Count; i++)
+            var removeList = new List<int>();
+
+            foreach (var kv in handViews)
             {
-                var cardInstance = newHand[i];
+                if (!newIds.Contains(kv.Key))
+                {
+                    removeList.Add(kv.Key);
+                }
+            }
 
-                var obj = Instantiate(cardViewPrefab, handContainer);
-                var view = obj.GetComponent<CardView>();
-
-                view.Setup(cardInstance.OriginalData, cardInstance.InstanceId, playZonePresenter.OnCardReturnRequested);
-                var targetPos = HandLayoutUtility.GetLinearPosition(i, startX, spacing, y);
-
-                tasks.Add(view.PlayDealAnimationAsync(deckStartPos, targetPos));
+            foreach (var id in removeList)
+            {
+                if (handViews.TryGetValue(id, out var view))
+                {
+                    Destroy(view.gameObject);
+                    handViews.Remove(id);
+                }
             }
 
             await UniTask.WhenAll(tasks);
-
-            previousHand = new List<CardData>(newHand.ConvertAll(ci => ci.OriginalData));
-            CustomLogger.Info($"手札を更新: {string.Join(", ", newHand.ConvertAll(ci => ci.OriginalData.CardName))}", LogTagUtil.TagBattle);
         }
 
-        // private void ShowPlayZone(PlayZoneSlot[] slots)
-        // {
-        //     for (int i = 0; i < slotTransforms.Length; i++)
-        //     {
-        //         if (i >= slots.Length || slots[i].IsEmpty) continue;
-        //         // TODO: スロットの CardView を生成して slotTransforms[i] に配置する
-        //     }
-        // }
+        /// <summary>
+        /// 使用されたカードを View から削除する。アニメーションを再生してから削除する。    
+        /// </summary>
+        /// <param name="results"></param>
+        /// <returns></returns>
+        public async UniTask RemoveUsedCardsAsync(List<CardResolveResult> results)
+        {
+            var tasks = new List<UniTask>();
 
+            foreach (var r in results)
+            {
+                if (!r.IsPlayer) continue;
+
+                if (handViews.TryGetValue(r.CardInstanceId, out var view))
+                {
+                    tasks.Add(RemoveCardAsync(view.InstanceId));
+                    handViews.Remove(r.CardInstanceId);
+                }
+                else
+                {
+                    CustomLogger.Warning($"削除対象のカードViewが見つからない: InstanceId {r.CardInstanceId}", LogTagUtil.TagCard);
+                }
+            }
+
+            await UniTask.WhenAll(tasks);
+        }
+
+        /// <summary>
+        /// カードを View から削除する。アニメーションを再生してから削除する。
+        /// 砕く場合は BreakZoneView へドラッグ＆ドロップしてから呼び出すこと（BreakZoneView 内で PlayBreakAnimationAsync を呼び出す）。
+        /// 砕かない場合は、RemoveUsedCardsAsync 内で CardInstanceId を渡して呼び出すこと。
+        /// </summary>
+        /// <param name="instanceId"></param>
+        /// <returns></returns>
+        public async UniTask RemoveCardAsync(int instanceId)
+        {
+            if (!handViews.TryGetValue(instanceId, out var view))
+            {
+                CustomLogger.Warning($"削除対象のカードViewが見つからない: InstanceId {instanceId}", LogTagUtil.TagCard);
+                return;
+            }
+
+            await view.PlayBreakAnimationAsync();
+
+            if (view != null)
+                Destroy(view.gameObject);
+
+            handViews.Remove(instanceId);
+        }
+
+        /// <summary>
+        /// プレイヤーの入力待ち。ターン確定ボタンが押されるまで完了しない UniTask を返す。
+        /// </summary>
+        /// <returns></returns>
         public UniTask WaitForPlayerConfirmAsync()
         {
             confirmTcs = new UniTaskCompletionSource();
             return confirmTcs.Task;
         }
 
-        /// <summary>ターン確定ボタンの OnClick から呼ぶ</summary>
         public void ConfirmTurn()
         {
             confirmTcs?.TrySetResult();
         }
 
-        // public async UniTask PlayCardResolveAsync(CardResolveResult result)
-        // {
-        //     if (result.WasBroken)
-        //     {
-        //         // TODO: 対応する CardView を取得して PlayBreakAnimationAsync() を呼ぶ
-        //         await UniTask.Delay(300);
-        //     }
-        //     else if (result.IsHit)
-        //     {
-        //         // TODO: ヒットエフェクト
-        //         await UniTask.Delay(400);
-        //     }
-        //     else
-        //     {
-        //         // TODO: ミスエフェクト
-        //         await UniTask.Delay(200);
-        //     }
-        // }
 
-        public async UniTask UpdateLuckGaugeAsync(float gauge, bool isHotMode)
-        {
-            hotModeEffect?.SetActive(isHotMode);
-            if (luckGaugeSlider != null)
-                await LerpSliderAsync(luckGaugeSlider, gauge / 100f, sliderDuration);
-        }
-
-        public void UpdateLuckGaugeImmediate(float gauge, bool isHotMode)
-        {
-            if (luckGaugeSlider != null) luckGaugeSlider.value = gauge / 100f;
-            hotModeEffect?.SetActive(isHotMode);
-        }
-
-        public async UniTask UpdateHpAsync(int playerHp, int playerHpMax, int enemyHp, int enemyHpMax)
-        {
-            await UniTask.WhenAll(
-                playerHpSlider != null
-                    ? LerpSliderAsync(playerHpSlider, (float)playerHp / playerHpMax, sliderDuration)
-                    : UniTask.CompletedTask,
-                enemyHpSlider != null
-                    ? LerpSliderAsync(enemyHpSlider, (float)enemyHp / enemyHpMax, sliderDuration)
-                    : UniTask.CompletedTask
-            );
-        }
-
-        public void UpdateHpImmediate(int playerHp, int playerHpMax, int enemyHp, int enemyHpMax)
-        {
-            if (playerHpSlider != null) playerHpSlider.value = (float)playerHp / playerHpMax;
-            if (enemyHpSlider != null) enemyHpSlider.value = (float)enemyHp / enemyHpMax;
-        }
-
-        public async UniTask ShowWinEffectAsync()
-        {
-            winEffectObj?.SetActive(true);
-            await UniTask.Delay((int)(effectDuration * 1000));
-        }
-
-        public async UniTask ShowLoseEffectAsync()
-        {
-            loseEffectObj?.SetActive(true);
-            await UniTask.Delay((int)(effectDuration * 1000));
-        }
-
+        /// <summary>
+        /// フェードアニメーション。from → to に fadeDuration 秒かけて変化させる。
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <param name="duration"></param>
+        /// <returns></returns>
         private async UniTask FadeAsync(float from, float to, float duration)
         {
             if (fadePanel == null) return;
 
-            float elapsed = 0f;
+            float t = 0;
             fadePanel.alpha = from;
 
-            while (elapsed < duration)
+            while (t < duration)
             {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / duration);
-                fadePanel.alpha = Mathf.Lerp(from, to, t);
+                t += Time.deltaTime;
+                fadePanel.alpha = Mathf.Lerp(from, to, t / duration);
                 await UniTask.Yield();
             }
 
@@ -274,38 +262,19 @@ namespace TechC.ODDESEY.Battle
 
         private async UniTask FadeObjectAsync(GameObject obj, float from, float to, float duration)
         {
-            var group = obj.GetComponent<CanvasGroup>();
-            if (group == null) group = obj.AddComponent<CanvasGroup>();
+            var group = obj.GetComponent<CanvasGroup>() ?? obj.AddComponent<CanvasGroup>();
 
-            float elapsed = 0f;
+            float t = 0;
             group.alpha = from;
 
-            while (elapsed < duration)
+            while (t < duration)
             {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / duration);
-                group.alpha = Mathf.Lerp(from, to, t);
+                t += Time.deltaTime;
+                group.alpha = Mathf.Lerp(from, to, t / duration);
                 await UniTask.Yield();
             }
 
             group.alpha = to;
-        }
-
-        private async UniTask LerpSliderAsync(Slider slider, float targetValue, float duration)
-        {
-            float elapsed = 0f;
-            float startValue = slider.value;
-
-            while (elapsed < duration)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / duration);
-                float ease = 1f - Mathf.Pow(1f - t, 3f);
-                slider.value = Mathf.Lerp(startValue, targetValue, ease);
-                await UniTask.Yield();
-            }
-
-            slider.value = targetValue;
         }
     }
 }

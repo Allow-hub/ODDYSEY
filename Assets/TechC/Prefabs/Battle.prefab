@@ -1305,6 +1305,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   highlightImage: {fileID: 7092042496188969718}
   highlightColor: {r: 0.9, g: 0.5, b: 0.1, a: 0.8}
+  battleView: {fileID: 6061412184378286799}
 --- !u!1 &5175175416969682875
 GameObject:
   m_ObjectHideFlags: 0
@@ -1431,6 +1432,7 @@ GameObject:
   - component: {fileID: 3013997532242510503}
   - component: {fileID: 7231924434358268762}
   - component: {fileID: 6878928513609290106}
+  - component: {fileID: 3554504122727850992}
   m_Layer: 5
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -1554,6 +1556,18 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!225 &3554504122727850992
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5857588450958049162}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &6184345255735731045
 GameObject:
   m_ObjectHideFlags: 0
@@ -1624,11 +1638,8 @@ MonoBehaviour:
   handContainer: {fileID: 125993149797615695}
   cardViewPrefab: {fileID: 18910239606501190, guid: b6566e7de3bf750438ea1e8354bd3e25,
     type: 3}
-  slotTransforms: []
   playerHpSlider: {fileID: 0}
   enemyHpSlider: {fileID: 0}
-  luckGaugeSlider: {fileID: 0}
-  hotModeEffect: {fileID: 0}
   fadePanel: {fileID: 6246592951312037123}
   battleStartText: {fileID: 5857588450958049162}
   enemySpawnPoint: {fileID: 8736963183302931841}
@@ -1636,7 +1647,6 @@ MonoBehaviour:
   winEffectObj: {fileID: 0}
   loseEffectObj: {fileID: 0}
   sliderDuration: 0.3
-  effectDuration: 1.5
   fadeDuration: 1
   textFadeDuration: 0.5
   startX: -400
