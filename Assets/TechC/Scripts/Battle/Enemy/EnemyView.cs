@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using TechC.ODDESEY.Core.Util;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
 using UnityEngine;
@@ -15,11 +16,7 @@ namespace TechC.ODDESEY.Battle
         private Animator animator;
         private Dictionary<EnemyStateNotifier.StateType, List<UniTaskCompletionSource>> waiters
              = new();
-        private static readonly int EnterHash = Animator.StringToHash("Enter");
-        private static readonly int HitHash = Animator.StringToHash("Hit");
-        private static readonly int MissHash = Animator.StringToHash("Miss");
-        private static readonly int DamageHash = Animator.StringToHash("Damage");
-        private static readonly int DefeatedHash = Animator.StringToHash("Defeated");
+
         private void Awake()
         {
             animator = GetComponent<Animator>();
@@ -78,27 +75,29 @@ namespace TechC.ODDESEY.Battle
         /// <returns></returns>
         public async UniTask PlayAttackAnimationAsync(bool isHit)
         {
-            CustomLogger.Info($"敵攻撃アニメーション開始 (isHit={isHit})", LogTagUtil.TagBattle);
-            // animator.SetTrigger(isHit ? HitHash : MissHash);
+            var type = isHit
+                ? EnemyStateNotifier.StateType.Hit
+                : EnemyStateNotifier.StateType.Miss;
 
-            // await UniTask.Yield(); // ステート遷移を1フレーム待つ
+            var task = WaitStateAsync(type);
 
-            // await UniTask.WaitUntil(() =>
-            // {
-            //     var state = animator.GetCurrentAnimatorStateInfo(0);
-            //     return state.IsName(isHit ? "Hit" : "Miss") && state.normalizedTime >= 1f;
-            // });
+            animator.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, true);
+
+            await task;
+
+            CustomLogger.Info($"プレイヤー攻撃アニメーション完了 (isHit={isHit})", LogTagUtil.TagBattle);
+            animator.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, false);
         }
 
         public void PlayDamageAnimation()
         {
-            animator.SetTrigger(DamageHash);
+            animator.SetTrigger(AnimUtil.DamageHash);
         }
 
         public async UniTask PlayDefeatedAnimationAsync()
         {
             var task = WaitStateAsync(EnemyStateNotifier.StateType.Defeated);
-            animator.SetTrigger(DefeatedHash);
+            animator.SetTrigger(AnimUtil.DefeatedHash);
             await task;
         }
     }

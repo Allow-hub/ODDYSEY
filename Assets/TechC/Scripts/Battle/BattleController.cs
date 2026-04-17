@@ -86,6 +86,7 @@ namespace TechC.ODDESEY.Battle
                     // 途中で勝敗が確定したらループを抜ける
                     // if (!battleLogic.IsBattleActive) break;
                     CustomLogger.Info($"カード「{result.CardInstanceId}」解決完了 (isHit={result.IsHit}, Player={result.IsPlayer})", LogTagUtil.TagBattle);
+                    await UniTask.Delay(1000); // 解決結果のログが見やすくなるように1フレーム待つ
                 }
 
                 //     // 5. ターン終了処理（激アツゲージ減少など）
