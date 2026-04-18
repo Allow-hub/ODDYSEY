@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using TechC.ODDESEY.Core.Util;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
 using UnityEngine;
@@ -46,12 +47,28 @@ namespace TechC.ODDESEY.Battle
 
             return tcs.Task;
         }
+        
         /// <summary>
         /// 攻撃アニメーションを再生する。isHit に応じてヒット・ミスのアニメーションを切り替える。
         /// </summary>
-        /// <param name="isHit"></param>
         /// <returns></returns>
-        public async UniTask PlayAttackAnimationAsync(bool isHit)
+        public async UniTask PlayAttackAnimationAsync()
+        {
+            var task = WaitStateAsync(PlayerAnimationType.Attack);
+            animator.SetBool(AnimUtil.AttackHash, true);
+
+            await task;
+
+            CustomLogger.Info($"プレイヤー攻撃アニメーション完了", LogTagUtil.TagBattle);
+            animator.SetBool(AnimUtil.AttackHash, false);
+        }
+
+        /// <summary>
+        /// ダメージを受けた時のアニメーション、成功した場合と失敗する場合がある
+        /// </summary>
+        /// <param name="isHit">攻撃が成功したかどうか</param>
+        /// <returns></returns>
+        public async UniTask PlayDamageAnimationAsync(bool isHit)
         {
             var type = isHit
                 ? PlayerAnimationType.Hit
@@ -63,7 +80,7 @@ namespace TechC.ODDESEY.Battle
 
             await task;
 
-            CustomLogger.Info($"プレイヤー攻撃アニメーション完了 (isHit={isHit})", LogTagUtil.TagBattle);
+            CustomLogger.Info($"プレイヤー被ダメージアニメーション完了 (isHit={isHit})", LogTagUtil.TagBattle);
             animator.SetBool(isHit ? "Hit" : "Miss", false);
         }
     }

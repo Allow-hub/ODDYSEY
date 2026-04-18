@@ -43,5 +43,5 @@ MonoBehaviour:
   - input
   - state
   - battle
+  _disabledCategoryIds:
   - card
-  _disabledCategoryIds: []

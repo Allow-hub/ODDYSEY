@@ -63,21 +63,37 @@ namespace TechC.ODDESEY.Battle
         public async UniTask PlayEnterAnimationAsync()
         {
             var task = WaitStateAsync(EnemyStateNotifier.StateType.Enter);
-            // animator.SetTrigger(EnterHash);
+            animator.SetBool(AnimUtil.EnterHash, true);
             await task;
             CustomLogger.Info($"敵出撃アニメーション完了", LogTagUtil.TagBattle);
+            animator.SetBool(AnimUtil.EnterHash, false);
         }
 
         /// <summary>
-        /// カードの効果に応じたアニメーションを再生する。例えば攻撃なら攻撃モーションを再生し、外した場合は外しモーションを再生する。
+        /// 攻撃アニメーションを再生
         /// </summary>
-        /// <param name="isHit"></param>
         /// <returns></returns>
-        public async UniTask PlayAttackAnimationAsync(bool isHit)
+        public async UniTask PlayAttackAnimationAsync()
+        {
+            var task = WaitStateAsync(EnemyStateNotifier.StateType.Attack);
+            animator.SetBool(AnimUtil.AttackHash, true);
+
+            await task;
+
+            CustomLogger.Info($"プレイヤー攻撃アニメーション完了", LogTagUtil.TagBattle);
+            animator.SetBool(AnimUtil.AttackHash, false);
+        }
+
+        /// <summary>
+        /// ダメージを受けた時のアニメーション、成功した場合と失敗する場合がある
+        /// </summary>
+        /// <param name="isHit">攻撃が成功したかどうか</param>
+        /// <returns></returns>
+        public async UniTask PlayDamageAnimation(bool isHit)
         {
             var type = isHit
-                ? EnemyStateNotifier.StateType.Hit
-                : EnemyStateNotifier.StateType.Miss;
+                        ? EnemyStateNotifier.StateType.Hit
+                        : EnemyStateNotifier.StateType.Miss;
 
             var task = WaitStateAsync(type);
 
@@ -85,13 +101,8 @@ namespace TechC.ODDESEY.Battle
 
             await task;
 
-            CustomLogger.Info($"プレイヤー攻撃アニメーション完了 (isHit={isHit})", LogTagUtil.TagBattle);
+            CustomLogger.Info($"プレイヤー被ダメージアニメーション完了 (isHit={isHit})", LogTagUtil.TagBattle);
             animator.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, false);
-        }
-
-        public void PlayDamageAnimation()
-        {
-            animator.SetTrigger(AnimUtil.DamageHash);
         }
 
         public async UniTask PlayDefeatedAnimationAsync()

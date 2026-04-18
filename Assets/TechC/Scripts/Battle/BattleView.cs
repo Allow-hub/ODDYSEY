@@ -8,6 +8,9 @@ using TechC.VBattle.Core.Extensions;
 
 namespace TechC.ODDESEY.Battle
 {
+    /// <summary>
+    /// 戦闘の見た目を管理する
+    /// </summary>
     public class BattleView : MonoBehaviour
     {
         [SerializeField] private PlayZonePresenter playZonePresenter;
@@ -36,7 +39,6 @@ namespace TechC.ODDESEY.Battle
         private EnemyView currentEnemyView;
         private UniTaskCompletionSource confirmTcs;
 
-        // 🔥 コア：InstanceId → CardView
         private Dictionary<int, CardView> handViews = new();
 
         public void Init()
@@ -102,9 +104,9 @@ namespace TechC.ODDESEY.Battle
 
             // ② プレイヤー or 敵のアニメーション
             if (result.IsPlayer)
-                await playerView.PlayAttackAnimationAsync(result.IsHit);
+                await playerView.PlayAttackAnimationAsync();
             else
-                await currentEnemyView.PlayAttackAnimationAsync(result.IsHit);
+                await currentEnemyView.PlayAttackAnimationAsync();
         }
 
         /// <summary>

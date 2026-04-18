@@ -13,6 +13,7 @@ namespace TechC.ODDESEY.Battle
             Enter,//登場
             Defeated,//倒されたとき
             Attack,//攻撃実行
+            AttackHit,//攻撃ヒット時
             Hit,//攻撃がヒットしたとき
             Miss//攻撃がミスしたとき
         }
