@@ -32,9 +32,9 @@ namespace TechC.ODDESEY.Battle
             int damage = instance.GetEffectiveDamage(effectIndex);
 
             if (context.IsEnemy)
-                context.Logic.TakePlayerDamage(damage);
+                context.Logic.TakePlayerDamage(damage, context.Result);
             else
-                context.Logic.TakeEnemyDamage(damage);
+                context.Logic.TakeEnemyDamage(damage, context.Result);
 
             context.Result.IsHit = true;
             context.Result.DamageDealt += damage;

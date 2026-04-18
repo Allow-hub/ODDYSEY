@@ -28,6 +28,8 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private GameObject battleStartText;
         [SerializeField] private Transform enemySpawnPoint;
         [SerializeField] private Button confirmButton;
+        [SerializeField] private GameObject winEffectObj;
+        [SerializeField] private GameObject loseEffectObj;
 
         [Header("Animation")]
         [SerializeField] private float fadeDuration = 0.4f;
@@ -39,19 +41,15 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private float y = -300f;
         [SerializeField] private Vector2 deckStartPos = new Vector2(800, -500);
 
-        // ================================
-        // Private
-        // ================================
         private EnemyView currentEnemyView;
         private UniTaskCompletionSource confirmTcs;
         private Dictionary<int, CardView> handViews = new();
 
-        // ================================
-        // 初期化
-        // ================================
         public void Init()
         {
             luckGaugeView.Setup(max: 100f);
+            winEffectObj.SetActive(false);
+            loseEffectObj.SetActive(false);
             if (fadePanel != null) fadePanel.alpha = 1f;
             confirmButton?.onClick.AddListener(ConfirmTurn);
         }
@@ -178,6 +176,26 @@ namespace TechC.ODDESEY.Battle
         public void ConfirmTurn()
         {
             confirmTcs?.TrySetResult();
+        }
+
+        /// <summary>
+        /// 勝利時の演出
+        /// </summary>
+        /// <returns></returns>
+        public async UniTask ShowWinEffectAsync()
+        {
+            winEffectObj.SetActive(true);
+            await UniTask.Delay(4000);//仮
+        }
+
+        /// <summary>
+        /// 敗北時の演出
+        /// </summary>
+        /// <returns></returns>
+        public async UniTask ShowLoseEffectAsync()
+        {
+            loseEffectObj.SetActive(true);
+            await UniTask.Delay(4000);//仮
         }
 
         /// <summary>

@@ -12,6 +12,10 @@ namespace TechC.ODDESEY.Battle
         public bool IsHit;
         public int DamageDealt;
         public int CardInstanceId;
+        public bool IsBattleEnd;  // このカードで決着がついたか
+        public bool IsWon;        // true=プレイヤー勝利, false=プレイヤー敗北
+        public int PlayerHpAfter;
+        public int EnemyHpAfter;
         public List<AppliedStatusInfo> AppliedStatuses = new();
     }
 }
