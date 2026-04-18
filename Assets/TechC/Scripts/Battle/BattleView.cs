@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using System;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
+using TechC.ODDESEY.Core.Manager;
 
 namespace TechC.ODDESEY.Battle
 {
@@ -30,6 +31,7 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private Button confirmButton;
         [SerializeField] private GameObject winEffectObj;
         [SerializeField] private GameObject loseEffectObj;
+        [SerializeField] private Button pauseButton;
 
         [Header("Animation")]
         [SerializeField] private float fadeDuration = 0.4f;
@@ -52,6 +54,7 @@ namespace TechC.ODDESEY.Battle
             loseEffectObj.SetActive(false);
             if (fadePanel != null) fadePanel.alpha = 1f;
             confirmButton?.onClick.AddListener(ConfirmTurn);
+            pauseButton?.onClick.AddListener(() => PauseManager.I?.Pause());
         }
 
         // ================================

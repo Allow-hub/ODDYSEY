@@ -1,6 +1,7 @@
 using UnityEngine;
 using TechC.Core.Manager;
 using TechC.Core.Setup;
+using TechC.ODDESEY.Core.Manager;
 
 namespace TechC.Core.Setup
 {
@@ -12,6 +13,7 @@ namespace TechC.Core.Setup
     {
         [SerializeField] private GameManager gameManager;
         [SerializeField] private AudioManager audioManager;
+        [SerializeField] private PauseManager pauseManager;
         /// <summary>
         /// ManagerSceneの初期化処理
         /// </summary>
@@ -19,8 +21,7 @@ namespace TechC.Core.Setup
         {
             gameManager.Init();
             audioManager.Init();
-
-            Debug.Log("ManagerSceneSetup: ManagerSceneの初期化完了");
+            pauseManager.Init();
         }
     }
 }
