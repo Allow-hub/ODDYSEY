@@ -8,9 +8,13 @@ using TechC.VBattle.Core.Extensions;
 
 namespace TechC.ODDESEY.Battle
 {
+    /// <summary>
+    /// 戦闘の見た目を管理する
+    /// </summary>
     public class BattleView : MonoBehaviour
     {
         [SerializeField] private PlayZonePresenter playZonePresenter;
+        [SerializeField] private PlayerView playerView;
 
         [Header("Hand")]
         [SerializeField] private Transform handContainer;
@@ -35,7 +39,6 @@ namespace TechC.ODDESEY.Battle
         private EnemyView currentEnemyView;
         private UniTaskCompletionSource confirmTcs;
 
-        // 🔥 コア：InstanceId → CardView
         private Dictionary<int, CardView> handViews = new();
 
         public void Init()
@@ -87,12 +90,23 @@ namespace TechC.ODDESEY.Battle
         }
 
         /// <summary>
-        /// カード解決演出。カードの効果に応じたアニメーションを再生する。
+        /// カード実行演出。カードの効果に応じたアニメーションを再生する。
         /// </summary>
         /// <param name="result"></param>
         /// <returns></returns>
         public async UniTask PlayCardResolveAsync(CardResolveResult result)
         {
+            // // ① カードアニメーション
+            // if (handViews.TryGetValue(result.CardInstanceId, out var cardView))
+            // {
+            //     await cardView.PlayResolveAnimationAsync();
+            // }
+
+            // ② プレイヤー or 敵のアニメーション
+            if (result.IsPlayer)
+                await playerView.PlayAttackAnimationAsync();
+            else
+                await currentEnemyView.PlayAttackAnimationAsync();
         }
 
         /// <summary>

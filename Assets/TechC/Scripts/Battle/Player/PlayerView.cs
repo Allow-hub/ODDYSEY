@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using TechC.ODDESEY.Core.Util;
@@ -8,39 +9,26 @@ using UnityEngine;
 namespace TechC.ODDESEY.Battle
 {
     /// <summary>
-    /// 敵1体の表示を管理する。
-    /// EnemyData から生成され、Animator のステート完了を UniTask で待てる口を提供する。
+    /// プレイヤーの見た目を管理する
     /// </summary>
-    public class EnemyView : MonoBehaviour
+    public class PlayerView : MonoBehaviour
     {
-        private Animator animator;
-        private Dictionary<EnemyStateNotifier.StateType, List<UniTaskCompletionSource>> waiters
-             = new();
-
-        private void Awake()
-        {
-            animator = GetComponent<Animator>();
-        }
-
-        /// <summary>
-        /// EnemyData を元に初期化する。BattleView から呼ぶ。
-        /// </summary>
-        public void Setup(EnemyData data)
-        {
-        }
+        [SerializeField] private Animator animator;
+        private Dictionary<PlayerAnimationType, List<UniTaskCompletionSource>> waiters
+            = new();
 
         /// <summary>
         /// Animator のステート完了を待っている UniTaskCompletionSource に完了通知を送る。
         /// </summary>
         /// <param name="type"></param>
-        public void NotifyStateFinished(EnemyStateNotifier.StateType type)
+        public void NotifyStateFinished(PlayerAnimationType type)
         {
             if (!waiters.TryGetValue(type, out var list)) return;
 
+            waiters.Remove(type);
+
             foreach (var tcs in list)
                 tcs.TrySetResult();
-
-            list.Clear();
         }
 
         /// <summary>
@@ -48,7 +36,7 @@ namespace TechC.ODDESEY.Battle
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        private UniTask WaitStateAsync(EnemyStateNotifier.StateType type)
+        private UniTask WaitStateAsync(PlayerAnimationType type)
         {
             var tcs = new UniTaskCompletionSource();
 
@@ -59,23 +47,14 @@ namespace TechC.ODDESEY.Battle
 
             return tcs.Task;
         }
-
-        public async UniTask PlayEnterAnimationAsync()
-        {
-            var task = WaitStateAsync(EnemyStateNotifier.StateType.Enter);
-            animator.SetBool(AnimUtil.EnterHash, true);
-            await task;
-            CustomLogger.Info($"敵出撃アニメーション完了", LogTagUtil.TagBattle);
-            animator.SetBool(AnimUtil.EnterHash, false);
-        }
-
+        
         /// <summary>
-        /// 攻撃アニメーションを再生
+        /// 攻撃アニメーションを再生する。isHit に応じてヒット・ミスのアニメーションを切り替える。
         /// </summary>
         /// <returns></returns>
         public async UniTask PlayAttackAnimationAsync()
         {
-            var task = WaitStateAsync(EnemyStateNotifier.StateType.Attack);
+            var task = WaitStateAsync(PlayerAnimationType.Attack);
             animator.SetBool(AnimUtil.AttackHash, true);
 
             await task;
@@ -89,27 +68,30 @@ namespace TechC.ODDESEY.Battle
         /// </summary>
         /// <param name="isHit">攻撃が成功したかどうか</param>
         /// <returns></returns>
-        public async UniTask PlayDamageAnimation(bool isHit)
+        public async UniTask PlayDamageAnimationAsync(bool isHit)
         {
             var type = isHit
-                        ? EnemyStateNotifier.StateType.Hit
-                        : EnemyStateNotifier.StateType.Miss;
+                ? PlayerAnimationType.Hit
+                : PlayerAnimationType.Miss;
 
             var task = WaitStateAsync(type);
 
-            animator.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, true);
+            animator.SetBool(isHit ? "Hit" : "Miss", true);
 
             await task;
 
             CustomLogger.Info($"プレイヤー被ダメージアニメーション完了 (isHit={isHit})", LogTagUtil.TagBattle);
-            animator.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, false);
+            animator.SetBool(isHit ? "Hit" : "Miss", false);
         }
+    }
 
-        public async UniTask PlayDefeatedAnimationAsync()
-        {
-            var task = WaitStateAsync(EnemyStateNotifier.StateType.Defeated);
-            animator.SetTrigger(AnimUtil.DefeatedHash);
-            await task;
-        }
+    public enum PlayerAnimationType
+    {
+        Enter,
+        Defeated,
+        Attack,
+        Damage,
+        Hit,
+        Miss
     }
 }
