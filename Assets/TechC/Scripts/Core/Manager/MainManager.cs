@@ -84,8 +84,8 @@ namespace TechC.Core.Manager
             currentPrefab = Instantiate(mapPrefab);
             stageController = currentPrefab.GetComponent<MapController>();
 
-            stageController.OnStageCompleted += HandleMapCompleted;
-            stageController.OnBattleRequested += HandleBattleRequested;
+            // stageController.OnStageCompleted += HandleMapCompleted;
+            // stageController.OnBattleRequested += HandleBattleRequested;
 
             stageController.Initialize();
         }
@@ -144,8 +144,8 @@ namespace TechC.Core.Manager
         {
             if (stageController != null)
             {
-                stageController.OnStageCompleted -= HandleMapCompleted;
-                stageController.OnBattleRequested -= HandleBattleRequested;
+                // stageController.OnStageCompleted -= HandleMapCompleted;
+                // stageController.OnBattleRequested -= HandleBattleRequested;
                 stageController = null;
             }
             if (battleController != null)
