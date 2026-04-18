@@ -22,7 +22,7 @@ namespace TechC.ODDESEY.Battle
         private List<CardData> discardPile;// CardData のリストで捨て札を管理（CardInstance は手札にしか存在しないため）
         private PlayZoneSlot[] playZone;
 
-        // private LuckGaugeModel luckGauge;
+        private LuckGaugeModel luckGauge;
 
         private int playerHp;
         private int enemyHp;
@@ -38,11 +38,13 @@ namespace TechC.ODDESEY.Battle
         // -------------------------------------------------------
         public bool IsBattleActive => isBattleActive;
         public bool IsWon => isWon;
-        // public bool IsHotMode      => luckGauge?.IsHotMode ?? false;
         public int PlayerHp => playerHp;
         public int PlayerHpMax { get; private set; }
         public int EnemyHp => enemyHp;
         public int EnemyHpMax => enemyHpMax;
+        public float LuckGauge => luckGauge.Current;
+        public float LuckGaugeMax => luckGauge.Max;
+        public bool IsHotMode => luckGauge.IsHotMode;
 
         private const int HandLimit = 5;
         private const int PlayZoneSize = 4;
@@ -61,7 +63,7 @@ namespace TechC.ODDESEY.Battle
             hand = new List<CardInstance>();
             discardPile = new List<CardData>();
             playZone = new PlayZoneSlot[PlayZoneSize];
-            // luckGauge   = new LuckGaugeModel();
+            luckGauge   = new LuckGaugeModel();
 
             enemyHp = 20;//test
             enemyHpMax = 20;
@@ -92,7 +94,7 @@ namespace TechC.ODDESEY.Battle
                 PlayerHpMax = PlayerHpMax,
                 EnemyHp = enemyHp,
                 EnemyHpMax = enemyHpMax,
-                // LuckGauge   = luckGauge.Current,
+                LuckGauge   = luckGauge.Current,
                 // IsHotMode   = luckGauge.IsHotMode,
                 TurnCount = turnCount,
             };
@@ -151,39 +153,12 @@ namespace TechC.ODDESEY.Battle
             return results;
         }
 
-        // -------------------------------------------------------
-        // 運ゲージ（未実装のため全停止）
-        // -------------------------------------------------------
-
-        /*
-        public void SpendLuckForProbability(int slotIndex, float amount)
-        {
-            if (!IsValidSlot(slotIndex)) return;
-            if (!luckGauge.TrySpend(amount)) return;
-
-            playZone[slotIndex].BonusProbability += amount / 100f;
-            OnLuckGaugeChanged?.Invoke(luckGauge.Current);
-        }
-
-        public void SpendLuckForDamage(int slotIndex, float amount)
-        {
-            if (!IsValidSlot(slotIndex)) return;
-            if (!luckGauge.TrySpend(amount)) return;
-
-            playZone[slotIndex].BonusDamage += (int)(amount / 5f);
-            OnLuckGaugeChanged?.Invoke(luckGauge.Current);
-        }
-        */
-
         /// <summary>
         /// ターン終了：手札を捨て、プレイゾーンをクリアする。BattleController から呼ぶ。
         /// </summary>
         public void EndTurn()
         {
-            /*
-            if (luckGauge.IsHotMode)
-                luckGauge.TickDown();
-            */
+            luckGauge.TickDown();
 
             for (int i = 0; i < playZone.Length; i++)
                 playZone[i]?.Clear();
@@ -299,5 +274,7 @@ namespace TechC.ODDESEY.Battle
         {
             
         }
+
+        public void AddLuckGauge(float amount) => luckGauge.Add(amount);
     }
 }

@@ -15,6 +15,9 @@ namespace TechC.ODDESEY.Battle
     {
         [SerializeField] private PlayZonePresenter playZonePresenter;
         [SerializeField] private PlayerView playerView;
+        [SerializeField] private HpView playerHpView;
+        [SerializeField] private HpView enemyHpView;
+        [SerializeField] private LuckGaugeView luckGaugeView;
 
         [Header("Hand")]
         [SerializeField] private Transform handContainer;
@@ -36,26 +39,36 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private float y = -300f;
         [SerializeField] private Vector2 deckStartPos = new Vector2(800, -500);
 
+        // ================================
+        // Private
+        // ================================
         private EnemyView currentEnemyView;
         private UniTaskCompletionSource confirmTcs;
-
         private Dictionary<int, CardView> handViews = new();
 
+        // ================================
+        // 初期化
+        // ================================
         public void Init()
         {
+            luckGaugeView.Setup(max: 100f);
             if (fadePanel != null) fadePanel.alpha = 1f;
             confirmButton?.onClick.AddListener(ConfirmTurn);
         }
 
+        // ================================
+        // 公開API（バトル進行）
+        // ================================
+
         /// <summary>
         /// バトル開始演出。フェードイン → 敵登場 → テキスト表示 → テキストフェードアウト。
         /// </summary>
-        /// <param name="firstTurnData"></param>
-        /// <param name="enemyData"></param>
-        /// <returns></returns>
         public async UniTask PlayBattleStartAsync(TurnData firstTurnData, EnemyData enemyData)
         {
             battleStartText.SetActive(false);
+
+            playerHpView.Setup(firstTurnData.PlayerHpMax);
+            enemyHpView.Setup(firstTurnData.EnemyHpMax);
 
             await FadeAsync(1f, 0f, fadeDuration);
 
@@ -82,8 +95,6 @@ namespace TechC.ODDESEY.Battle
         /// <summary>
         /// ターン開始演出。テキスト表示 → テキストフェードアウト。
         /// </summary>
-        /// <param name="turnData"></param>
-        /// <returns></returns>
         public async UniTask ShowTurnStartAsync(TurnData turnData)
         {
             await UpdateHandAsync(turnData.Hand);
@@ -92,16 +103,8 @@ namespace TechC.ODDESEY.Battle
         /// <summary>
         /// カード実行演出。カードの効果に応じたアニメーションを再生する。
         /// </summary>
-        /// <param name="result"></param>
-        /// <returns></returns>
         public async UniTask PlayCardResolveAsync(CardResolveResult result)
         {
-            // // ① カードアニメーション
-            // if (handViews.TryGetValue(result.CardInstanceId, out var cardView))
-            // {
-            //     await cardView.PlayResolveAnimationAsync();
-            // }
-
             // ② プレイヤー or 敵のアニメーション
             if (result.IsPlayer)
                 await playerView.PlayAttackAnimationAsync();
@@ -109,15 +112,80 @@ namespace TechC.ODDESEY.Battle
                 await currentEnemyView.PlayAttackAnimationAsync();
         }
 
+        public async UniTask UpdatePlayerHpAsync(int current, int max)
+            => await playerHpView.UpdateHpAsync(current, max);
+
+        public async UniTask UpdateEnemyHpAsync(int current, int max)
+            => await enemyHpView.UpdateHpAsync(current, max);
+
+        public async UniTask UpdateLuckGaugeAsync(float current, float max, bool isHotMode)
+            => await luckGaugeView.UpdateGaugeAsync(current, max, isHotMode);
+
+        public void UpdateLuckGaugeImmediate(float current, float max, bool isHotMode)
+            => luckGaugeView.UpdateGaugeImmediate(current, max, isHotMode);
+
         /// <summary>
-        /// 手札の内容を View に反映する。カードの追加・削除・移動をアニメーション付きで行う。
+        /// 使用されたカードを View から削除する。アニメーションを再生してから削除する。    
         /// </summary>
-        /// <param name="newHand"></param>
-        /// <returns></returns>
-        private async UniTask UpdateHandAsync(List<CardInstance> newHand)
+        public async UniTask RemoveUsedCardsAsync(List<CardResolveResult> results)
         {
             var tasks = new List<UniTask>();
 
+            foreach (var r in results)
+            {
+                if (!r.IsPlayer) continue;
+
+                if (handViews.TryGetValue(r.CardInstanceId, out var view))
+                {
+                    tasks.Add(RemoveCardAsync(view.InstanceId));
+                    handViews.Remove(r.CardInstanceId);
+                }
+                else
+                    CustomLogger.Warning($"削除対象のカードViewが見つからない: InstanceId {r.CardInstanceId}", LogTagUtil.TagCard);
+            }
+
+            await UniTask.WhenAll(tasks);
+        }
+
+        /// <summary>
+        /// カードを View から削除する。アニメーションを再生してから削除する。
+        /// </summary>
+        public async UniTask RemoveCardAsync(int instanceId)
+        {
+            if (!handViews.TryGetValue(instanceId, out var view))
+            {
+                CustomLogger.Warning($"削除対象のカードViewが見つからない: InstanceId {instanceId}", LogTagUtil.TagCard);
+                return;
+            }
+
+            await view.PlayBreakAnimationAsync();
+
+            if (view != null)
+                Destroy(view.gameObject);
+
+            handViews.Remove(instanceId);
+        }
+
+        /// <summary>
+        /// プレイヤーの入力待ち。ターン確定ボタンが押されるまで完了しない UniTask を返す。
+        /// </summary>
+        public UniTask WaitForPlayerConfirmAsync()
+        {
+            confirmTcs = new UniTaskCompletionSource();
+            return confirmTcs.Task;
+        }
+
+        public void ConfirmTurn()
+        {
+            confirmTcs?.TrySetResult();
+        }
+
+        /// <summary>
+        /// 手札の内容を View に反映する。カードの追加・削除・移動をアニメーション付きで行う。
+        /// </summary>
+        private async UniTask UpdateHandAsync(List<CardInstance> newHand)
+        {
+            var tasks = new List<UniTask>();
             var newIds = new HashSet<int>();
 
             // -----------------------------
@@ -134,14 +202,11 @@ namespace TechC.ODDESEY.Battle
 
                 if (handViews.TryGetValue(instance.InstanceId, out view))
                 {
-                    // 既存カード → 現在位置から移動
                     var currentPos = view.GetComponent<RectTransform>().anchoredPosition;
-
                     tasks.Add(view.PlayDealAnimationAsync(currentPos, targetPos));
                 }
                 else
                 {
-                    // 新規カード → デッキから
                     var obj = Instantiate(cardViewPrefab, handContainer);
                     view = obj.GetComponent<CardView>();
 
@@ -167,9 +232,7 @@ namespace TechC.ODDESEY.Battle
             foreach (var kv in handViews)
             {
                 if (!newIds.Contains(kv.Key))
-                {
                     removeList.Add(kv.Key);
-                }
             }
 
             foreach (var id in removeList)
@@ -185,78 +248,8 @@ namespace TechC.ODDESEY.Battle
         }
 
         /// <summary>
-        /// 使用されたカードを View から削除する。アニメーションを再生してから削除する。    
-        /// </summary>
-        /// <param name="results"></param>
-        /// <returns></returns>
-        public async UniTask RemoveUsedCardsAsync(List<CardResolveResult> results)
-        {
-            var tasks = new List<UniTask>();
-
-            foreach (var r in results)
-            {
-                if (!r.IsPlayer) continue;
-
-                if (handViews.TryGetValue(r.CardInstanceId, out var view))
-                {
-                    tasks.Add(RemoveCardAsync(view.InstanceId));
-                    handViews.Remove(r.CardInstanceId);
-                }
-                else
-                {
-                    CustomLogger.Warning($"削除対象のカードViewが見つからない: InstanceId {r.CardInstanceId}", LogTagUtil.TagCard);
-                }
-            }
-
-            await UniTask.WhenAll(tasks);
-        }
-
-        /// <summary>
-        /// カードを View から削除する。アニメーションを再生してから削除する。
-        /// 砕く場合は BreakZoneView へドラッグ＆ドロップしてから呼び出すこと（BreakZoneView 内で PlayBreakAnimationAsync を呼び出す）。
-        /// 砕かない場合は、RemoveUsedCardsAsync 内で CardInstanceId を渡して呼び出すこと。
-        /// </summary>
-        /// <param name="instanceId"></param>
-        /// <returns></returns>
-        public async UniTask RemoveCardAsync(int instanceId)
-        {
-            if (!handViews.TryGetValue(instanceId, out var view))
-            {
-                CustomLogger.Warning($"削除対象のカードViewが見つからない: InstanceId {instanceId}", LogTagUtil.TagCard);
-                return;
-            }
-
-            await view.PlayBreakAnimationAsync();
-
-            if (view != null)
-                Destroy(view.gameObject);
-
-            handViews.Remove(instanceId);
-        }
-
-        /// <summary>
-        /// プレイヤーの入力待ち。ターン確定ボタンが押されるまで完了しない UniTask を返す。
-        /// </summary>
-        /// <returns></returns>
-        public UniTask WaitForPlayerConfirmAsync()
-        {
-            confirmTcs = new UniTaskCompletionSource();
-            return confirmTcs.Task;
-        }
-
-        public void ConfirmTurn()
-        {
-            confirmTcs?.TrySetResult();
-        }
-
-
-        /// <summary>
         /// フェードアニメーション。from → to に fadeDuration 秒かけて変化させる。
         /// </summary>
-        /// <param name="from"></param>
-        /// <param name="to"></param>
-        /// <param name="duration"></param>
-        /// <returns></returns>
         private async UniTask FadeAsync(float from, float to, float duration)
         {
             if (fadePanel == null) return;

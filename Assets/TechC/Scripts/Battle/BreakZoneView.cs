@@ -81,7 +81,7 @@ namespace TechC.ODDESEY.Battle
             PlayBreakAndNotify(cardView, luckGain).Forget();
         }
 
-        private async Cysharp.Threading.Tasks.UniTaskVoid PlayBreakAndNotify(CardView cardView, float luckGain)
+        private async UniTaskVoid PlayBreakAndNotify(CardView cardView, float luckGain)
         {
             await cardView.PlayBreakAnimationAsync();
             battleView.RemoveCardAsync(cardView.InstanceId).Forget(); // アニメーション完了後にカードを View から削除
