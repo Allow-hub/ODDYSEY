@@ -79,14 +79,27 @@ namespace TechC.ODDESEY.Battle
                     {
                         if (result.IsPlayer)
                             // プレイヤーが攻撃 → 敵のHPが減る
-                            await battleView.UpdateEnemyHpAsync(battleLogic.EnemyHp, battleLogic.EnemyHpMax);
+                            await battleView.UpdateEnemyHpAsync(result.EnemyHpAfter, battleLogic.EnemyHpMax);
                         else
                             // 敵が攻撃 → プレイヤーのHPが減る
-                            await battleView.UpdatePlayerHpAsync(battleLogic.PlayerHp, battleLogic.PlayerHpMax);
+                            await battleView.UpdatePlayerHpAsync(result.PlayerHpAfter, battleLogic.PlayerHpMax);
                     }
 
                     // 途中で勝敗が確定したらループを抜ける
-                    if (!battleLogic.IsBattleActive) break;
+                    if (result.IsBattleEnd)
+                    {
+                        // 6. 勝敗演出 → MainManager へ通知
+                        if (result.IsWon)
+                        {
+                            await battleView.ShowWinEffectAsync();
+                            OnBattleWon?.Invoke();
+                        }
+                        else
+                        {
+                            await battleView.ShowLoseEffectAsync();
+                            OnBattleLost?.Invoke();
+                        }
+                    }
                     CustomLogger.Info($"カード「{result.CardInstanceId}」解決完了 (isHit={result.IsHit}, Player={result.IsPlayer})", LogTagUtil.TagBattle);
                     await UniTask.Delay(1000); // 解決結果のログが見やすくなるように1フレーム待つ
                 }
@@ -98,22 +111,15 @@ namespace TechC.ODDESEY.Battle
                         battleLogic.LuckGauge,
                         battleLogic.LuckGaugeMax,
                         battleLogic.IsHotMode
-                    );
-
-                // // 6. 勝敗演出 → MainManager へ通知
-                // if (battleLogic.IsWon)
-                // {
-                //     await battleView.ShowWinEffectAsync();
-                //     OnBattleWon?.Invoke();
-                // }
-                // else
-                // {
-                //     await battleView.ShowLoseEffectAsync();
-                //     OnBattleLost?.Invoke();
+                );
             }
         }
 
-
+        /// <summary>
+        /// カードはゲージの更新支持
+        /// </summary>
+        /// <param name="cardView">砕いたカード</param>
+        /// <param name="luckGain">運ゲー時のチャージ量</param>
         private void OnCardBroken(CardView cardView, float luckGain)
         {
             battleLogic.AddLuckGauge(luckGain);

@@ -42,18 +42,16 @@ namespace TechC.ODDESEY.Battle
             SetHighlight(false);
         }
 
-        public void SetSlotData(PlayZoneSlot slot)
+        public void SetSlotData(PlayZoneSlot slot,CardView enemyCard = null)
         {
             slotData = slot;
 
             if (slot != null && slot.IsEnemyCard && slot.EnemyCardInstance != null)
             {
-                // cardAnchor 配下に既にある backgroundImage などを使って表示するだけ
-                // 例：背景色を変えて「敵カード」と分かるようにする
-                CustomLogger.Info($"スロット {slotIndex} に敵カード配置: {slot.EnemyCardInstance.OriginalData.CardName}", LogTagUtil.TagCard);
+                enemyCard.transform.SetParent(cardAnchor);
+                enemyCard.transform.localPosition = Vector3.zero;
 
-                // カード名・スプライトも既存の UI に流し込める
-                // （CardView を使わず直接 Image/TMP を参照する設計ならそちらへ）
+                CustomLogger.Info($"スロット {slotIndex} に敵カード配置: {slot.EnemyCardInstance.OriginalData.CardName}", LogTagUtil.TagCard);
             }
             else
             {

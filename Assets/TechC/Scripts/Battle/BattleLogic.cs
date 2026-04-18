@@ -28,7 +28,6 @@ namespace TechC.ODDESEY.Battle
         private int enemyHp;
         private int enemyHpMax;
         private bool isBattleActive;
-        private bool isWon;
         private int turnCount;
         private EnemyData currentEnemy;
         private IEnemyCardPlacementStrategy enemyPlacementStrategy;
@@ -37,7 +36,6 @@ namespace TechC.ODDESEY.Battle
         // 公開プロパティ
         // -------------------------------------------------------
         public bool IsBattleActive => isBattleActive;
-        public bool IsWon => isWon;
         public int PlayerHp => playerHp;
         public int PlayerHpMax { get; private set; }
         public int EnemyHp => enemyHp;
@@ -63,7 +61,7 @@ namespace TechC.ODDESEY.Battle
             hand = new List<CardInstance>();
             discardPile = new List<CardData>();
             playZone = new PlayZoneSlot[PlayZoneSize];
-            luckGauge   = new LuckGaugeModel();
+            luckGauge = new LuckGaugeModel();
 
             enemyHp = 20;//test
             enemyHpMax = 20;
@@ -72,7 +70,6 @@ namespace TechC.ODDESEY.Battle
             enemyPlacementStrategy = currentEnemy?.CardDeck?.CreateStrategy();
 
             isBattleActive = true;
-            isWon = false;
             turnCount = 0;
         }
 
@@ -94,7 +91,7 @@ namespace TechC.ODDESEY.Battle
                 PlayerHpMax = PlayerHpMax,
                 EnemyHp = enemyHp,
                 EnemyHpMax = enemyHpMax,
-                LuckGauge   = luckGauge.Current,
+                LuckGauge = luckGauge.Current,
                 // IsHotMode   = luckGauge.IsHotMode,
                 TurnCount = turnCount,
             };
@@ -164,26 +161,6 @@ namespace TechC.ODDESEY.Battle
                 playZone[i]?.Clear();
         }
 
-        // -------------------------------------------------------
-        // 勝敗チェック
-        // -------------------------------------------------------
-
-        private void CheckBattleEnd()
-        {
-            if (enemyHp <= 0)
-            {
-                isBattleActive = false;
-                isWon = true;
-                OnBattleWon?.Invoke();
-            }
-            else if (playerHp <= 0)
-            {
-                isBattleActive = false;
-                isWon = false;
-                OnBattleLost?.Invoke();
-            }
-        }
-
         /// <summary>
         /// カードをマックスまで引く（ターン開始時に呼ぶ）。deck が尽きたら discardPile をシャッフルして補充する。
         /// </summary>
@@ -234,16 +211,16 @@ namespace TechC.ODDESEY.Battle
                 if (playZone[i] != null && playZone[i].IsEnemyCard)
                     playZone[i].Clear();
             }
- 
+
             // デッキ・戦略がなければスキップ
             if (enemyPlacementStrategy == null || currentEnemy?.CardDeck == null) return;
             if (currentEnemy.CardDeck.Cards == null || currentEnemy.CardDeck.Cards.Count == 0) return;
- 
+
             var placements = enemyPlacementStrategy.SelectCards(
                 currentEnemy.CardDeck.Cards,
                 playZone.Length,
                 currentEnemy.CardDeck.CardsPerTurn);
- 
+
             foreach (var (slotIndex, cardData) in placements)
             {
                 if (slotIndex < 0 || slotIndex >= playZone.Length) continue;
@@ -252,7 +229,7 @@ namespace TechC.ODDESEY.Battle
                 playZone[slotIndex] ??= new PlayZoneSlot();
                 playZone[slotIndex].EnemyCardInstance = instance;
                 playZone[slotIndex].IsEnemyCard = true;
- 
+
                 CustomLogger.Info(
                     $"敵カード配置: {cardData.CardName} → Slot {slotIndex}",
                     LogTagUtil.TagBattle);
@@ -260,19 +237,39 @@ namespace TechC.ODDESEY.Battle
         }
 
         /// <summary>敵にダメージを与える</summary>
-        public void TakeEnemyDamage(int damage) => enemyHp -= damage;
+        public void TakeEnemyDamage(int damage, CardResolveResult result)
+        {
+            enemyHp = Mathf.Max(0, enemyHp - damage);
+            result.EnemyHpAfter = enemyHp;
+            if (enemyHp <= 0)
+            {
+                isBattleActive = false;
+                result.IsBattleEnd = true;
+                result.IsWon = true;
+            }
+        }
 
         /// <summary>プレイヤーにダメージを与える</summary>
-        public void TakePlayerDamage(int damage) => playerHp -= damage;
+        public void TakePlayerDamage(int damage, CardResolveResult result)
+        {
+            playerHp = Mathf.Max(0, playerHp - damage);
+            result.PlayerHpAfter = playerHp;
+            if (playerHp <= 0)
+            {
+                isBattleActive = false;
+                result.IsBattleEnd = true;
+                result.IsWon = false;
+            }
+        }
 
         public void ApplyStatusToEnemy(StatusType type, int duration, int stackCount)
         {
-            
+
         }
 
         public void ApplyStatusToPlayer(StatusType type, int duration, int stackCount)
         {
-            
+
         }
 
         public void AddLuckGauge(float amount) => luckGauge.Add(amount);

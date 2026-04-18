@@ -5,11 +5,15 @@ using UnityEngine;
 
 namespace TechC.ODDESEY.Battle
 {
+    /// <summary>
+    /// プレイゾーン表示の仲介者
+    /// </summary>
     public class PlayZonePresenter : MonoBehaviour
     {
         [Header("スロットの View（Inspector でアサイン / 順番がスロット番号）")]
         [SerializeField] private List<PlayZoneSlotView> slotViews;
-
+        [SerializeField] private GameObject cardViewPrefab;
+        private Dictionary<int, CardView> enemyCardViews = new();
         private PlayZoneSlot[] slots;
 
         // instanceId → スロット番号（配置追跡）
@@ -24,24 +28,46 @@ namespace TechC.ODDESEY.Battle
         public void SetupTurn(TurnData turnData, List<CardInstance> playerHand)
         {
             slots = turnData.PlayZone;
+
+            // 前ターンの敵カードを破棄
+            foreach (var kv in enemyCardViews)
+                Destroy(kv.Value.gameObject);
+            enemyCardViews.Clear();
+
             for (int i = 0; i < slots.Length; i++)
             {
                 if (slots[i] == null)
                     slots[i] = new PlayZoneSlot();
             }
+
             cardToSlotIndex.Clear();
             cardInstanceMap.Clear();
 
-            // 手札の CardInstance を instanceId でマッピング
             if (playerHand != null)
                 foreach (var inst in playerHand)
                     cardInstanceMap[inst.InstanceId] = inst;
 
             for (int i = 0; i < slotViews.Count; i++)
             {
-                int idx = i;
-                slotViews[i].Setup(idx, OnCardPlaced, OnCardRemoved);
-                slotViews[i].SetSlotData(i < slots.Length ? slots[i] : null);
+                slotViews[i].Setup(i, OnCardPlaced, OnCardRemoved);
+
+                var slot = i < slots.Length ? slots[i] : null;
+
+                // 敵カードを生成して SlotView に渡す
+                if (slot != null && slot.IsEnemyCard && slot.EnemyCardInstance != null)
+                {
+                    var obj = Instantiate(cardViewPrefab, slotViews[i].transform);
+                    var cardView = obj.GetComponent<CardView>();
+                    cardView.Setup(slot.EnemyCardInstance.OriginalData, slot.EnemyCardInstance.InstanceId);
+                    cardView.SetEnemyAppearance();
+                    
+                    enemyCardViews[slot.EnemyCardInstance.InstanceId] = cardView;
+                    slotViews[i].SetSlotData(slot, cardView); // cardView を渡す
+                }
+                else
+                {
+                    slotViews[i].SetSlotData(slot, null);
+                }
             }
         }
 

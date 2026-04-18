@@ -30,6 +30,8 @@ namespace TechC.ODDESEY.Battle
         private RectTransform rectTransform;
         private CardData cardData;
         private int instanceId;
+        private bool isEnemy = false;
+
 
 
         public Transform OriginalParent => originalParent;
@@ -69,6 +71,13 @@ namespace TechC.ODDESEY.Battle
             rootCanvas = GetComponentInParent<Canvas>();
         }
 
+
+        public void SetEnemyAppearance()
+        {
+            isEnemy = true;
+        }
+
+
         private void RefreshDisplay()
         {
             if (cardData == null) return;
@@ -106,7 +115,7 @@ namespace TechC.ODDESEY.Battle
         /// カードを砕くアニメーション。砕ける演出を再生してから完了通知を送る
         /// </summary>
         /// <returns></returns>
-        public async  UniTask PlayBreakAnimationAsync()
+        public async UniTask PlayBreakAnimationAsync()
         {
             // Destroy(gameObject);
             await UniTask.Delay(1); // 仮
@@ -120,7 +129,7 @@ namespace TechC.ODDESEY.Battle
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (isDealing || isPlaced) return;
+            if (isDealing || isPlaced || isEnemy) return;
             cardImage.raycastTarget = false; // ドロップ判定の邪魔になるのでドラッグ中は無効化
             originalParent = transform.parent;
             transform.SetParent(rootCanvas.transform, true);
@@ -128,7 +137,7 @@ namespace TechC.ODDESEY.Battle
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (isDealing || isPlaced) return;
+            if (isDealing || isPlaced || isEnemy) return;
 
             RectTransformUtility.ScreenPointToWorldPointInRectangle(
                 rootCanvas.transform as RectTransform,
@@ -145,7 +154,7 @@ namespace TechC.ODDESEY.Battle
         /// </summary>
         public void OnEndDrag(PointerEventData eventData)
         {
-            if (isDealing) return;
+            if (isDealing || isEnemy) return;
             if (isPlaced)
             {
                 // スロット配置確定済み → 何もしない（OnDrop 側で処理済み）
@@ -164,7 +173,7 @@ namespace TechC.ODDESEY.Battle
         public void OnPointerClick(PointerEventData eventData)
         {
             if (eventData.dragging) return;
-            if (isDealing) return;
+            if (isDealing || isEnemy) return;
             if (isPlaced)
             {
                 ReturnToHand(originalParent);
