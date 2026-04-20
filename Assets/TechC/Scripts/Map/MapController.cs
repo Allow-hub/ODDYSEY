@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
+using TechC.Core.Manager;
+using TechC.ODDESEY.Battle;
 using UnityEngine;
 
-namespace TechC.ODDESEY.Stage
+namespace TechC.ODDESEY.Map
 {
     /// <summary>
     /// ステージマップの管理。
@@ -10,75 +13,97 @@ namespace TechC.ODDESEY.Stage
     public class MapController : MonoBehaviour
     {
         // -------------------------------------------------------
-        // MainManager へ通知するイベント
+        // Inspector
         // -------------------------------------------------------
+        [Header("ノードViewのリスト（上から順、数はStageMapDataのnodes数に合わせる）")]
+        [SerializeField] private List<MapNodeView> nodeViews;
 
-        /// <summary>ノードを選択 → バトルへ</summary>
+        [Header("選択肢ボタンのPrefab（NodeChoiceButton がアタッチされていること）")]
+        [SerializeField] private GameObject choiceButtonPrefab;
+
+        [Header("ラッキーゲージ")]
+        [SerializeField] private LuckGaugeView luckGaugeView;
+
+        // -------------------------------------------------------
+        // Events
+        // -------------------------------------------------------
         public event Action OnBattleRequested;
-
-        /// <summary>ノードを選択 → イベントへ</summary>
         public event Action OnEventRequested;
-
-        /// <summary>ステージクリア（ボス討伐後など）</summary>
         public event Action OnStageCompleted;
-
-        // -------------------------------------------------------
-        // Inspector 設定
-        // -------------------------------------------------------
-
-        [Header("Node UI")]
-        [SerializeField] private GameObject nodeSelectUI;   // ノード選択パネル
 
         // -------------------------------------------------------
         // 内部状態
         // -------------------------------------------------------
-
-        // TODO: マップデータ（ノード一覧）を保持する
-        // private StageMapData mapData;
+        private StageMapData mapData;
+        private MapProgressState progressState;
 
         // -------------------------------------------------------
-        // 初期化（MainManager から呼ばれる）
+        // 初期化
         // -------------------------------------------------------
 
-        public void Initialize()
+        /// <summary>
+        /// MainManager からステージ定義と進行状態を渡して初期化する。
+        /// </summary>
+        public void Initialize(StageMapData data, MapProgressState progress)
         {
-            ShowMap();
+            mapData = data;
+            progressState = progress;
+
+            luckGaugeView.Setup(100f);
+            luckGaugeView.UpdateGaugeImmediate(MainManager.I?.LuckGaugeValue ?? 0f, 100f, false);
+            RefreshView();
         }
 
         // -------------------------------------------------------
-        // マップ表示
+        // ビュー更新
         // -------------------------------------------------------
 
-        private void ShowMap()
+        private void RefreshView()
         {
-            if (nodeSelectUI != null)
-                nodeSelectUI.SetActive(true);
+            if (mapData == null) return;
 
-            // TODO: マップデータを元にノードを生成・表示する
+            int current = progressState.currentNodeIndex;
+
+            for (int i = 0; i < nodeViews.Count; i++)
+            {
+                if (i >= mapData.nodes.Count)
+                {
+                    nodeViews[i].gameObject.SetActive(false);
+                    continue;
+                }
+
+                nodeViews[i].gameObject.SetActive(true);
+
+                MapNodeView.NodeState state;
+                if (i < current) state = MapNodeView.NodeState.Cleared;
+                else if (i == current) state = MapNodeView.NodeState.Active;
+                else state = MapNodeView.NodeState.Locked;
+
+                // buttonPrefab を渡してノードView内で Instantiate させる
+                nodeViews[i].Setup(mapData.nodes[i], state, choiceButtonPrefab, OnNodeChoiceSelected);
+            }
         }
 
         // -------------------------------------------------------
-        // ノード選択（UIボタンなどから呼ぶ）
+        // 選択処理
         // -------------------------------------------------------
 
-        /// <summary>バトルノードを選択した</summary>
-        public void SelectBattleNode()
+        private void OnNodeChoiceSelected(NodeType chosenType)
         {
-            // TODO: 選択したノードの情報を PlayerData / BattleData に渡す
-            OnBattleRequested?.Invoke();
-        }
+            progressState.Advance();
 
-        /// <summary>イベントノードを選択した</summary>
-        public void SelectEventNode()
-        {
-            // TODO: 選択したノードのイベント種別を PlayerData / EventData に渡す
-            OnEventRequested?.Invoke();
-        }
+            if (progressState.IsCompleted(mapData.nodes.Count))
+            {
+                OnStageCompleted?.Invoke();
+                return;
+            }
 
-        /// <summary>ステージの最終ノードを突破した</summary>
-        public void CompleteStage()
-        {
-            OnStageCompleted?.Invoke();
+            switch (chosenType)
+            {
+                case NodeType.Battle: OnBattleRequested?.Invoke(); break;
+                case NodeType.Event: OnEventRequested?.Invoke(); break;
+                case NodeType.Rest: OnBattleRequested?.Invoke(); break; // 必要なら拡張
+            }
         }
     }
 }

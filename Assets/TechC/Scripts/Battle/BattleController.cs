@@ -88,6 +88,7 @@ namespace TechC.ODDESEY.Battle
                     // 途中で勝敗が確定したらループを抜ける
                     if (result.IsBattleEnd)
                     {
+                        MainManager.I?.SetLackGaugeValue(battleLogic.LuckGauge); // 最終的なゲージ値を MainManager に渡す
                         // 6. 勝敗演出 → MainManager へ通知
                         if (result.IsWon)
                         {
@@ -104,7 +105,7 @@ namespace TechC.ODDESEY.Battle
                     await UniTask.Delay(1000); // 解決結果のログが見やすくなるように1フレーム待つ
                 }
 
-                //     // 5. ターン終了処理
+                // 5. ターン終了処理
                 await battleView.RemoveUsedCardsAsync(resolveResults);
                 battleLogic.EndTurn();
                 await battleView.UpdateLuckGaugeAsync(
