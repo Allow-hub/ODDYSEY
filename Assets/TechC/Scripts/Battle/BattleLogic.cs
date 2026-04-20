@@ -95,7 +95,7 @@ namespace TechC.ODDESEY.Battle
                 EnemyHp = enemyHp,
                 EnemyHpMax = enemyHpMax,
                 LuckGauge = luckGauge.Current,
-                // IsHotMode   = luckGauge.IsHotMode,
+                IsHotMode   = luckGauge.IsHotMode,
                 TurnCount = turnCount,
             };
         }
@@ -182,7 +182,8 @@ namespace TechC.ODDESEY.Battle
 
                 //CardInstance を生成してロール
                 var instance = new CardInstance(cardData);
-                instance.RollValues();
+                var isHotMode = luckGauge != null ? luckGauge.IsHotMode : false;
+                instance.RollValues(isHotMode);
 
                 //hand に追加
                 hand.Add(instance);
@@ -228,7 +229,8 @@ namespace TechC.ODDESEY.Battle
             {
                 if (slotIndex < 0 || slotIndex >= playZone.Length) continue;
                 var instance = new CardInstance(cardData);
-                instance.RollValues();
+                var isHotMode = luckGauge != null ? luckGauge.IsHotMode : false;
+                instance.RollValues(isHotMode);
                 playZone[slotIndex] ??= new PlayZoneSlot();
                 playZone[slotIndex].EnemyCardInstance = instance;
                 playZone[slotIndex].IsEnemyCard = true;
