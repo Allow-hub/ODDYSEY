@@ -7,12 +7,13 @@ using UnityEngine;
 
 namespace TechC.ODDESEY.Battle
 {
+    /// <summary>
+    /// バトルのロジックを管理する
+    /// </summary>
     public class BattleLogic
     {
-        // イベント
         public event Action<TurnData> OnTurnStarted;
         public event Action<CardResolveResult> OnCardResolved;
-        // public event Action<float>             OnLuckGaugeChanged;
         public event Action OnBattleWon;
         public event Action OnBattleLost;
 
