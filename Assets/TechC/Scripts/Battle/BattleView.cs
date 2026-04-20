@@ -6,6 +6,7 @@ using System;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
 using TechC.ODDESEY.Core.Manager;
+using TechC.Core.Manager;
 
 namespace TechC.ODDESEY.Battle
 {
@@ -50,6 +51,7 @@ namespace TechC.ODDESEY.Battle
         public void Init()
         {
             luckGaugeView.Setup(max: 100f);
+            luckGaugeView.UpdateGaugeImmediate(MainManager.I?.LuckGaugeValue ?? 0f, 100f, false);
             winEffectObj.SetActive(false);
             loseEffectObj.SetActive(false);
             if (fadePanel != null) fadePanel.alpha = 1f;

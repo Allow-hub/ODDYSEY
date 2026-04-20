@@ -7,9 +7,6 @@ namespace TechC.ODDESEY.Map
     public class MapNodeView : MonoBehaviour
     {
         [SerializeField] private Transform buttonContainer;
-        [SerializeField] private GameObject clearedIndicator;
-        [SerializeField] private GameObject currentIndicator;
-
         private readonly List<NodeChoiceButton> spawnedButtons = new();
 
         public enum NodeState { Locked, Active, Cleared }
@@ -57,12 +54,6 @@ namespace TechC.ODDESEY.Map
                 btn.SetInteractable(state == NodeState.Active);
                 spawnedButtons.Add(btn);
             }
-
-            if (clearedIndicator != null)
-                clearedIndicator.SetActive(state == NodeState.Cleared);
-
-            if (currentIndicator != null)
-                currentIndicator.SetActive(state == NodeState.Active);
         }
 
         private void ClearButtons()

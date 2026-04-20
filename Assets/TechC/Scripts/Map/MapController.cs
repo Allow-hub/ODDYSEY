@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TechC.Core.Manager;
 using TechC.ODDESEY.Battle;
 using UnityEngine;
 
@@ -33,7 +34,7 @@ namespace TechC.ODDESEY.Map
         // -------------------------------------------------------
         // 内部状態
         // -------------------------------------------------------
-        private StageMapData     mapData;
+        private StageMapData mapData;
         private MapProgressState progressState;
 
         // -------------------------------------------------------
@@ -45,10 +46,11 @@ namespace TechC.ODDESEY.Map
         /// </summary>
         public void Initialize(StageMapData data, MapProgressState progress)
         {
-            mapData       = data;
+            mapData = data;
             progressState = progress;
 
             luckGaugeView.Setup(100f);
+            luckGaugeView.UpdateGaugeImmediate(MainManager.I?.LuckGaugeValue ?? 0f, 100f, false);
             RefreshView();
         }
 
@@ -73,9 +75,9 @@ namespace TechC.ODDESEY.Map
                 nodeViews[i].gameObject.SetActive(true);
 
                 MapNodeView.NodeState state;
-                if (i < current)       state = MapNodeView.NodeState.Cleared;
+                if (i < current) state = MapNodeView.NodeState.Cleared;
                 else if (i == current) state = MapNodeView.NodeState.Active;
-                else                   state = MapNodeView.NodeState.Locked;
+                else state = MapNodeView.NodeState.Locked;
 
                 // buttonPrefab を渡してノードView内で Instantiate させる
                 nodeViews[i].Setup(mapData.nodes[i], state, choiceButtonPrefab, OnNodeChoiceSelected);
@@ -99,8 +101,8 @@ namespace TechC.ODDESEY.Map
             switch (chosenType)
             {
                 case NodeType.Battle: OnBattleRequested?.Invoke(); break;
-                case NodeType.Event:  OnEventRequested?.Invoke();  break;
-                case NodeType.Rest:   OnBattleRequested?.Invoke(); break; // 必要なら拡張
+                case NodeType.Event: OnEventRequested?.Invoke(); break;
+                case NodeType.Rest: OnBattleRequested?.Invoke(); break; // 必要なら拡張
             }
         }
     }

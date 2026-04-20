@@ -12,7 +12,7 @@ namespace TechC.ODDESEY.Map
     public class NodeChoiceButton : MonoBehaviour
     {
         [SerializeField] private Button button;
-        // [SerializeField] private TextMeshProUGUI label;
+        [SerializeField] private TextMeshProUGUI label;
         // [SerializeField] private Image iconImage;
 
         // NodeType ごとのアイコンは Inspector で差し替え可能にする
@@ -32,7 +32,7 @@ namespace TechC.ODDESEY.Map
         {
             onSelected = callback;
 
-            // label.text = GetLabel(nodeType);
+            label.text = GetLabel(nodeType);
             // if (iconImage != null)
             //     iconImage.sprite = GetIcon(nodeType);
 
@@ -44,9 +44,9 @@ namespace TechC.ODDESEY.Map
 
         private string GetLabel(NodeType type) => type switch
         {
-            NodeType.Battle => "⚔ 戦闘",
-            NodeType.Event  => "❓ イベント",
-            NodeType.Rest   => "🏕 休憩",
+            NodeType.Battle => "X",
+            NodeType.Event  => "?",
+            NodeType.Rest   => "R",
             _               => type.ToString(),
         };
 

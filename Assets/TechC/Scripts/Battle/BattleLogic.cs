@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TechC.Core.Manager;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
 using UnityEngine;
@@ -62,6 +63,7 @@ namespace TechC.ODDESEY.Battle
             discardPile = new List<CardData>();
             playZone = new PlayZoneSlot[PlayZoneSize];
             luckGauge = new LuckGaugeModel();
+            luckGauge.Add(MainManager.I?.LuckGaugeValue ?? 0f); // MainManager から初期値を受け取る
 
             enemyHp = 20;//test
             enemyHpMax = 20;

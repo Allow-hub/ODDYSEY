@@ -88,6 +88,7 @@ namespace TechC.ODDESEY.Battle
                     // 途中で勝敗が確定したらループを抜ける
                     if (result.IsBattleEnd)
                     {
+                        MainManager.I?.SetLackGaugeValue(battleLogic.LuckGauge); // 最終的なゲージ値を MainManager に渡す
                         // 6. 勝敗演出 → MainManager へ通知
                         if (result.IsWon)
                         {

@@ -52,10 +52,31 @@ MonoBehaviour:
     type: 3}
   eventPrefab: {fileID: 2731581732393259310, guid: 1b11d86faaa841542a368fa0d386a891,
     type: 3}
+  currentStageMapData: {fileID: 11400000, guid: 88d9b1f3483589043b1d68c2ffa275aa,
+    type: 2}
   debugStartPhase: 1
   debugContext:
     PlayerHp: 30
     PlayerHpMax: 30
     InitialDeck:
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
     - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
     DebugEnemy: {fileID: 11400000, guid: 4c700648c5e5ada408c3b33c685f8978, type: 2}

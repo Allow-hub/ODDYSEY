@@ -29,17 +29,20 @@ namespace TechC.Core.Manager
         [Header("ステージ定義（ScriptableObject）")]
         [SerializeField] private StageMapData currentStageMapData;
 
+        public float LuckGaugeValue => lackGaugeValue;
+        private float lackGaugeValue = 0f;
+
         [Header("デバッグ用設定")]
         [SerializeField] private StartPhase debugStartPhase = StartPhase.Map;
 
         // -------------------------------------------------------
         // 内部フィールド
         // -------------------------------------------------------
-        private GameObject       currentPrefab;
-        private MapController    mapController;
+        private GameObject currentPrefab;
+        private MapController mapController;
         private BattleController battleController;
         private RewardController rewardController;
-        private EventController  eventController;
+        private EventController eventController;
 
         /// <summary>
         /// マップの進行状態。Prefab が破棄されても保持し続ける。
@@ -89,10 +92,10 @@ namespace TechC.Core.Manager
 
             switch (phase)
             {
-                case StartPhase.Map:    EnterMap();    break;
+                case StartPhase.Map: EnterMap(); break;
                 case StartPhase.Battle: EnterBattle(); break;
                 case StartPhase.Result: EnterResult(); break;
-                case StartPhase.Event:  EnterEvent();  break;
+                case StartPhase.Event: EnterEvent(); break;
             }
         }
 
@@ -105,8 +108,8 @@ namespace TechC.Core.Manager
             mapController = currentPrefab.GetComponent<MapController>();
 
             mapController.OnBattleRequested += HandleBattleRequested;
-            mapController.OnEventRequested  += HandleEventRequested;
-            mapController.OnStageCompleted  += HandleStageCompleted;
+            mapController.OnEventRequested += HandleEventRequested;
+            mapController.OnStageCompleted += HandleStageCompleted;
 
             // 進行状態を渡して復元
             mapController.Initialize(currentStageMapData, mapProgress);
@@ -117,7 +120,7 @@ namespace TechC.Core.Manager
             currentPrefab = Instantiate(battlePrefab);
             battleController = currentPrefab.GetComponent<BattleController>();
 
-            battleController.OnBattleWon  += HandleBattleWon;
+            battleController.OnBattleWon += HandleBattleWon;
             battleController.OnBattleLost += HandleBattleLost;
 
             battleController.Initialize();
@@ -147,7 +150,7 @@ namespace TechC.Core.Manager
         // ハンドラ
         // -------------------------------------------------------
         private void HandleBattleRequested() => EnterPhase(StartPhase.Battle);
-        private void HandleEventRequested()  => EnterPhase(StartPhase.Event);
+        private void HandleEventRequested() => EnterPhase(StartPhase.Event);
         private void HandleStageCompleted()
         {
             // ステージクリア → リザルトへ。次回のために進行状態をリセット。
@@ -155,11 +158,13 @@ namespace TechC.Core.Manager
             EnterPhase(StartPhase.Result);
         }
 
-        private void HandleBattleWon()  => EnterPhase(StartPhase.Map); // マップに戻り次ノードへ
+        private void HandleBattleWon() => EnterPhase(StartPhase.Map); // マップに戻り次ノードへ
         private void HandleBattleLost() => EnterPhase(StartPhase.Result);
 
-        private void HandleResultClosed()   => EnterPhase(StartPhase.Map);
+        private void HandleResultClosed() => EnterPhase(StartPhase.Map);
         private void HandleEventCompleted() => EnterPhase(StartPhase.Map);
+
+        public void SetLackGaugeValue(float value) => lackGaugeValue = Mathf.Clamp(value, 0f, 100f);
 
         // -------------------------------------------------------
         // クリーンアップ
@@ -169,13 +174,13 @@ namespace TechC.Core.Manager
             if (mapController != null)
             {
                 mapController.OnBattleRequested -= HandleBattleRequested;
-                mapController.OnEventRequested  -= HandleEventRequested;
-                mapController.OnStageCompleted  -= HandleStageCompleted;
+                mapController.OnEventRequested -= HandleEventRequested;
+                mapController.OnStageCompleted -= HandleStageCompleted;
                 mapController = null;
             }
             if (battleController != null)
             {
-                battleController.OnBattleWon  -= HandleBattleWon;
+                battleController.OnBattleWon -= HandleBattleWon;
                 battleController.OnBattleLost -= HandleBattleLost;
                 battleController = null;
             }
