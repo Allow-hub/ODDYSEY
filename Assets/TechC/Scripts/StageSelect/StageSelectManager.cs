@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TechC.Core.Manager;
 
@@ -11,7 +12,22 @@ namespace TechC.ODDESEY.StageSelect
     /// </summary>
     public class StageSelectManager : MonoBehaviour
     {
-        public void StartNormal()
+        [SerializeField] private Button normalButton;
+        [SerializeField] private Button hardButton;
+
+        void Start()
+        {
+            if (normalButton == null || hardButton == null)
+            {
+                Debug.LogError("Buttonが設定されていません");
+                return;
+            }
+
+            normalButton.onClick.AddListener(StartNormal);
+            hardButton.onClick.AddListener(StartHard);
+        }
+
+        private void StartNormal()
         {
             GameManager.I.SetDifficulty(Difficulty.Normal);
             SceneManager.LoadScene("MainScene");

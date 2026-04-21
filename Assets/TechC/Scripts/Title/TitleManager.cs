@@ -11,7 +11,20 @@ namespace TechC.ODDESEY.Title
     /// </summary>
     public class TitleManager : MonoBehaviour
     {
-        public void OnClickStart()
+        [SerializeField] private Button startButton;
+
+        void Start()
+        {
+            if (startButton == null)
+            {
+                Debug.LogError("startButton が設定されていません");
+                return;
+            }
+
+            startButton.onClick.AddListener(OnClickStart);
+        }
+
+        private void OnClickStart()
         {
             SceneManager.LoadScene("StageSelectScene");
         }
