@@ -231,7 +231,7 @@ namespace TechC.ODDESEY.Battle
                 var instance = new CardInstance(cardData);
                 var isHotMode = luckGauge != null ? luckGauge.IsHotMode : false;
                 instance.RollValues(isHotMode);
-                playZone[slotIndex] ??= new PlayZoneSlot();
+                playZone[slotIndex] ??= new PlayZoneSlot();//スロットが まだ作られてなければ生成
                 playZone[slotIndex].EnemyCardInstance = instance;
                 playZone[slotIndex].IsEnemyCard = true;
 

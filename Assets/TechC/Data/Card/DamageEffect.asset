@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ProbabilityMin: 1
   ProbabilityMax: 1
-  DamageMin: 100
-  DamageMax: 100
+  DamageMin: 3
+  DamageMax: 6

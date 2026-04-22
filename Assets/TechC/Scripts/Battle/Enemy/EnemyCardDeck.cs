@@ -35,6 +35,7 @@ namespace TechC.ODDESEY.Battle
             return StrategyType switch
             {
                 PlacementStrategyType.Sequential => new SequentialEnemyCardPlacementStrategy(),
+                PlacementStrategyType.RandomCardFixedSlot => new RandomCardFixedSlotStrategy(),
                 _                                => new RandomEnemyCardPlacementStrategy(),
             };
         }
@@ -47,5 +48,8 @@ namespace TechC.ODDESEY.Battle
 
         /// <summary>デッキの先頭から順に出す（ループあり）</summary>
         Sequential,
+        
+        /// <summary>カードはランダム配置は固定</summary>
+        RandomCardFixedSlot,
     }
 }

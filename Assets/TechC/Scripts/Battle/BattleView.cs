@@ -15,6 +15,7 @@ namespace TechC.ODDESEY.Battle
     /// </summary>
     public class BattleView : MonoBehaviour
     {
+        [SerializeField] private Animator anim;
         [SerializeField] private PlayZonePresenter playZonePresenter;
         [SerializeField] private PlayerView playerView;
         [SerializeField] private HpView playerHpView;
@@ -146,6 +147,7 @@ namespace TechC.ODDESEY.Battle
                 else
                     CustomLogger.Warning($"削除対象のカードViewが見つからない: InstanceId {r.CardInstanceId}", LogTagUtil.TagCard);
             }
+            anim.SetBool("BattleEnd", true);
 
             await UniTask.WhenAll(tasks);
         }
@@ -174,12 +176,15 @@ namespace TechC.ODDESEY.Battle
         /// </summary>
         public UniTask WaitForPlayerConfirmAsync()
         {
+            anim.SetBool("BattleStart", false);
             confirmTcs = new UniTaskCompletionSource();
             return confirmTcs.Task;
         }
 
         public void ConfirmTurn()
         {
+            anim.SetBool("BattleEnd", false);
+            anim.SetBool("BattleStart", true);
             confirmTcs?.TrySetResult();
         }
 

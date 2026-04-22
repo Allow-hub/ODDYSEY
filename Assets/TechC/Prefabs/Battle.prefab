@@ -2953,6 +2953,7 @@ GameObject:
   - component: {fileID: 3133558817554752861}
   - component: {fileID: 1427779086754204888}
   - component: {fileID: 6061412184378286799}
+  - component: {fileID: 1362713075309464415}
   m_Layer: 0
   m_Name: Battle
   m_TagString: Untagged
@@ -3012,6 +3013,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 923a5d095c337f144a0d11fb36a656d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  anim: {fileID: 1362713075309464415}
   playZonePresenter: {fileID: 298021203467365772}
   playerView: {fileID: 6360908101444403034}
   playerHpView: {fileID: 778741438461311010}
@@ -3033,6 +3035,27 @@ MonoBehaviour:
   spacing: 200
   y: -400
   deckStartPos: {x: 800, y: -500}
+--- !u!95 &1362713075309464415
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6184345255735731045}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 9972e29ddc4474b45961a234e5db9b58, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &6206009687507435769
 GameObject:
   m_ObjectHideFlags: 0
