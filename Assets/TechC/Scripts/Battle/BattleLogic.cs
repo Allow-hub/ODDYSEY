@@ -277,6 +277,11 @@ namespace TechC.ODDESEY.Battle
 
         }
 
+        public void SetDamageReduction(int rate)
+        {
+
+        }
+
         public void AddLuckGauge(float amount) => luckGauge.Add(amount);
     }
 }

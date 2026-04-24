@@ -44,6 +44,7 @@ namespace TechC.ODDESEY.Battle
 
         /// <summary>
         /// すべての効果値をロール。手札に追加された時点で1度だけ呼ぶ。
+        /// EvaluateAtResolve == true の効果は確率のみロールし、値は解決時に確定する。
         /// </summary>
         public void RollValues(bool isHotMode = false)
         {
@@ -51,21 +52,61 @@ namespace TechC.ODDESEY.Battle
             {
                 var effect = OriginalData.Effects[i];
 
-                // 確率をロール
+                // 確率をロール（EvaluateAtResolve でも確率は手札時に確定）
                 rolledProbabilities[i] = isHotMode
                     ? effect.ProbabilityMax
                     : Random.Range(effect.ProbabilityMin, effect.ProbabilityMax);
 
-                // ダメージをロール（DamageEffect のみ）
+                // 解決時評価の効果はここでは値を確定しない
+                if (effect.EvaluateAtResolve) continue;
+
+                // ダメージをロール（DamageEffect / CriticalDamageEffect）
                 if (effect is DamageEffect dmg)
                 {
                     rolledDamages[i] = isHotMode
                         ? dmg.DamageMax
                         : Random.Range(dmg.DamageMin, dmg.DamageMax + 1);
                 }
+                else if (effect is CriticalDamageEffect crit)
+                {
+                    // 確定ダメージ部分をロール
+                    rolledDamages[i] = isHotMode
+                        ? crit.BaseDamageMax
+                        : Random.Range(crit.BaseDamageMin, crit.BaseDamageMax + 1);
+                }
+                else if (effect is DefenseEffect def)
+                {
+                    // 軽減率をロール（rolledDamages を軽減率（%）の格納に流用）
+                    rolledDamages[i] = isHotMode
+                        ? def.ReductionMax
+                        : Random.Range(def.ReductionMin, def.ReductionMax + 1);
+                }
             }
 
             IsRolled = true;
+        }
+
+        /// <summary>
+        /// 解決時評価の効果の値を確定する。ConfirmTurn() の直前に呼ぶ。
+        /// </summary>
+        /// <param name="handCount">現在の手札枚数</param>
+        /// <param name="isHotMode">激アツモードか</param>
+        public void EvaluateResolveValues(int handCount, bool isHotMode = false)
+        {
+            for (int i = 0; i < OriginalData.Effects.Count; i++)
+            {
+                var effect = OriginalData.Effects[i];
+                if (!effect.EvaluateAtResolve) continue;
+
+                if (effect is HandSizeDamageEffect hs)
+                {
+                    // 手札枚数 × 乗数をここで確定
+                    int multiplier = isHotMode
+                        ? hs.MultiplierMax
+                        : Random.Range(hs.MultiplierMin, hs.MultiplierMax + 1);
+                    rolledDamages[i] = handCount * multiplier;
+                }
+            }
         }
 
         /// <summary>
@@ -79,6 +120,13 @@ namespace TechC.ODDESEY.Battle
         /// </summary>
         public int GetEffectiveDamage(int effectIndex)
             => rolledDamages[effectIndex] + bonusDamages[effectIndex];
+
+        /// <summary>
+        /// 実効軽減率（%）を取得。DefenseEffect 専用。
+        /// rolledDamages[] に軽減率を格納しているため同じ経路で取得する。
+        /// </summary>
+        public int GetEffectiveReductionRate(int effectIndex)
+            => Mathf.Clamp(rolledDamages[effectIndex] + bonusDamages[effectIndex], 0, 100);
 
         /// <summary>
         /// ロール済み基礎値を取得
