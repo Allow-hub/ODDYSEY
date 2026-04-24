@@ -38,7 +38,7 @@ namespace TechC.ODDESEY.Battle
             }
 
             // EvaluateResolveValues() 済みの値を取得
-            int damage = context.Source.GetEffectiveDamage(effectIndex);
+            int damage = context.Source.GetEffectiveValue(effectIndex);
 
             if (context.IsEnemy)
                 context.Logic.TakePlayerDamage(damage, context.Result);
@@ -51,6 +51,22 @@ namespace TechC.ODDESEY.Battle
             CustomLogger.Info(
                 $"手札連動ダメージ: {damage} (手札{context.CurrentHandCount}枚) Slot:{context.SlotIndex}",
                 LogTagUtil.TagCard);
+        }
+        
+        public override void RollValue(EffectSlot slot, bool isHotMode)
+        {
+            slot.RolledProbability = isHotMode
+                ? ProbabilityMax
+                : Random.Range(ProbabilityMin, ProbabilityMax);
+        }
+
+        public override void EvaluateResolve(EffectSlot slot, int handCount, bool isHotMode)
+        {
+            int mult = isHotMode
+                ? MultiplierMax
+                : Random.Range(MultiplierMin, MultiplierMax + 1);
+
+            slot.Value = handCount * mult;
         }
     }
 }

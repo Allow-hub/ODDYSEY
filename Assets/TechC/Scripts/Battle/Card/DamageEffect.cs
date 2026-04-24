@@ -42,7 +42,8 @@ namespace TechC.ODDESEY.Battle
                 return;
             }
 
-            int damage = instance.GetEffectiveDamage(effectIndex);
+            int damage = instance.GetEffectiveValue(effectIndex);
+  
 
             // 配置ボーナス判定
             if (UsePositionBonus && context.SlotIndex == RequiredSlotIndex)
@@ -60,6 +61,17 @@ namespace TechC.ODDESEY.Battle
 
             context.Result.IsHit = true;
             context.Result.DamageDealt += damage;
+        }
+
+        public override void RollValue(EffectSlot slot, bool isHotMode)
+        {
+            slot.RolledProbability = isHotMode
+                ? ProbabilityMax
+                : Random.Range(ProbabilityMin, ProbabilityMax);
+
+            slot.Value = isHotMode
+                ? DamageMax
+                : Random.Range(DamageMin, DamageMax + 1);
         }
     }
 }

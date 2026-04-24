@@ -12,9 +12,9 @@ namespace TechC.ODDESEY
     {
         public int PlayerHp;
         public int PlayerHpMax;
-        public List<CardData> Deck;
+        public Dictionary<CardData, int> Deck;
         public List<CardData> RewardCandidates;
-        public EnemyData  CurrentEnemy;
+        public EnemyData CurrentEnemy;
         // public BattleResult LastBattleResult;
     }
 
@@ -30,7 +30,7 @@ namespace TechC.ODDESEY
         public int PlayerHpMax = 30;
 
         [Header("初期デッキ（CardData SO をドラッグして登録）")]
-        public List<CardData> InitialDeck = new();
+        public CardDeckSO InitialDeck;
 
         [Header("デバッグ用敵")]
         public EnemyData DebugEnemy;
@@ -41,7 +41,7 @@ namespace TechC.ODDESEY
             {
                 PlayerHp = PlayerHp,
                 PlayerHpMax = PlayerHpMax,
-                Deck = new List<CardData>(InitialDeck),
+                Deck = InitialDeck != null ? InitialDeck.ToDictionary() : new(),
                 CurrentEnemy = DebugEnemy,
             };
         }

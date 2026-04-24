@@ -28,7 +28,7 @@ namespace TechC.ODDESEY.Battle
                 return;
             }
 
-            int rate = context.Source.GetEffectiveReductionRate(effectIndex);
+            int rate = context.Source.GetEffectiveValue(effectIndex);
 
             // BattleLogic 側でこのターンの軽減率を保持させる
             context.Logic.SetDamageReduction(rate);
@@ -39,6 +39,17 @@ namespace TechC.ODDESEY.Battle
             CustomLogger.Info(
                 $"ダメージ軽減: {rate}% Slot:{context.SlotIndex}",
                 LogTagUtil.TagCard);
+        }
+
+        public override void RollValue(EffectSlot slot, bool isHotMode)
+        {
+            slot.RolledProbability = isHotMode
+                ? ProbabilityMax
+                : Random.Range(ProbabilityMin, ProbabilityMax);
+
+            slot.Value = isHotMode
+                ? ReductionMax
+                : Random.Range(ReductionMin, ReductionMax + 1);
         }
     }
 }

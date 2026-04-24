@@ -84,7 +84,16 @@ namespace TechC.ODDESEY.Battle
                             // 敵が攻撃 → プレイヤーのHPが減る
                             await battleView.UpdatePlayerHpAsync(result.PlayerHpAfter, battleLogic.PlayerHpMax);
                     }
-
+                    // 自傷ダメージ
+                    if (result.SelfDamageDealt > 0)
+                    {
+                        if (result.IsPlayer)
+                            // プレイヤーのカード → プレイヤーが自傷
+                            await battleView.UpdatePlayerHpAsync(result.PlayerHpAfter, battleLogic.PlayerHpMax);
+                        else
+                            // 敵のカード → 敵が自傷
+                            await battleView.UpdateEnemyHpAsync(result.EnemyHpAfter, battleLogic.EnemyHpMax);
+                    }
                     // 途中で勝敗が確定したらループを抜ける
                     if (result.IsBattleEnd)
                     {
@@ -101,7 +110,7 @@ namespace TechC.ODDESEY.Battle
                             OnBattleLost?.Invoke();
                         }
                     }
-                    CustomLogger.Info($"カード「{result.CardInstanceId}」解決完了 (isHit={result.IsHit}, Player={result.IsPlayer})", LogTagUtil.TagBattle);
+                    CustomLogger.Info($"カード「{result.DamageDealt}」解決完了 (isHit={result.IsHit}, Player={result.IsPlayer})", LogTagUtil.TagBattle);
                     await UniTask.Delay(1000); // 解決結果のログが見やすくなるように1フレーム待つ
                 }
 

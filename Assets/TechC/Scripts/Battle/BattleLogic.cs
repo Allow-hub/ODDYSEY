@@ -55,11 +55,15 @@ namespace TechC.ODDESEY.Battle
         /// <param name="context"></param>
         public void StartBattle(GameContext context)
         {
-            masterDeck = context.Deck;
+            // masterDeck = context.Deck;
             playerHp = context.PlayerHp;
             PlayerHpMax = context.PlayerHpMax;
 
-            deck = new List<CardData>(masterDeck);
+            deck = new List<CardData>();
+
+            foreach (var pair in context.Deck)
+                for (int i = 0; i < pair.Value; i++)
+                    deck.Add(pair.Key);
             hand = new List<CardInstance>();
             discardPile = new List<CardData>();
             playZone = new PlayZoneSlot[PlayZoneSize];
@@ -116,6 +120,8 @@ namespace TechC.ODDESEY.Battle
                 var instance = slot.IsEnemyCard
                     ? slot.EnemyCardInstance
                     : slot.PlayerCardInstance;
+                
+                instance.EvaluateResolveValues(hand.Count, IsHotMode);
 
                 var context = new EffectContext
                 {
@@ -258,6 +264,7 @@ namespace TechC.ODDESEY.Battle
         public void TakePlayerDamage(int damage, CardResolveResult result)
         {
             playerHp = Mathf.Max(0, playerHp - damage);
+            Debug.Log($"TakePlayerDamage: damage={damage}, playerHp={playerHp}");
             result.PlayerHpAfter = playerHp;
             if (playerHp <= 0)
             {

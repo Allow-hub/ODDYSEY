@@ -65,5 +65,9 @@ namespace TechC.ODDESEY.Battle
                 $"状態異常付与: {StatusType} (Duration:{Duration}, Stack:{StackCount}) Slot:{context.SlotIndex}",
                 LogTagUtil.TagCard);
         }
+        public override void RollValue(EffectSlot slot, bool isHotMode)
+        {
+            // 何もしない
+        }
     }
 }

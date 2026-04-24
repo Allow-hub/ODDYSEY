@@ -13,17 +13,20 @@ namespace TechC.ODDESEY.Battle
         [Range(0f, 1f)] public float ProbabilityMax = 1f;
 
         /// <summary>
-        /// true のとき RollValues() では値を確定せず、
-        /// ConfirmTurn()（解決タイミング）で動的に評価する。
-        /// 手札枚数依存など解決時まで値が定まらない効果に使う。
+        /// 手札に来たときに呼ばれるロール処理
+        /// </summary>
+        public abstract void RollValue(EffectSlot slot, bool isHotMode);
+
+        /// <summary>
+        /// 解決時に値を確定する（必要なEffectだけオーバーライド）
+        /// </summary>
+        public virtual void EvaluateResolve(EffectSlot slot, int handCount, bool isHotMode) { }
+
+        /// <summary>
+        /// 解決時評価が必要かどうか
         /// </summary>
         public virtual bool EvaluateAtResolve => false;
 
-        /// <summary>
-        /// カードが効力を発揮するタイミングで呼ばれる実行メソッド。
-        /// </summary>
-        /// <param name="context">バトルのデータ</param>
-        /// <param name="effectIndex">CardData.Effects 内のインデックス</param>
         public abstract void Execute(EffectContext context, int effectIndex);
     }
 
@@ -42,5 +45,17 @@ namespace TechC.ODDESEY.Battle
         public int CurrentHandCount;
 
         public CardResolveResult Result;
+    }
+
+    public class EffectSlot
+    {
+        public float RolledProbability;
+        public int Value;
+
+        public float BonusProbability;
+        public int BonusValue;
+
+        public float EffectiveProbability => Mathf.Min(RolledProbability + BonusProbability, 1f);
+        public int EffectiveValue => Value + BonusValue;
     }
 }

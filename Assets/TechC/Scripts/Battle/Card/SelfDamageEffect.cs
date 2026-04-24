@@ -30,12 +30,20 @@ namespace TechC.ODDESEY.Battle
             // Result.IsHit が true ならメイン効果は成功している
             if (context.Result.IsHit) return;
 
-            context.Logic.TakePlayerDamage(SelfDamage, context.Result);
+            if(context.IsEnemy)
+                context.Logic.TakeEnemyDamage(SelfDamage, context.Result);
+            else
+                context.Logic.TakePlayerDamage(SelfDamage, context.Result);
             context.Result.SelfDamageDealt += SelfDamage;
 
             CustomLogger.Info(
                 $"自傷ダメージ: {SelfDamage} Slot:{context.SlotIndex}",
                 LogTagUtil.TagCard);
+        }
+
+        public override void RollValue(EffectSlot slot, bool isHotMode)
+        {
+            // 何もしない
         }
     }
 }
