@@ -6,39 +6,45 @@ namespace TechC.ODDESEY.Battle
 {
     /// <summary>
     /// このターンに受ける敵ダメージを軽減する効果。
-    /// 軽減率（%）を RollValues() でロールし、BattleLogic 側のターン軽減バッファに積む。
-    /// rolledDamages[] に軽減率を格納するため GetEffectiveReductionRate() で取得する。
+    /// 軽減率（0〜100）は EffectSlot.Value に格納し GetEffectiveValue() で取得する。
+    ///
+    /// リファクタリング変更点：
+    ///   軽減率を state.DamageReductionRate に書く。
+    ///   CardResolver.FlushStateToResult() が Result.Extras[ResultKeys.ReductionRate] に転写し、
+    ///   BattleLogic.SetDamageReduction() は CardResolver の後に呼ばれる想定。
+    ///
+    /// ※ ProbabilityMin / Max は通常 1.0 固定（外れない）。
+    ///   ゲージ連携で軽減率を上乗せする場合は AddBonusValue() を使う。
     /// </summary>
     [CreateAssetMenu(menuName = "CardEffect/Defense")]
     public class DefenseEffect : CardEffectBase
     {
-        [Header("軽減率（範囲）%")]
-        [Tooltip("ゲージなしのとき最低でもこの割合で軽減する")]
+        [Header("軽減率（%）")]
         [Range(0, 100)] public int ReductionMin = 20;
-
-        [Tooltip("ゲージなしのとき最大でもこの割合で軽減する（ゲージで上限まで上昇）")]
         [Range(0, 100)] public int ReductionMax = 60;
 
-        public override void Execute(EffectContext context, int effectIndex)
+        public override void Execute(EffectContext context, EffectExecutionState state, int effectIndex)
         {
-            // DefenseEffect の確率は原則 100% だが、設計上の拡張余地を残して判定する
-            if (!context.Source.TryExecuteEffect(effectIndex))
-            {
-                context.Result.IsHit = false;
-                return;
-            }
+            var instance = context.Source;
+            int rate = Mathf.Clamp(instance.GetEffectiveValue(effectIndex), 0, 100);
 
-            int rate = context.Source.GetEffectiveReductionRate(effectIndex);
-
-            // BattleLogic 側でこのターンの軽減率を保持させる
+            // BattleLogic に軽減率を通知
             context.Logic.SetDamageReduction(rate);
 
+            // State に書く（CardResolver が Extras に転写）
+            state.DamageReductionRate = rate;
+
             context.Result.IsHit = true;
-            context.Result.ReductionRate = rate;
 
             CustomLogger.Info(
-                $"ダメージ軽減: {rate}% Slot:{context.SlotIndex}",
+                $"防御発動: 軽減率={rate}% Slot:{context.SlotIndex}",
                 LogTagUtil.TagCard);
+        }
+
+        public override void RollValue(EffectSlot slot, bool isHotMode)
+        {
+            slot.RolledProbability = isHotMode ? ProbabilityMax : Random.Range(ProbabilityMin, ProbabilityMax);
+            slot.Value = isHotMode ? ReductionMax : Random.Range(ReductionMin, ReductionMax + 1);
         }
     }
 }

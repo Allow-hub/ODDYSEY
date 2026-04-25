@@ -11,10 +11,6 @@ namespace TechC.ODDESEY.Battle
     /// 使い方：CardData.Effects に DamageEffect の次に本クラスを配置する。
     ///   Effects[0] = DamageEffect  (60〜80%で 10〜25 ダメージ)
     ///   Effects[1] = SelfDamageEffect (外れたとき 5 固定)
-    ///
-    /// Execute() の呼び出し順は BattleLogic.ConfirmTurn() が Effect[0] → Effect[1] の順で
-    /// 呼ぶ実装を前提とする。Result.IsHit が false のとき（直前が外れ）に自傷が発動する。
-    ///
     /// ※ ProbabilityMin / ProbabilityMax は 1.0 固定にすること（判定不使用）。
     /// </summary>
     [CreateAssetMenu(menuName = "CardEffect/SelfDamage")]
@@ -23,19 +19,27 @@ namespace TechC.ODDESEY.Battle
         [Header("自傷ダメージ（固定値）")]
         public int SelfDamage = 5;
 
-        public override void Execute(EffectContext context, int effectIndex)
+        public override void Execute(EffectContext context, EffectExecutionState state, int effectIndex)
         {
-            // 直前の効果がヒットしていたら自傷しない
-            // BattleLogic は Effects を 0 → n-1 の順に Execute するため
-            // Result.IsHit が true ならメイン効果は成功している
-            if (context.Result.IsHit) return;
+            // 直前の Effect がヒット判定を持っていなかった、またはヒットしていたら自傷しない
+            if (!state.PreviousEffectHadHitCheck || state.PreviousEffectHit) return;
 
-            context.Logic.TakePlayerDamage(SelfDamage, context.Result);
-            context.Result.SelfDamageDealt += SelfDamage;
+            if (context.IsEnemy)
+                context.Logic.TakeEnemyDamage(SelfDamage, context.Result);
+            else
+                context.Logic.TakePlayerDamage(SelfDamage, context.Result);
+
+            // 累積値を State に書く（CardResolver が Result.Extras に転写する）
+            state.TotalSelfDamage += SelfDamage;
 
             CustomLogger.Info(
                 $"自傷ダメージ: {SelfDamage} Slot:{context.SlotIndex}",
                 LogTagUtil.TagCard);
+        }
+
+        public override void RollValue(EffectSlot slot, bool isHotMode)
+        {
+            // 固定ダメージなのでロール不要
         }
     }
 }

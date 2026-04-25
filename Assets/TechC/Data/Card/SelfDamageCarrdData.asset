@@ -10,10 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
-  m_Name: CardData 1
+  m_Name: SelfDamageCarrdData
   m_EditorClassIdentifier: 
-  CardName: Status
+  CardName: SelfDamageCarrdData
   CardSprite: {fileID: 0}
   Effects:
-  - {fileID: 11400000, guid: 4f3b4458c3c87d343967b273ed539b4c, type: 2}
+  - {fileID: 11400000, guid: 6a91ef4e5b2e8a742bc681de2999ca99, type: 2}
+  - {fileID: 11400000, guid: 9348f96da50e34a409e7257955cab40d, type: 2}
   LuckConversionRate: 20

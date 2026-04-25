@@ -63,10 +63,10 @@ namespace TechC.ODDESEY.Battle
         public async UniTask PlayEnterAnimationAsync()
         {
             var task = WaitStateAsync(EnemyStateNotifier.StateType.Enter);
-            animator.SetBool(AnimUtil.EnterHash, true);
+            animator?.SetBool(AnimUtil.EnterHash, true);
             await task;
             CustomLogger.Info($"敵出撃アニメーション完了", LogTagUtil.TagBattle);
-            animator.SetBool(AnimUtil.EnterHash, false);
+            animator?.SetBool(AnimUtil.EnterHash, false);
         }
 
         /// <summary>
@@ -76,12 +76,12 @@ namespace TechC.ODDESEY.Battle
         public async UniTask PlayAttackAnimationAsync()
         {
             var task = WaitStateAsync(EnemyStateNotifier.StateType.Attack);
-            animator.SetBool(AnimUtil.AttackHash, true);
+            animator?.SetBool(AnimUtil.AttackHash, true);
 
             await task;
 
             CustomLogger.Info($"プレイヤー攻撃アニメーション完了", LogTagUtil.TagBattle);
-            animator.SetBool(AnimUtil.AttackHash, false);
+            animator?.SetBool(AnimUtil.AttackHash, false);
         }
 
         /// <summary>
@@ -97,18 +97,18 @@ namespace TechC.ODDESEY.Battle
 
             var task = WaitStateAsync(type);
 
-            animator.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, true);
+            animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, true);
 
             await task;
 
             CustomLogger.Info($"プレイヤー被ダメージアニメーション完了 (isHit={isHit})", LogTagUtil.TagBattle);
-            animator.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, false);
+            animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, false);
         }
 
         public async UniTask PlayDefeatedAnimationAsync()
         {
             var task = WaitStateAsync(EnemyStateNotifier.StateType.Defeated);
-            animator.SetTrigger(AnimUtil.DefeatedHash);
+            animator?.SetTrigger(AnimUtil.DefeatedHash);
             await task;
         }
     }

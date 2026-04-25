@@ -7,6 +7,7 @@ using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
 using TechC.ODDESEY.Core.Manager;
 using TechC.Core.Manager;
+using System.Threading;
 
 namespace TechC.ODDESEY.Battle
 {
@@ -44,6 +45,7 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private float spacing = 200f;
         [SerializeField] private float y = -300f;
         [SerializeField] private Vector2 deckStartPos = new Vector2(800, -500);
+        private CancellationToken destroyToken;
 
         private EnemyView currentEnemyView;
         private UniTaskCompletionSource confirmTcs;
@@ -58,6 +60,7 @@ namespace TechC.ODDESEY.Battle
             if (fadePanel != null) fadePanel.alpha = 1f;
             confirmButton?.onClick.AddListener(ConfirmTurn);
             pauseButton?.onClick.AddListener(() => PauseManager.I?.Pause());
+            destroyToken = this.GetCancellationTokenOnDestroy();
         }
 
         // ================================
@@ -147,7 +150,8 @@ namespace TechC.ODDESEY.Battle
                 else
                     CustomLogger.Warning($"削除対象のカードViewが見つからない: InstanceId {r.CardInstanceId}", LogTagUtil.TagCard);
             }
-            anim.SetBool("BattleEnd", true);
+            if (!destroyToken.IsCancellationRequested && anim)
+                anim.SetBool("BattleEnd", true);
 
             await UniTask.WhenAll(tasks);
         }
@@ -176,15 +180,15 @@ namespace TechC.ODDESEY.Battle
         /// </summary>
         public UniTask WaitForPlayerConfirmAsync()
         {
-            anim.SetBool("BattleStart", false);
+            anim?.SetBool("BattleStart", false);
             confirmTcs = new UniTaskCompletionSource();
             return confirmTcs.Task;
         }
 
         public void ConfirmTurn()
         {
-            anim.SetBool("BattleEnd", false);
-            anim.SetBool("BattleStart", true);
+            anim?.SetBool("BattleEnd", false);
+            anim?.SetBool("BattleStart", true);
             confirmTcs?.TrySetResult();
         }
 

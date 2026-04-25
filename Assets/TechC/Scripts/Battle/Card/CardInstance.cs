@@ -4,187 +4,105 @@ namespace TechC.ODDESEY.Battle
 {
     /// <summary>
     /// 手札に配られたカード1枚のインスタンス。
-    /// CardData への参照 + ロール済み値を保持。
+    /// CardData への参照 + EffectSlot でロール済み値を保持する。
+    ///
+    /// リファクタリング変更点：
+    ///   - ExecuteAll() を追加。CardResolver がこれを呼ぶことで、
+    ///     解決ループの責任を CardInstance 内に閉じ込めた。
+    ///   - EffectExecutionState の生成・管理は CardResolver が行う。
+    ///     CardInstance は「値の保持と効果の委譲」に専念する。
     /// </summary>
     public class CardInstance
     {
         public CardData OriginalData { get; private set; }
-        
+
         private static int nextId = 1;
 
-        /// <summary>
-        /// このインスタンスのユニークID（手札内での識別用）
-        /// </summary>
+        /// <summary>このインスタンスのユニークID（手札内での識別用）</summary>
         public int InstanceId { get; private set; }
 
-        // ロール済み値（インデックスは OriginalData.Effects[i] と対応）
-        private float[] rolledProbabilities;
-        private int[] rolledDamages;
-
-        // 運ゲージによる上乗せ値
-        private float[] bonusProbabilities;
-        private int[] bonusDamages;
+        /// <summary>各 Effect ごとの値を保持</summary>
+        private EffectSlot[] slots;
 
         public bool IsRolled { get; private set; }
 
-        /// <summary>
-        /// CardData を参照して CardInstance を生成
-        /// </summary>
         public CardInstance(CardData data)
         {
             OriginalData = data;
             InstanceId = nextId++;
-            int effectCount = data.Effects.Count;
 
-            rolledProbabilities = new float[effectCount];
-            rolledDamages = new int[effectCount];
-            bonusProbabilities = new float[effectCount];
-            bonusDamages = new int[effectCount];
+            int effectCount = data.Effects.Count;
+            slots = new EffectSlot[effectCount];
+            for (int i = 0; i < effectCount; i++)
+                slots[i] = new EffectSlot();
         }
 
         /// <summary>
-        /// すべての効果値をロール。手札に追加された時点で1度だけ呼ぶ。
-        /// EvaluateAtResolve == true の効果は確率のみロールし、値は解決時に確定する。
+        /// このカードのすべての Effect について RollValue() を呼び出し、ランダム値を決定する。
         /// </summary>
+        /// <param name="isHotMode">運ゲージがたまっているか</param>
         public void RollValues(bool isHotMode = false)
         {
             for (int i = 0; i < OriginalData.Effects.Count; i++)
-            {
-                var effect = OriginalData.Effects[i];
-
-                // 確率をロール（EvaluateAtResolve でも確率は手札時に確定）
-                rolledProbabilities[i] = isHotMode
-                    ? effect.ProbabilityMax
-                    : Random.Range(effect.ProbabilityMin, effect.ProbabilityMax);
-
-                // 解決時評価の効果はここでは値を確定しない
-                if (effect.EvaluateAtResolve) continue;
-
-                // ダメージをロール（DamageEffect / CriticalDamageEffect）
-                if (effect is DamageEffect dmg)
-                {
-                    rolledDamages[i] = isHotMode
-                        ? dmg.DamageMax
-                        : Random.Range(dmg.DamageMin, dmg.DamageMax + 1);
-                }
-                else if (effect is CriticalDamageEffect crit)
-                {
-                    // 確定ダメージ部分をロール
-                    rolledDamages[i] = isHotMode
-                        ? crit.BaseDamageMax
-                        : Random.Range(crit.BaseDamageMin, crit.BaseDamageMax + 1);
-                }
-                else if (effect is DefenseEffect def)
-                {
-                    // 軽減率をロール（rolledDamages を軽減率（%）の格納に流用）
-                    rolledDamages[i] = isHotMode
-                        ? def.ReductionMax
-                        : Random.Range(def.ReductionMin, def.ReductionMax + 1);
-                }
-            }
-
+                OriginalData.Effects[i].RollValue(slots[i], isHotMode);
             IsRolled = true;
         }
 
         /// <summary>
-        /// 解決時評価の効果の値を確定する。ConfirmTurn() の直前に呼ぶ。
+        /// このカードのすべての Effect について EvaluateResolve() を呼び出し、解決時の値を決定する。
         /// </summary>
-        /// <param name="handCount">現在の手札枚数</param>
-        /// <param name="isHotMode">激アツモードか</param>
+        /// <param name="handCount">手札の数</param>
+        /// <param name="isHotMode">運ゲージがたまっているか</param>
         public void EvaluateResolveValues(int handCount, bool isHotMode = false)
         {
             for (int i = 0; i < OriginalData.Effects.Count; i++)
-            {
-                var effect = OriginalData.Effects[i];
-                if (!effect.EvaluateAtResolve) continue;
-
-                if (effect is HandSizeDamageEffect hs)
-                {
-                    // 手札枚数 × 乗数をここで確定
-                    int multiplier = isHotMode
-                        ? hs.MultiplierMax
-                        : Random.Range(hs.MultiplierMin, hs.MultiplierMax + 1);
-                    rolledDamages[i] = handCount * multiplier;
-                }
-            }
+                OriginalData.Effects[i].EvaluateResolve(slots[i], handCount, isHotMode);
         }
 
         /// <summary>
-        /// 実効確率を取得（BaseProbability + BonusProbability、上限1.0）
+        /// このカードのすべての Effect を順番に実行する。
+        /// state は CardResolver が生成して渡す（Effect間通信の媒介）。
         /// </summary>
-        public float GetEffectiveProbability(int effectIndex)
-            => Mathf.Min(rolledProbabilities[effectIndex] + bonusProbabilities[effectIndex], 1f);
-        
-        /// <summary>
-        /// 実効ダメージを取得（BaseDamage + BonusDamage、上限なし）
-        /// </summary>
-        public int GetEffectiveDamage(int effectIndex)
-            => rolledDamages[effectIndex] + bonusDamages[effectIndex];
-
-        /// <summary>
-        /// 実効軽減率（%）を取得。DefenseEffect 専用。
-        /// rolledDamages[] に軽減率を格納しているため同じ経路で取得する。
-        /// </summary>
-        public int GetEffectiveReductionRate(int effectIndex)
-            => Mathf.Clamp(rolledDamages[effectIndex] + bonusDamages[effectIndex], 0, 100);
-
-        /// <summary>
-        /// ロール済み基礎値を取得
-        /// </summary>
-        public float GetBaseProbability(int effectIndex) => rolledProbabilities[effectIndex];
-        public int GetBaseDamage(int effectIndex) => rolledDamages[effectIndex];
-
-        /// <summary>
-        /// ボーナス値を取得
-        /// </summary>
-        public float GetBonusProbability(int effectIndex) => bonusProbabilities[effectIndex];
-        public int GetBonusDamage(int effectIndex) => bonusDamages[effectIndex];
-
-        /// <summary>
-        /// ボーナス値を設定（上書き）
-        /// </summary>
-        public void SetBonusProbability(int effectIndex, float bonus)
-            => bonusProbabilities[effectIndex] = bonus;
-
-        public void SetBonusDamage(int effectIndex, int bonus)
-            => bonusDamages[effectIndex] = bonus;
-
-        /// <summary>
-        /// ボーナス値を加算
-        /// </summary>
-        public void AddBonusProbability(int effectIndex, float bonus)
-            => bonusProbabilities[effectIndex] += bonus;
-
-        public void AddBonusDamage(int effectIndex, int bonus) 
-            => bonusDamages[effectIndex] += bonus;
-
-        /// <summary>
-        /// 実効確率で判定。成功時に true を返す。
-        /// </summary>
-        public bool TryExecuteEffect(int effectIndex) 
-            => Random.value <= GetEffectiveProbability(effectIndex);
-
-        /// <summary>
-        /// 指定インデックスの効果オブジェクトを取得
-        /// </summary>
-        public T GetEffect<T>(int effectIndex) where T : CardEffectBase
+        /// <param name="context">外部リソースへのアクセス手段</param>
+        /// <param name="state">効果実行中の可変状態</param>
+        public void ExecuteAll(EffectContext context, EffectExecutionState state)
         {
-            if (effectIndex >= 0 && effectIndex < OriginalData.Effects.Count)
-                if (OriginalData.Effects[effectIndex] is T typed)
-                    return typed;
+            for (int i = 0; i < OriginalData.Effects.Count; i++)
+                OriginalData.Effects[i].Execute(context, state, i);
+        }
+
+        // ─── 値の取得・更新 ──────────────────────────────────────────────
+        public float GetEffectiveProbability(int i) => slots[i].EffectiveProbability;
+        public int GetEffectiveValue(int i) => slots[i].EffectiveValue;
+        public float GetBaseProbability(int i) => slots[i].RolledProbability;
+        public int GetBaseValue(int i) => slots[i].Value;
+        public float GetBonusProbability(int i) => slots[i].BonusProbability;
+        public int GetBonusValue(int i) => slots[i].BonusValue;
+
+        public void SetBonusProbability(int i, float v) => slots[i].BonusProbability = v;
+        public void SetBonusValue(int i, int v) => slots[i].BonusValue = v;
+        public void AddBonusProbability(int i, float v) => slots[i].BonusProbability += v;
+        public void AddBonusValue(int i, int v) => slots[i].BonusValue += v;
+
+        public bool TryExecuteEffect(int i) => Random.value <= GetEffectiveProbability(i);
+
+        public T GetEffect<T>(int i) where T : CardEffectBase
+        {
+            if (i >= 0 && i < OriginalData.Effects.Count && OriginalData.Effects[i] is T typed)
+                return typed;
             return null;
         }
 
-        /// <summary>
-        /// ロール履歴をリセット（プール再利用時など）
-        /// </summary>
         public void Reset()
         {
             IsRolled = false;
-            System.Array.Clear(rolledProbabilities, 0, rolledProbabilities.Length);
-            System.Array.Clear(rolledDamages, 0, rolledDamages.Length);
-            System.Array.Clear(bonusProbabilities, 0, bonusProbabilities.Length);
-            System.Array.Clear(bonusDamages, 0, bonusDamages.Length);
+            for (int i = 0; i < slots.Length; i++)
+            {
+                slots[i].RolledProbability = 0;
+                slots[i].Value = 0;
+                slots[i].BonusProbability = 0;
+                slots[i].BonusValue = 0;
+            }
         }
     }
 }

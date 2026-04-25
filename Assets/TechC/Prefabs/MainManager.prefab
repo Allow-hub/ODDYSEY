@@ -58,25 +58,5 @@ MonoBehaviour:
   debugContext:
     PlayerHp: 30
     PlayerHpMax: 30
-    InitialDeck:
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
-    - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+    InitialDeck: {fileID: 11400000, guid: 44bc08867cc8543449909928e19a20bf, type: 2}
     DebugEnemy: {fileID: 11400000, guid: 4c700648c5e5ada408c3b33c685f8978, type: 2}

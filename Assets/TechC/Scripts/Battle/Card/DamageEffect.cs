@@ -6,12 +6,10 @@ namespace TechC.ODDESEY.Battle
 {
     /// <summary>
     /// 確率付きダメージ効果。
-    /// 運ゲージでダメージに上乗せできる（上限なし）。
     ///
     /// 配置ボーナス：
     ///   UsePositionBonus = true のとき、RequiredSlotIndex と一致するスロットに
     ///   置かれた場合のみ PositionBonusDamage を追加で与える。
-    ///   先制特化カードの「左端配置で +5 ダメージ」を ScriptableObject だけで設定できる。
     /// </summary>
     [CreateAssetMenu(menuName = "CardEffect/Damage")]
     public class DamageEffect : CardEffectBase
@@ -30,11 +28,15 @@ namespace TechC.ODDESEY.Battle
         [Tooltip("条件一致時に追加するダメージ量")]
         public int PositionBonusDamage = 5;
 
-        public override void Execute(EffectContext context, int effectIndex)
+        public override void Execute(EffectContext context, EffectExecutionState state, int effectIndex)
         {
             var instance = context.Source;
 
             bool isHit = instance.TryExecuteEffect(effectIndex);
+
+            // ── Effect間通信：ヒット結果を State に書く ─────────────────
+            state.PreviousEffectHadHitCheck = true;
+            state.PreviousEffectHit = isHit;
 
             if (!isHit)
             {
@@ -42,9 +44,8 @@ namespace TechC.ODDESEY.Battle
                 return;
             }
 
-            int damage = instance.GetEffectiveDamage(effectIndex);
+            int damage = instance.GetEffectiveValue(effectIndex);
 
-            // 配置ボーナス判定
             if (UsePositionBonus && context.SlotIndex == RequiredSlotIndex)
             {
                 damage += PositionBonusDamage;
@@ -60,6 +61,18 @@ namespace TechC.ODDESEY.Battle
 
             context.Result.IsHit = true;
             context.Result.DamageDealt += damage;
+            state.TotalDamageToEnemy += damage;
+        }
+
+        public override void RollValue(EffectSlot slot, bool isHotMode)
+        {
+            slot.RolledProbability = isHotMode
+                ? ProbabilityMax
+                : Random.Range(ProbabilityMin, ProbabilityMax);
+
+            slot.Value = isHotMode
+                ? DamageMax
+                : Random.Range(DamageMin, DamageMax + 1);
         }
     }
 }

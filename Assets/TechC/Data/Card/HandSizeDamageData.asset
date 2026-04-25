@@ -9,13 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6708bc7d66b2a3242938440f443d44a7, type: 3}
-  m_Name: DamageEffect
+  m_Script: {fileID: 11500000, guid: a4dd21d3d4f105e438e51095523bfffc, type: 3}
+  m_Name: HandSizeDamageData
   m_EditorClassIdentifier: 
-  ProbabilityMin: 0.1
-  ProbabilityMax: 0.5
-  DamageMin: 3
-  DamageMax: 6
-  UsePositionBonus: 0
-  RequiredSlotIndex: 0
-  PositionBonusDamage: 5
+  ProbabilityMin: 1
+  ProbabilityMax: 1
+  MultiplierMin: 2
+  MultiplierMax: 10

@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
-  m_Name: CardData
+  m_Name: HandSize
   m_EditorClassIdentifier: 
-  CardName: Def
+  CardName: HandSize
   CardSprite: {fileID: 0}
   Effects:
-  - {fileID: 11400000, guid: 6a91ef4e5b2e8a742bc681de2999ca99, type: 2}
+  - {fileID: 11400000, guid: e4089e5585b7b2147928941462f2bc9a, type: 2}
   LuckConversionRate: 20

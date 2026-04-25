@@ -5,40 +5,50 @@ using UnityEngine;
 namespace TechC.ODDESEY.Battle
 {
     /// <summary>
-    /// 手札枚数 × 乗数 のダメージを与える効果。
-    /// 手札枚数は解決タイミングまで変動するため EvaluateAtResolve = true とし、
-    /// CardInstance.EvaluateResolveValues() で乗数と手札枚数を掛け合わせてから確定する。
+    /// 手札枚数 × 乗数のダメージを与える効果。
+    /// 解決タイミングで手札枚数を参照するため EvaluateAtResolve = true。
     ///
-    /// 実装フロー：
-    ///   RollValues()          → 確率のみロール。ダメージは 0 のまま。
-    ///   EvaluateResolveValues(handCount) → rolledDamages[i] = handCount × rolled乗数 を確定
-    ///   Execute()             → GetEffectiveDamage() でダメージ取得・適用
+    /// EvaluateResolve() で「乗数 × 手札枚数」を slot.Value に格納し、
+    /// Execute() では GetEffectiveValue() でそのまま取得してダメージに使う。
     ///
-    /// ゲージ連携：
-    ///   - 確率 → GetEffectiveProbability() で上昇（設計指針§3-2 準拠）
-    ///   - ダメージ → AddBonusDamage() で上乗せ可能（handCount × 乗数 に加算）
+    /// リファクタリング変更点：
+    ///   Execute シグネチャに EffectExecutionState を追加。State に書き込む。
     /// </summary>
     [CreateAssetMenu(menuName = "CardEffect/HandSizeDamage")]
     public class HandSizeDamageEffect : CardEffectBase
     {
-        [Header("手札1枚あたりのダメージ乗数（範囲）")]
-        [Tooltip("55〜65%の確率で 手札枚数 × この乗数 のダメージを与える")]
+        [Header("乗数（範囲）")]
         public int MultiplierMin = 2;
         public int MultiplierMax = 4;
 
-        /// <summary>解決時まで値を確定しない</summary>
         public override bool EvaluateAtResolve => true;
 
-        public override void Execute(EffectContext context, int effectIndex)
+        public override void EvaluateResolve(EffectSlot slot, int handCount, bool isHotMode)
         {
-            if (!context.Source.TryExecuteEffect(effectIndex))
+            int multiplier = isHotMode
+                ? MultiplierMax
+                : Random.Range(MultiplierMin, MultiplierMax + 1);
+
+            // 手札枚数 × 乗数を Value に格納（Execute で GetEffectiveValue として取得）
+            slot.Value = multiplier * handCount;
+        }
+
+        public override void Execute(EffectContext context, EffectExecutionState state, int effectIndex)
+        {
+            var instance = context.Source;
+
+            bool isHit = instance.TryExecuteEffect(effectIndex);
+
+            state.PreviousEffectHadHitCheck = true;
+            state.PreviousEffectHit = isHit;
+
+            if (!isHit)
             {
                 context.Result.IsHit = false;
                 return;
             }
 
-            // EvaluateResolveValues() 済みの値を取得
-            int damage = context.Source.GetEffectiveDamage(effectIndex);
+            int damage = instance.GetEffectiveValue(effectIndex);
 
             if (context.IsEnemy)
                 context.Logic.TakePlayerDamage(damage, context.Result);
@@ -47,10 +57,21 @@ namespace TechC.ODDESEY.Battle
 
             context.Result.IsHit = true;
             context.Result.DamageDealt += damage;
+            state.TotalDamageToEnemy += damage;
 
             CustomLogger.Info(
                 $"手札連動ダメージ: {damage} (手札{context.CurrentHandCount}枚) Slot:{context.SlotIndex}",
                 LogTagUtil.TagCard);
+        }
+
+        public override void RollValue(EffectSlot slot, bool isHotMode)
+        {
+            // 確率のみロール。ダメージ値は EvaluateResolve() で確定する。
+            slot.RolledProbability = isHotMode
+                ? ProbabilityMax
+                : Random.Range(ProbabilityMin, ProbabilityMax);
+
+            slot.Value = 0; // EvaluateResolve で上書きされる
         }
     }
 }
