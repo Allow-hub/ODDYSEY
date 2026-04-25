@@ -55,12 +55,12 @@ namespace TechC.ODDESEY.Battle
         public async UniTask PlayAttackAnimationAsync()
         {
             var task = WaitStateAsync(PlayerAnimationType.Attack);
-            animator.SetBool(AnimUtil.AttackHash, true);
+            animator?.SetBool(AnimUtil.AttackHash, true);
 
             await task;
 
             CustomLogger.Info($"プレイヤー攻撃アニメーション完了", LogTagUtil.TagBattle);
-            animator.SetBool(AnimUtil.AttackHash, false);
+            animator?.SetBool(AnimUtil.AttackHash, false);
         }
 
         /// <summary>
@@ -76,12 +76,12 @@ namespace TechC.ODDESEY.Battle
 
             var task = WaitStateAsync(type);
 
-            animator.SetBool(isHit ? "Hit" : "Miss", true);
+            animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, true);
 
             await task;
 
             CustomLogger.Info($"プレイヤー被ダメージアニメーション完了 (isHit={isHit})", LogTagUtil.TagBattle);
-            animator.SetBool(isHit ? "Hit" : "Miss", false);
+            animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, false);
         }
     }
 

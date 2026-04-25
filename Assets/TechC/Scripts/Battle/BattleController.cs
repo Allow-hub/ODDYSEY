@@ -85,7 +85,8 @@ namespace TechC.ODDESEY.Battle
                             await battleView.UpdatePlayerHpAsync(result.PlayerHpAfter, battleLogic.PlayerHpMax);
                     }
                     // 自傷ダメージ
-                    if (result.SelfDamageDealt > 0)
+                    var selfDamage = result.GetExtra<int>(ResultKeys.SelfDamageDealt);
+                    if (selfDamage > 0)
                     {
                         if (result.IsPlayer)
                             // プレイヤーのカード → プレイヤーが自傷

@@ -4,26 +4,32 @@ using UnityEngine;
 
 namespace TechC.ODDESEY.Battle
 {
+    /// <summary>
+    /// 確定ダメージ＋クリティカル確率でダメージ倍率をかける効果。
+    ///
+    ///   ProbabilityMin / Max → クリティカル確率
+    ///   BaseDamageMin / Max  → 確定ダメージ部分
+    ///   CriticalMultiplier   → クリティカル時のダメージ倍率
+    /// </summary>
     [CreateAssetMenu(menuName = "CardEffect/CriticalDamage")]
     public class CriticalDamageEffect : CardEffectBase
     {
         [Header("確定ダメージ（範囲）")]
-        public int BaseDamageMin = 2;
-        public int BaseDamageMax = 3;
+        public int BaseDamageMin = 3;
+        public int BaseDamageMax = 6;
 
         [Header("クリティカル倍率")]
+        [Tooltip("クリティカル発生時のダメージ倍率")]
         public int CriticalMultiplier = 3;
 
-        public override void Execute(EffectContext context, int effectIndex)
+        public override void Execute(EffectContext context, EffectExecutionState state, int effectIndex)
         {
-            int baseDamage = context.Source.GetEffectiveValue(effectIndex);
+            var instance = context.Source;
 
-            // クリティカル判定（確率はここで使う）
-            bool isCritical = context.Source.TryExecuteEffect(effectIndex);
+            int baseDamage = instance.GetEffectiveValue(effectIndex);
+            bool isCrit = instance.TryExecuteEffect(effectIndex);
 
-            int finalDamage = isCritical
-                ? baseDamage * CriticalMultiplier
-                : baseDamage;
+            int finalDamage = isCrit ? baseDamage * CriticalMultiplier : baseDamage;
 
             if (context.IsEnemy)
                 context.Logic.TakePlayerDamage(finalDamage, context.Result);
@@ -32,24 +38,25 @@ namespace TechC.ODDESEY.Battle
 
             context.Result.IsHit = true;
             context.Result.DamageDealt += finalDamage;
-            context.Result.IsCritical = isCritical;
+
+            // State に書く（Effect間通信＋CardResolver が Extras に転写）
+            state.PreviousEffectHadHitCheck = true;
+            state.PreviousEffectHit = true; // 確定ダメージなので常にヒット扱い
+            state.TotalDamageToEnemy += finalDamage;
+            state.IsCritical |= isCrit;
 
             CustomLogger.Info(
-                $"クリティカル判定: baseDmg={baseDamage} crit={isCritical} finalDmg={finalDamage} Slot:{context.SlotIndex}",
+                $"クリティカルダメージ: base={baseDamage} isCrit={isCrit} final={finalDamage} Slot:{context.SlotIndex}",
                 LogTagUtil.TagCard);
         }
 
-        /// <summary>
-        /// ロール処理をEffect側に移動
-        /// </summary>
         public override void RollValue(EffectSlot slot, bool isHotMode)
         {
-            // クリティカル確率
+            // 確率スロットをクリティカル確率として使う
             slot.RolledProbability = isHotMode
                 ? ProbabilityMax
                 : Random.Range(ProbabilityMin, ProbabilityMax);
 
-            // 確定ダメージ部分
             slot.Value = isHotMode
                 ? BaseDamageMax
                 : Random.Range(BaseDamageMin, BaseDamageMax + 1);
