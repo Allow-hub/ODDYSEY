@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using TechC.ODDESEY.Core.Manager;
 using TechC.ODDESEY.Core.Util;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
@@ -14,6 +15,7 @@ namespace TechC.ODDESEY.Battle
     public class EnemyView : MonoBehaviour
     {
         private Animator animator;
+        [SerializeField] private AttackCameraData attackCameraData;
         private Dictionary<EnemyStateNotifier.StateType, List<UniTaskCompletionSource>> waiters
              = new();
 
@@ -77,9 +79,9 @@ namespace TechC.ODDESEY.Battle
         {
             var task = WaitStateAsync(EnemyStateNotifier.StateType.Attack);
             animator?.SetBool(AnimUtil.AttackHash, true);
-
+            var cameraTask = CameraManager.I.PlayAttackCameraAsync(attackCameraData);
             await task;
-
+            await cameraTask;
             CustomLogger.Info($"プレイヤー攻撃アニメーション完了", LogTagUtil.TagBattle);
             animator?.SetBool(AnimUtil.AttackHash, false);
         }

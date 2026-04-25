@@ -166,7 +166,7 @@ namespace TechC.ODDESEY.Battle
             playerHp = Mathf.Max(0, playerHp - actualDamage);
             result.PlayerHpAfter = playerHp;
 
-            Debug.Log($"TakePlayerDamage: raw={damage} reduced={actualDamage} hp={playerHp}");
+            CustomLogger.Info($"TakePlayerDamage: raw={damage} reduced={actualDamage} hp={playerHp}", LogTagUtil.TagCard);
 
             if (playerHp <= 0)
             {
