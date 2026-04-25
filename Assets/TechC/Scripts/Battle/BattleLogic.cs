@@ -183,10 +183,7 @@ namespace TechC.ODDESEY.Battle
         /// このターンの受けるダメージ軽減率を設定する。
         /// DefenseEffect から呼ばれる。
         /// </summary>
-        public void SetDamageReduction(int rate)
-        {
-            currentTurnDamageReductionRate = Mathf.Clamp(rate, 0, 100);
-        }
+        public void SetDamageReduction(int rate) => currentTurnDamageReductionRate = Mathf.Clamp(rate, 0, 100);
 
         public void AddLuckGauge(float amount) => luckGauge.Add(amount);
 
