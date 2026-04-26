@@ -243,8 +243,7 @@ namespace TechC.ODDESEY.Battle
                     view = obj.GetComponent<CardView>();
 
                     view.Setup(
-                        instance.OriginalData,
-                        instance.InstanceId,
+                        instance,
                         playZonePresenter.OnCardReturnRequested
                     );
 

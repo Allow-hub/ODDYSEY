@@ -58,7 +58,7 @@ namespace TechC.ODDESEY.Battle
                 {
                     var obj = Instantiate(cardViewPrefab, slotViews[i].transform);
                     var cardView = obj.GetComponent<CardView>();
-                    cardView.Setup(slot.EnemyCardInstance.OriginalData, slot.EnemyCardInstance.InstanceId);
+                    cardView.Setup(slot.EnemyCardInstance);
                     cardView.SetEnemyAppearance();
                     
                     enemyCardViews[slot.EnemyCardInstance.InstanceId] = cardView;

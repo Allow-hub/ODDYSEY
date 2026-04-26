@@ -29,6 +29,7 @@ namespace TechC.ODDESEY.Battle
         private Animator animator;
         private RectTransform rectTransform;
         private CardData cardData;
+        private CardInstance cardInstance;
         private int instanceId;
         private bool isEnemy = false;
 
@@ -57,18 +58,19 @@ namespace TechC.ODDESEY.Battle
         }
 
         public void Setup(
-            CardData cardData,
-            int instanceId = 0,
+            CardInstance cardInstance,          // ← CardData の代わりに Instance を受け取る
             Action<CardView> onReturnRequested = null,
             Action<CardView> onDroppedToSlot = null)
         {
-            this.cardData = cardData;
-            this.instanceId = instanceId;
+            this.cardInstance = cardInstance;
+            this.cardData = cardInstance.OriginalData;   // CardData は Instance 経由で取得
+            this.instanceId = cardInstance.InstanceId;
             this.onDroppedToSlot = onDroppedToSlot;
             this.onReturnRequested = onReturnRequested;
             isPlaced = false;
 
             rootCanvas = GetComponentInParent<Canvas>();
+            RefreshDisplay();   // ← Setup 後に即描画
         }
 
 
@@ -82,6 +84,9 @@ namespace TechC.ODDESEY.Battle
         {
             if (cardData == null) return;
             cardNameText.text = cardData.CardName;
+            var probability = cardInstance.GetEffectiveProbability(0)*100;
+            probabilityText.text = $"{probability:F0}%";
+            damageText.text = $"{cardInstance.GetEffectiveValue(0)}";
         }
 
         /// <summary>
