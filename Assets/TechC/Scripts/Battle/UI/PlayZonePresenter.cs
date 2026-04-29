@@ -58,7 +58,7 @@ namespace TechC.ODDESEY.Battle
                 {
                     var obj = Instantiate(cardViewPrefab, slotViews[i].transform);
                     var cardView = obj.GetComponent<CardView>();
-                    cardView.Setup(slot.EnemyCardInstance.OriginalData, slot.EnemyCardInstance.InstanceId);
+                    cardView.Setup(slot.EnemyCardInstance);
                     cardView.SetEnemyAppearance();
                     
                     enemyCardViews[slot.EnemyCardInstance.InstanceId] = cardView;
@@ -145,23 +145,6 @@ namespace TechC.ODDESEY.Battle
 
             CustomLogger.Warning($"CardInstance が見つからない: InstanceId {cardView.InstanceId}", LogTagUtil.TagBattle);
             return null;
-        }
-
-        public IReadOnlyList<PlayZoneSlot> GetFilledSlots()
-        {
-            var result = new List<PlayZoneSlot>();
-            if (slots == null) return result;
-            foreach (var slot in slots)
-                if (slot.IsPlayerCard) result.Add(slot);
-            return result;
-        }
-
-        public bool AllSlotsFilled()
-        {
-            if (slots == null) return false;
-            foreach (var slot in slots)
-                if (!slot.IsEnemyCard && slot.IsEmpty) return false;
-            return true;
         }
     }
 }

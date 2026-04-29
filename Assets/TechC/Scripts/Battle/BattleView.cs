@@ -12,7 +12,12 @@ using System.Threading;
 namespace TechC.ODDESEY.Battle
 {
     /// <summary>
-    /// 戦闘の見た目を管理する
+    /// 戦闘の見た目を管理する。
+    ///
+    /// 変更点：
+    ///   - CardView.Setup() への onReturnRequested 渡しを廃止。
+    ///   - CardView は BattleEventBus にイベントを発行するだけになったため、
+    ///     BattleView 側での Action 注入が不要になった。
     /// </summary>
     public class BattleView : MonoBehaviour
     {
@@ -67,9 +72,6 @@ namespace TechC.ODDESEY.Battle
         // 公開API（バトル進行）
         // ================================
 
-        /// <summary>
-        /// バトル開始演出。フェードイン → 敵登場 → テキスト表示 → テキストフェードアウト。
-        /// </summary>
         public async UniTask PlayBattleStartAsync(TurnData firstTurnData, EnemyData enemyData)
         {
             battleStartText.SetActive(false);
@@ -99,20 +101,13 @@ namespace TechC.ODDESEY.Battle
             await UpdateHandAsync(firstTurnData.Hand);
         }
 
-        /// <summary>
-        /// ターン開始演出。テキスト表示 → テキストフェードアウト。
-        /// </summary>
         public async UniTask ShowTurnStartAsync(TurnData turnData)
         {
             await UpdateHandAsync(turnData.Hand);
         }
 
-        /// <summary>
-        /// カード実行演出。カードの効果に応じたアニメーションを再生する。
-        /// </summary>
         public async UniTask PlayCardResolveAsync(CardResolveResult result)
         {
-            // ② プレイヤー or 敵のアニメーション
             if (result.IsPlayer)
                 await playerView.PlayAttackAnimationAsync();
             else
@@ -131,9 +126,6 @@ namespace TechC.ODDESEY.Battle
         public void UpdateLuckGaugeImmediate(float current, float max, bool isHotMode)
             => luckGaugeView.UpdateGaugeImmediate(current, max, isHotMode);
 
-        /// <summary>
-        /// 使用されたカードを View から削除する。アニメーションを再生してから削除する。    
-        /// </summary>
         public async UniTask RemoveUsedCardsAsync(List<CardResolveResult> results)
         {
             var tasks = new List<UniTask>();
@@ -150,15 +142,13 @@ namespace TechC.ODDESEY.Battle
                 else
                     CustomLogger.Warning($"削除対象のカードViewが見つからない: InstanceId {r.CardInstanceId}", LogTagUtil.TagCard);
             }
+
             if (!destroyToken.IsCancellationRequested && anim)
                 anim.SetBool("BattleEnd", true);
 
             await UniTask.WhenAll(tasks);
         }
 
-        /// <summary>
-        /// カードを View から削除する。アニメーションを再生してから削除する。
-        /// </summary>
         public async UniTask RemoveCardAsync(int instanceId)
         {
             if (!handViews.TryGetValue(instanceId, out var view))
@@ -175,9 +165,6 @@ namespace TechC.ODDESEY.Battle
             handViews.Remove(instanceId);
         }
 
-        /// <summary>
-        /// プレイヤーの入力待ち。ターン確定ボタンが押されるまで完了しない UniTask を返す。
-        /// </summary>
         public UniTask WaitForPlayerConfirmAsync()
         {
             anim?.SetBool("BattleStart", false);
@@ -192,37 +179,27 @@ namespace TechC.ODDESEY.Battle
             confirmTcs?.TrySetResult();
         }
 
-        /// <summary>
-        /// 勝利時の演出
-        /// </summary>
-        /// <returns></returns>
         public async UniTask ShowWinEffectAsync()
         {
             winEffectObj.SetActive(true);
-            await UniTask.Delay(4000);//仮
+            await UniTask.Delay(4000);
         }
 
-        /// <summary>
-        /// 敗北時の演出
-        /// </summary>
-        /// <returns></returns>
         public async UniTask ShowLoseEffectAsync()
         {
             loseEffectObj.SetActive(true);
-            await UniTask.Delay(4000);//仮
+            await UniTask.Delay(4000);
         }
 
-        /// <summary>
-        /// 手札の内容を View に反映する。カードの追加・削除・移動をアニメーション付きで行う。
-        /// </summary>
+        // ================================
+        // 内部処理
+        // ================================
+
         private async UniTask UpdateHandAsync(List<CardInstance> newHand)
         {
             var tasks = new List<UniTask>();
             var newIds = new HashSet<int>();
 
-            // -----------------------------
-            // 生成・更新
-            // -----------------------------
             for (int i = 0; i < newHand.Count; i++)
             {
                 var instance = newHand[i];
@@ -242,30 +219,20 @@ namespace TechC.ODDESEY.Battle
                     var obj = Instantiate(cardViewPrefab, handContainer);
                     view = obj.GetComponent<CardView>();
 
-                    view.Setup(
-                        instance.OriginalData,
-                        instance.InstanceId,
-                        playZonePresenter.OnCardReturnRequested
-                    );
+                    // ★ Action の注入なし。CardView は EventBus にイベントを発行するだけ
+                    view.Setup(instance);
 
                     handViews[instance.InstanceId] = view;
-
                     tasks.Add(view.PlayDealAnimationAsync(deckStartPos, targetPos));
                 }
 
                 view.transform.SetParent(handContainer);
             }
 
-            // -----------------------------
-            // 削除（存在しないもの）
-            // -----------------------------
             var removeList = new List<int>();
-
             foreach (var kv in handViews)
-            {
                 if (!newIds.Contains(kv.Key))
                     removeList.Add(kv.Key);
-            }
 
             foreach (var id in removeList)
             {
@@ -279,9 +246,6 @@ namespace TechC.ODDESEY.Battle
             await UniTask.WhenAll(tasks);
         }
 
-        /// <summary>
-        /// フェードアニメーション。from → to に fadeDuration 秒かけて変化させる。
-        /// </summary>
         private async UniTask FadeAsync(float from, float to, float duration)
         {
             if (fadePanel == null) return;

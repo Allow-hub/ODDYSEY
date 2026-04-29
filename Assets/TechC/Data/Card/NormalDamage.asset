@@ -9,13 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6708bc7d66b2a3242938440f443d44a7, type: 3}
-  m_Name: DamageEffect
+  m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
+  m_Name: NormalDamage
   m_EditorClassIdentifier: 
-  ProbabilityMin: 0.7
-  ProbabilityMax: 1
-  DamageMin: 3
-  DamageMax: 6
-  UsePositionBonus: 0
-  RequiredSlotIndex: 0
-  PositionBonusDamage: 5
+  CardName: NormalDamage
+  CardSprite: {fileID: 0}
+  Effects:
+  - {fileID: 11400000, guid: 6a91ef4e5b2e8a742bc681de2999ca99, type: 2}
+  LuckConversionRate: 20

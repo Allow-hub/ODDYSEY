@@ -11,6 +11,13 @@ namespace TechC.ODDESEY.Battle
 {
     /// <summary>
     /// 手札のカード1枚を表す View クラス。
+    ///
+    /// 変更点：
+    ///   - onReturnRequested / onDroppedToSlot の Action を廃止。
+    ///     代わりに BattleEventBus にイベントを発行する。
+    ///   - isPlaced=true のときのクリックで ReturnToHand を直接呼ぶのをやめ、
+    ///     CardPlacedClickedEvent を発行するだけにした。
+    ///     「戻すかどうか」の判断は PlayZonePresenter 側に委譲。
     /// </summary>
     public class CardView : MonoBehaviour,
         IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
@@ -29,10 +36,9 @@ namespace TechC.ODDESEY.Battle
         private Animator animator;
         private RectTransform rectTransform;
         private CardData cardData;
+        private CardInstance cardInstance;
         private int instanceId;
         private bool isEnemy = false;
-
-
 
         public Transform OriginalParent => originalParent;
         private Transform originalParent;
@@ -47,49 +53,44 @@ namespace TechC.ODDESEY.Battle
         /// </summary>
         private bool isPlaced = false;
 
-        private Action<CardView> onDroppedToSlot;
-        private Action<CardView> onReturnRequested;
-
         private void Awake()
         {
             animator = GetComponent<Animator>();
             rectTransform = GetComponent<RectTransform>();
         }
 
-        public void Setup(
-            CardData cardData,
-            int instanceId = 0,
-            Action<CardView> onReturnRequested = null,
-            Action<CardView> onDroppedToSlot = null)
+        /// <summary>
+        /// Setup から Action の引数を削除。
+        /// 購読は呼び出し側（BattleView / PlayZonePresenter）が BattleEventBus で行う。
+        /// </summary>
+        public void Setup(CardInstance cardInstance)
         {
-            this.cardData = cardData;
-            this.instanceId = instanceId;
-            this.onDroppedToSlot = onDroppedToSlot;
-            this.onReturnRequested = onReturnRequested;
+            this.cardInstance = cardInstance;
+            cardData = cardInstance.OriginalData;
+            instanceId = cardInstance.InstanceId;
             isPlaced = false;
 
             rootCanvas = GetComponentInParent<Canvas>();
+            RefreshDisplay();
         }
-
 
         public void SetEnemyAppearance()
         {
             isEnemy = true;
         }
 
-
         private void RefreshDisplay()
         {
             if (cardData == null) return;
             cardNameText.text = cardData.CardName;
+            var probability = cardInstance.GetEffectiveProbability(0) * 100;
+            probabilityText.text = $"{probability:F0}%";
+            damageText.text = $"{cardInstance.GetEffectiveValue(0)}";
         }
 
         /// <summary>
-        /// ドロー、手札への追加時のアニメーション。カードが山札から手札に移動する演出
+        /// ドロー・手札追加時のアニメーション。
         /// </summary>
-        /// <param name="startPos"></param>
-        /// <param name="targetPos"></param>
-        /// <returns></returns>
         public async UniTask PlayDealAnimationAsync(Vector2 startPos, Vector2 targetPos)
         {
             isDealing = true;
@@ -112,25 +113,17 @@ namespace TechC.ODDESEY.Battle
         }
 
         /// <summary>
-        /// カードを砕くアニメーション。砕ける演出を再生してから完了通知を送る
+        /// カードを砕くアニメーション。
         /// </summary>
-        /// <returns></returns>
         public async UniTask PlayBreakAnimationAsync()
         {
-            // Destroy(gameObject);
             await UniTask.Delay(1); // 仮
         }
-
-        // public void OnBreakAnimationComplete()
-        // {
-        //     breakTcs?.TrySetResult();
-        //     Destroy(gameObject);
-        // }
 
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (isDealing || isPlaced || isEnemy) return;
-            cardImage.raycastTarget = false; // ドロップ判定の邪魔になるのでドラッグ中は無効化
+            cardImage.raycastTarget = false;
             originalParent = transform.parent;
             transform.SetParent(rootCanvas.transform, true);
         }
@@ -149,41 +142,46 @@ namespace TechC.ODDESEY.Battle
         }
 
         /// <summary>
-        /// ドラッグ終了。isPlaced = true なら配置確定済みなので何もしない。
-        /// false なら手札位置へ戻す。
+        /// ドラッグ終了。
+        /// スロット未配置なら手札位置へ戻し、CardReturnedToHandEvent を発行。
         /// </summary>
         public void OnEndDrag(PointerEventData eventData)
         {
             if (isDealing || isEnemy) return;
             if (isPlaced)
             {
-                // スロット配置確定済み → 何もしない（OnDrop 側で処理済み）
                 CustomLogger.Info($"カード配置確定: {cardData.CardName} (InstanceId: {instanceId})", LogTagUtil.TagCard);
                 return;
             }
-            cardImage.raycastTarget = true; // ドロップ判定を再度有効化
 
-            // スロットに入らなかった → 手札位置へ戻す
+            cardImage.raycastTarget = true;
             transform.SetParent(originalParent, true);
             rectTransform.anchoredPosition = dealTargetPos;
+
             CustomLogger.Info($"カード配置キャンセル: {cardData.CardName} (InstanceId: {instanceId})", LogTagUtil.TagCard);
-            onReturnRequested?.Invoke(this);
+            BattleEventBus.Publish(new CardReturnedToHandEvent(this));
         }
 
+        /// <summary>
+        /// クリック処理。
+        ///   isPlaced=true → CardPlacedClickedEvent を発行。ReturnToHand は呼ばない。
+        ///   isPlaced=false → カード詳細を表示。
+        /// </summary>
         public void OnPointerClick(PointerEventData eventData)
         {
             if (eventData.dragging) return;
             if (isDealing || isEnemy) return;
+
             if (isPlaced)
             {
-                ReturnToHand(originalParent);
-                CustomLogger.Info($"カードを手札に戻す: {cardData.CardName} (InstanceId: {instanceId})", LogTagUtil.TagCard);
-                onReturnRequested?.Invoke(this);
+                // 「戻すかどうか」は PlayZonePresenter が判断する
+                CustomLogger.Info($"配置済みカードクリック: {cardData.CardName} (InstanceId: {instanceId})", LogTagUtil.TagCard);
+                BattleEventBus.Publish(new CardPlacedClickedEvent(this));
             }
             else
             {
                 CardDetailView.I.Show(cardData);
-                CustomLogger.Info($"TODO:カード情報を表示: {cardData.CardName} (InstanceId: {instanceId})", LogTagUtil.TagCard);
+                CustomLogger.Info($"カード情報を表示: {cardData.CardName} (InstanceId: {instanceId})", LogTagUtil.TagCard);
             }
         }
 
@@ -192,14 +190,14 @@ namespace TechC.ODDESEY.Battle
         /// </summary>
         public void SetPlacedParent(Transform newParent)
         {
-            isPlaced = true;//OnEndDrag の手札戻しをブロックする
-            transform.SetParent(newParent); // anchoredPosition リセットもここで行う
+            isPlaced = true;
+            transform.SetParent(newParent);
             transform.localPosition = Vector3.zero;
-            cardImage.raycastTarget = true; // ドロップ判定を再度有効化
+            cardImage.raycastTarget = true;
         }
 
         /// <summary>
-        /// スロットから手札へ戻すときに呼ぶ（スロットの取り外しボタンなど）。
+        /// スロットから手札へ戻す。PlayZonePresenter から呼ぶ。
         /// </summary>
         public void ReturnToHand(Transform handParent)
         {
@@ -208,10 +206,9 @@ namespace TechC.ODDESEY.Battle
             rectTransform.anchoredPosition = dealTargetPos;
         }
 
+        public CardInstance CardInstance => cardInstance;
         public CardData CardData => cardData;
         public int InstanceId => instanceId;
-        public Vector2 DealTargetPos => dealTargetPos;
-        public bool IsDealing => isDealing;
         public bool IsPlaced => isPlaced;
     }
 }

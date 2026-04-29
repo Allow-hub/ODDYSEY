@@ -13,5 +13,6 @@ namespace TechC.ODDESEY.Util
         public static readonly string TagInput = "input";
         public static readonly string TagBattle = "battle";
         public static readonly string TagCard = "card";
+        public static readonly string TagCamera = "camera";
     }
 }

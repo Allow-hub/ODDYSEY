@@ -214,6 +214,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a7926e6e4aff4148a717adce173d18b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  attackCameraData: {fileID: 11400000, guid: 68106ed16e925d3468cbc507fa801a3d, type: 2}
 --- !u!95 &2635887138843171673
 Animator:
   serializedVersion: 5

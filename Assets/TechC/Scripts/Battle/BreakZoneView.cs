@@ -1,4 +1,3 @@
-using System;
 using Cysharp.Threading.Tasks;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
@@ -10,7 +9,12 @@ namespace TechC.ODDESEY.Battle
 {
     /// <summary>
     /// カードをドロップすると「砕く」処理を行う専用UIエリア。
-    /// カードは消滅し、LuckConversionRate の分だけ運ゲージが回復する。
+    ///
+    /// 変更点：
+    ///   - OnCardBroken event を廃止。
+    ///     BattleController が直接購読していた event の代わりに
+    ///     BattleEventBus.Publish(CardBrokenEvent) で通知する。
+    ///   - BattleController 側の OnCardBroken -= 購読解除も不要になった。
     /// </summary>
     public class BreakZoneView : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPointerExitHandler
     {
@@ -22,13 +26,6 @@ namespace TechC.ODDESEY.Battle
 
         [SerializeField] private BattleView battleView;
 
-        /// <summary>
-        /// カードが砕かれたときに呼ばれるコールバック。
-        /// 引数は（砕かれた CardView, 回復する運ゲージ量）。
-        /// BattleController / PlayZonePresenter が登録する。
-        /// </summary>
-        public event Action<CardView, float> OnCardBroken;
-
         // -------------------------------------------------------
         // IDropHandler
         // -------------------------------------------------------
@@ -38,7 +35,6 @@ namespace TechC.ODDESEY.Battle
             var cardView = eventData.pointerDrag?.GetComponent<CardView>();
             if (cardView == null) return;
 
-            // スロットに配置済みのカードは砕けない
             if (cardView.IsPlaced)
             {
                 CustomLogger.Info($"配置済みのカードは砕けない: {cardView.CardData.CardName}", LogTagUtil.TagCard);
@@ -74,21 +70,16 @@ namespace TechC.ODDESEY.Battle
         private void BreakCard(CardView cardView)
         {
             float luckGain = cardView.CardData.LuckConversionRate;
-
-            CustomLogger.Info($"カードを砕く: {cardView.CardData.CardName} → 運ゲージ +{luckGain}",LogTagUtil.TagCard);
-
-            // 演出を再生してから通知（演出は CardView 側が持つ）
+            CustomLogger.Info($"カードを砕く: {cardView.CardData.CardName} → 運ゲージ +{luckGain}", LogTagUtil.TagCard);
             PlayBreakAndNotify(cardView, luckGain).Forget();
         }
 
         private async UniTaskVoid PlayBreakAndNotify(CardView cardView, float luckGain)
         {
             await cardView.PlayBreakAnimationAsync();
-            battleView.RemoveCardAsync(cardView.InstanceId).Forget(); // アニメーション完了後にカードを View から削除
+            battleView.RemoveCardAsync(cardView.InstanceId).Forget();
 
-            // アニメーション完了後にロジック側へ通知
-            // （PlayBreakAnimationAsync の中で Destroy まで行う）
-            OnCardBroken?.Invoke(cardView, luckGain);
+            BattleEventBus.Publish(new CardBrokenEvent(cardView, luckGain));
         }
 
         private void SetHighlight(bool on)

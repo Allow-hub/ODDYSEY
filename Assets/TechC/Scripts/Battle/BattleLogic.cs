@@ -73,8 +73,8 @@ namespace TechC.ODDESEY.Battle
             luckGauge = new LuckGaugeModel();
             luckGauge.Add(MainManager.I?.LuckGaugeValue ?? 0f);
 
-            enemyHp = 20; // test
-            enemyHpMax = 20;
+            enemyHp = context.CurrentEnemy.Hp; // test
+            enemyHpMax = context.CurrentEnemy.Hp;
 
             foreach (var pair in context.Deck)
                 for (int i = 0; i < pair.Value; i++)
@@ -166,7 +166,7 @@ namespace TechC.ODDESEY.Battle
             playerHp = Mathf.Max(0, playerHp - actualDamage);
             result.PlayerHpAfter = playerHp;
 
-            Debug.Log($"TakePlayerDamage: raw={damage} reduced={actualDamage} hp={playerHp}");
+            CustomLogger.Info($"TakePlayerDamage: raw={damage} reduced={actualDamage} hp={playerHp}", LogTagUtil.TagCard);
 
             if (playerHp <= 0)
             {
@@ -186,6 +186,12 @@ namespace TechC.ODDESEY.Battle
         public void SetDamageReduction(int rate) => currentTurnDamageReductionRate = Mathf.Clamp(rate, 0, 100);
 
         public void AddLuckGauge(float amount) => luckGauge.Add(amount);
+
+        /// <summary>
+        /// 運ゲージを消費する。PlayZoneView のカード強化操作から呼ばれる。
+        /// 消費できた場合は true / ゲージ不足の場合は false を返す。
+        /// </summary>
+        public bool TrySpendLuckGauge(float cost) => luckGauge.TrySpend(cost);
 
         /// <summary>
         /// ダメージ軽減率を適用する。

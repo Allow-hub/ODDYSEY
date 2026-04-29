@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
   m_Name: SelfDamageCarrdData
   m_EditorClassIdentifier: 
-  CardName: SelfDamageCarrdData
+  CardName: SelfDamage
   CardSprite: {fileID: 0}
   Effects:
   - {fileID: 11400000, guid: 6a91ef4e5b2e8a742bc681de2999ca99, type: 2}

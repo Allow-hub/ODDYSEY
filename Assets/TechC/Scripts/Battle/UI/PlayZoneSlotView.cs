@@ -1,6 +1,7 @@
 using System;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
