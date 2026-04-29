@@ -9,14 +9,15 @@ namespace TechC.ODDESEY.Battle
 {
     /// <summary>
     /// バトル全体の司令塔（MonoBehaviour）。
-    /// BattleLogic（純粋C#）と BattleView（表示）を所有し橋渡しする。
-    /// アニメーション待ちは UniTask で順序を保証する。
+    ///
+    /// 変更点：
+    ///   - LuckGaugeSpendRequestEvent を購読。
+    ///     PlayZoneView からのゲージ消費要求を BattleLogic に委譲し、
+    ///     結果を OnResult コールバックで返す。
+    ///   - 消費後に LuckGaugeChangedEvent を発行して LuckGaugeView を即時更新。
     /// </summary>
     public class BattleController : MonoBehaviour
     {
-        // -------------------------------------------------------
-        // MainManager へ通知するイベント
-        // -------------------------------------------------------
         public event Action OnBattleWon;
         public event Action OnBattleLost;
 
@@ -30,18 +31,14 @@ namespace TechC.ODDESEY.Battle
         public void Initialize()
         {
             battleLogic = new BattleLogic();
-
             battleView.Init();
-            breakZoneView.OnCardBroken += OnCardBroken;
 
-            // バトル開始（非同期で回す）
+            BattleEventBus.Subscribe<CardBrokenEvent>(OnCardBroken);
+            BattleEventBus.Subscribe<LuckGaugeSpendRequestEvent>(OnLuckGaugeSpendRequested);
+
             RunBattleAsync().Forget();
         }
 
-        /// <summary>
-        /// バトル全体を非同期で回すメインループ。
-        /// ターン開始 → ユーザー入力待ち → カード解決 → を繰り返す。
-        /// </summary>
         private async UniTaskVoid RunBattleAsync()
         {
             battleLogic.StartBattle(MainManager.I?.GameContext);
@@ -49,12 +46,9 @@ namespace TechC.ODDESEY.Battle
 
             while (battleLogic.IsBattleActive)
             {
-                // 1. ターン開始：ドロー・敵カード配置
                 var turnData = battleLogic.BeginTurn();
-                // プレイゾーンのカード配置を View に反映
                 playZonePresenter.SetupTurn(turnData, turnData.Hand);
 
-                // 1ターン目だけバトル開始演出を再生する
                 if (isFirstTurn)
                 {
                     await battleView.PlayBattleStartAsync(turnData, MainManager.I?.GameContext.CurrentEnemy);
@@ -63,43 +57,35 @@ namespace TechC.ODDESEY.Battle
                 else
                     await battleView.ShowTurnStartAsync(turnData);
 
-                // 3. プレイヤーの入力待ち（ターン確定ボタンが押されるまでブロック）
                 await battleView.WaitForPlayerConfirmAsync();
 
-                // 4. ターン確定：プレイゾーンのカードを左から順に解決
                 var resolveResults = battleLogic.ConfirmTurn();
                 CustomLogger.Info($"カード解決開始: {resolveResults.Count}枚", LogTagUtil.TagBattle);
 
                 foreach (var result in resolveResults)
                 {
-                    // カード1枚ごとにアニメーションを待つ
                     await battleView.PlayCardResolveAsync(result);
 
                     if (result.DamageDealt > 0)
                     {
                         if (result.IsPlayer)
-                            // プレイヤーが攻撃 → 敵のHPが減る
                             await battleView.UpdateEnemyHpAsync(result.EnemyHpAfter, battleLogic.EnemyHpMax);
                         else
-                            // 敵が攻撃 → プレイヤーのHPが減る
                             await battleView.UpdatePlayerHpAsync(result.PlayerHpAfter, battleLogic.PlayerHpMax);
                     }
-                    // 自傷ダメージ
+
                     var selfDamage = result.GetExtra<int>(ResultKeys.SelfDamageDealt);
                     if (selfDamage > 0)
                     {
                         if (result.IsPlayer)
-                            // プレイヤーのカード → プレイヤーが自傷
                             await battleView.UpdatePlayerHpAsync(result.PlayerHpAfter, battleLogic.PlayerHpMax);
                         else
-                            // 敵のカード → 敵が自傷
                             await battleView.UpdateEnemyHpAsync(result.EnemyHpAfter, battleLogic.EnemyHpMax);
                     }
-                    // 途中で勝敗が確定したらループを抜ける
+
                     if (result.IsBattleEnd)
                     {
-                        MainManager.I?.SetLackGaugeValue(battleLogic.LuckGauge); // 最終的なゲージ値を MainManager に渡す
-                        // 6. 勝敗演出 → MainManager へ通知
+                        MainManager.I?.SetLackGaugeValue(battleLogic.LuckGauge);
                         if (result.IsWon)
                         {
                             await battleView.ShowWinEffectAsync();
@@ -111,29 +97,28 @@ namespace TechC.ODDESEY.Battle
                             OnBattleLost?.Invoke();
                         }
                     }
+
                     CustomLogger.Info($"カード「{result.DamageDealt}」解決完了 (isHit={result.IsHit}, Player={result.IsPlayer})", LogTagUtil.TagBattle);
-                    await UniTask.Delay(1000); // 解決結果のログが見やすくなるように1フレーム待つ
+                    await UniTask.Delay(1000);
                 }
 
-                // 5. ターン終了処理
                 await battleView.RemoveUsedCardsAsync(resolveResults);
                 battleLogic.EndTurn();
                 await battleView.UpdateLuckGaugeAsync(
-                        battleLogic.LuckGauge,
-                        battleLogic.LuckGaugeMax,
-                        battleLogic.IsHotMode
+                    battleLogic.LuckGauge,
+                    battleLogic.LuckGaugeMax,
+                    battleLogic.IsHotMode
                 );
             }
         }
 
         /// <summary>
-        /// カードはゲージの更新支持
+        /// カードが砕かれたとき。ゲージを増やして UI を更新する。
         /// </summary>
-        /// <param name="cardView">砕いたカード</param>
-        /// <param name="luckGain">運ゲー時のチャージ量</param>
-        private void OnCardBroken(CardView cardView, float luckGain)
+        private void OnCardBroken(CardBrokenEvent ev)
         {
-            battleLogic.AddLuckGauge(luckGain);
+            battleLogic.AddLuckGauge(ev.LuckGain);
+            PublishLuckGaugeChanged();
 
             battleView.UpdateLuckGaugeAsync(
                 battleLogic.LuckGauge,
@@ -142,10 +127,36 @@ namespace TechC.ODDESEY.Battle
             ).Forget();
         }
 
+        /// <summary>
+        /// PlayZoneView からのゲージ消費要求。
+        /// TrySpendLuckGauge() で消費を試みて結果を OnResult で返す。
+        /// 成功時は LuckGaugeChangedEvent を発行して UI を即時同期する。
+        /// </summary>
+        private void OnLuckGaugeSpendRequested(LuckGaugeSpendRequestEvent ev)
+        {
+            bool success = battleLogic.TrySpendLuckGauge(ev.Cost);
+            ev.OnResult?.Invoke(success);
+
+            if (success)
+                PublishLuckGaugeChanged();
+        }
+
+        /// <summary>
+        /// LuckGaugeChangedEvent を発行して全購読者に即時通知する。
+        /// </summary>
+        private void PublishLuckGaugeChanged()
+        {
+            BattleEventBus.Publish(new LuckGaugeChangedEvent(
+                battleLogic.LuckGauge,
+                battleLogic.LuckGaugeMax,
+                battleLogic.IsHotMode
+            ));
+        }
+
         private void OnDestroy()
         {
-            if (breakZoneView != null)
-                breakZoneView.OnCardBroken -= OnCardBroken;
+            BattleEventBus.Unsubscribe<CardBrokenEvent>(OnCardBroken);
+            BattleEventBus.Unsubscribe<LuckGaugeSpendRequestEvent>(OnLuckGaugeSpendRequested);
         }
     }
 }

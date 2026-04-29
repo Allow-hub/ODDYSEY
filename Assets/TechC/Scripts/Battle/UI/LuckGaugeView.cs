@@ -6,14 +6,19 @@ using UnityEngine.UI;
 namespace TechC.ODDESEY.Battle
 {
     /// <summary>
-    /// 運ゲージの表示を管理する
+    /// 運ゲージの表示を管理する。
+    ///
+    /// 変更点：
+    ///   - LuckGaugeChangedEvent を購読。
+    ///     PlayZoneView のカード強化でゲージが消費されたとき、
+    ///     アニメーションなしで即時 UI を更新する。
+    ///   - ターン終了時の UpdateGaugeAsync はそのまま（アニメあり）。
     /// </summary>
     public class LuckGaugeView : MonoBehaviour
     {
         [SerializeField] private Slider gaugeSlider;
         [SerializeField] private Image fillImage;
         [SerializeField] private TextMeshProUGUI gaugeText;
-        // [SerializeField] private GameObject hotModeEffect; // 激アツ演出オブジェクト
 
         [Header("Color")]
         [SerializeField] private Color normalColor = Color.yellow;
@@ -22,19 +27,27 @@ namespace TechC.ODDESEY.Battle
         [Header("Animation")]
         [SerializeField] private float slideDuration = 0.3f;
 
+        private void OnEnable()
+        {
+            // ゲージ即時変化（カード強化によるゲージ消費など）を購読
+            BattleEventBus.Subscribe<LuckGaugeChangedEvent>(OnLuckGaugeChanged);
+        }
+
+        private void OnDisable()
+        {
+            BattleEventBus.Unsubscribe<LuckGaugeChangedEvent>(OnLuckGaugeChanged);
+        }
+
         public void Setup(float max)
         {
             gaugeSlider.maxValue = max;
             gaugeSlider.value = 0f;
             fillImage.color = normalColor;
             UpdateText(0f, max);
-
-            // if (hotModeEffect != null)
-            //     hotModeEffect.SetActive(false);
         }
 
         /// <summary>
-        /// ゲージをアニメーション付きで更新する
+        /// ゲージをアニメーション付きで更新する（ターン終了時など）。
         /// </summary>
         public async UniTask UpdateGaugeAsync(float current, float max, bool isHotMode)
         {
@@ -43,7 +56,7 @@ namespace TechC.ODDESEY.Battle
         }
 
         /// <summary>
-        /// アニメーションなしで即時反映（運ゲージ消費時など）
+        /// アニメーションなしで即時反映（Setup 時・運ゲージ消費時）。
         /// </summary>
         public void UpdateGaugeImmediate(float current, float max, bool isHotMode)
         {
@@ -51,6 +64,23 @@ namespace TechC.ODDESEY.Battle
             UpdateText(current, max);
             UpdateHotMode(isHotMode);
         }
+
+        // ──────────────────────────────────────────────────────────
+        // イベント受信
+        // ──────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// BattleController がゲージ変化後に発行するイベントを受信して即時更新。
+        /// アニメーションは不要（プレイヤー操作への即時フィードバック）。
+        /// </summary>
+        private void OnLuckGaugeChanged(LuckGaugeChangedEvent ev)
+        {
+            UpdateGaugeImmediate(ev.Current, ev.Max, ev.IsHotMode);
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // 内部処理
+        // ──────────────────────────────────────────────────────────
 
         private async UniTask SlideToAsync(float current, float max)
         {
@@ -72,9 +102,6 @@ namespace TechC.ODDESEY.Battle
         private void UpdateHotMode(bool isHotMode)
         {
             fillImage.color = isHotMode ? hotModeColor : normalColor;
-
-            // if (hotModeEffect != null)
-            //     hotModeEffect.SetActive(isHotMode);
         }
 
         private void UpdateText(float current, float max)

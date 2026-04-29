@@ -188,6 +188,12 @@ namespace TechC.ODDESEY.Battle
         public void AddLuckGauge(float amount) => luckGauge.Add(amount);
 
         /// <summary>
+        /// 運ゲージを消費する。PlayZoneView のカード強化操作から呼ばれる。
+        /// 消費できた場合は true / ゲージ不足の場合は false を返す。
+        /// </summary>
+        public bool TrySpendLuckGauge(float cost) => luckGauge.TrySpend(cost);
+
+        /// <summary>
         /// ダメージ軽減率を適用する。
         /// </summary>
         /// <param name="rawDamage"></param>
