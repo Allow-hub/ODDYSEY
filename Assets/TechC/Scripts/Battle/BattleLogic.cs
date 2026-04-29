@@ -73,8 +73,8 @@ namespace TechC.ODDESEY.Battle
             luckGauge = new LuckGaugeModel();
             luckGauge.Add(MainManager.I?.LuckGaugeValue ?? 0f);
 
-            enemyHp = 20; // test
-            enemyHpMax = 20;
+            enemyHp = context.CurrentEnemy.Hp; // test
+            enemyHpMax = context.CurrentEnemy.Hp;
 
             foreach (var pair in context.Deck)
                 for (int i = 0; i < pair.Value; i++)
