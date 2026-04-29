@@ -14,7 +14,7 @@ namespace TechC.ODDESEY.Battle
     /// リファクタリング変更点：
     ///   Execute シグネチャに EffectExecutionState を追加。State に書き込む。
     /// </summary>
-    [CreateAssetMenu(menuName = "CardEffect/HandSizeDamage")]
+    [CreateAssetMenu(menuName = "ODDESEY/CardEffect/HandSizeDamage")]
     public class HandSizeDamageEffect : CardEffectBase
     {
         [Header("乗数（範囲）")]

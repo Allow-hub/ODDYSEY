@@ -9,10 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0f8ff8fe52956e2428d77780aac399a5, type: 3}
-  m_Name: DefenceCardData
+  m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
+  m_Name: CritCardData
   m_EditorClassIdentifier: 
-  ProbabilityMin: 0.5
-  ProbabilityMax: 1
-  ReductionMin: 20
-  ReductionMax: 60
+  CardName: Crit
+  CardSprite: {fileID: 0}
+  Effects:
+  - {fileID: 11400000, guid: 012b70e0661f9bb4bada7b977118be39, type: 2}
+  LuckConversionRate: 20

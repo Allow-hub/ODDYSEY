@@ -4115,8 +4115,8 @@ MonoBehaviour:
   upDamageButton: {fileID: 8377909652062040723}
   downDamageButton: {fileID: 257325331967378621}
   damageText: {fileID: 2907213994008826433}
-  percentageAdjustCost: 10
-  damageAdjustCost: 15
+  percentageAdjustCost: 1
+  damageAdjustCost: 1
 --- !u!1 &6053088082864165021
 GameObject:
   m_ObjectHideFlags: 0

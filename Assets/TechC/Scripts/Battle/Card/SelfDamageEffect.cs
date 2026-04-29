@@ -13,7 +13,7 @@ namespace TechC.ODDESEY.Battle
     ///   Effects[1] = SelfDamageEffect (外れたとき 5 固定)
     /// ※ ProbabilityMin / ProbabilityMax は 1.0 固定にすること（判定不使用）。
     /// </summary>
-    [CreateAssetMenu(menuName = "CardEffect/SelfDamage")]
+    [CreateAssetMenu(menuName = "ODDESEY/CardEffect/SelfDamage")]
     public class SelfDamageEffect : CardEffectBase
     {
         [Header("自傷ダメージ（固定値）")]

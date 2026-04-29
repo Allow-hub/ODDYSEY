@@ -11,7 +11,7 @@ namespace TechC.ODDESEY.Battle
     ///   UsePositionBonus = true のとき、RequiredSlotIndex と一致するスロットに
     ///   置かれた場合のみ PositionBonusDamage を追加で与える。
     /// </summary>
-    [CreateAssetMenu(menuName = "CardEffect/Damage")]
+    [CreateAssetMenu(menuName = "ODDESEY/CardEffect/Damage")]
     public class DamageEffect : CardEffectBase
     {
         [Header("ダメージ（範囲）")]

@@ -28,7 +28,7 @@ namespace TechC.ODDESEY.Battle
     ///   状態異常固有の追加情報が必要になった場合は state.Extras（あれば）か
     ///   Result.SetExtra() を使う。
     /// </summary>
-    [CreateAssetMenu(menuName = "CardEffect/Status")]
+    [CreateAssetMenu(menuName = "ODDESEY/CardEffect/Status")]
     public class StatusEffect : CardEffectBase
     {
         [Header("付与する状態異常")]

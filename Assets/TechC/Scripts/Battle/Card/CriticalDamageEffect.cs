@@ -11,7 +11,7 @@ namespace TechC.ODDESEY.Battle
     ///   BaseDamageMin / Max  → 確定ダメージ部分
     ///   CriticalMultiplier   → クリティカル時のダメージ倍率
     /// </summary>
-    [CreateAssetMenu(menuName = "CardEffect/CriticalDamage")]
+    [CreateAssetMenu(menuName = "ODDESEY/CardEffect/CriticalDamage")]
     public class CriticalDamageEffect : CardEffectBase
     {
         [Header("確定ダメージ（範囲）")]

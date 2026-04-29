@@ -14,10 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Entries:
   - Card: {fileID: 11400000, guid: cb9d077bad7863d4596898a4d8dde585, type: 2}
-    Count: 20
+    Count: 0
   - Card: {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
     Count: 0
   - Card: {fileID: 11400000, guid: 54567c322155dfe448f531c1bb0fc1e8, type: 2}
     Count: 0
   - Card: {fileID: 11400000, guid: 8470fda4821535344a20ffe84cad5f17, type: 2}
     Count: 0
+  - Card: {fileID: 11400000, guid: d81946b5d8b4acf49a683882f7db982c, type: 2}
+    Count: 10

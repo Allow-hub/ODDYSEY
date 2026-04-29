@@ -16,7 +16,7 @@ namespace TechC.ODDESEY.Battle
     /// ※ ProbabilityMin / Max は通常 1.0 固定（外れない）。
     ///   ゲージ連携で軽減率を上乗せする場合は AddBonusValue() を使う。
     /// </summary>
-    [CreateAssetMenu(menuName = "CardEffect/Defense")]
+    [CreateAssetMenu(menuName = "ODDESEY/CardEffect/Defense")]
     public class DefenseEffect : CardEffectBase
     {
         [Header("軽減率（%）")]
