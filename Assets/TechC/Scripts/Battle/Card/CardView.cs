@@ -1,4 +1,3 @@
-using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -46,6 +45,9 @@ namespace TechC.ODDESEY.Battle
         private Vector2 dealTargetPos;
         private bool isDealing = false;
 
+        private float lastProbability;
+        private int lastDamage;
+
         /// <summary>
         /// スロットへの配置が確定したかどうか。
         /// EventSystem は OnDrop → OnEndDrag の順で呼ぶため、
@@ -59,6 +61,16 @@ namespace TechC.ODDESEY.Battle
             rectTransform = GetComponent<RectTransform>();
         }
 
+        private void Update()
+        {
+            if(cardData == null || cardInstance == null) return;
+            if(cardInstance.GetEffectiveValue(0) != lastDamage || cardInstance.GetEffectiveProbability(0) != lastProbability)
+            {
+                RefreshDisplay();
+                lastDamage = cardInstance.GetEffectiveValue(0);
+                lastProbability = cardInstance.GetEffectiveProbability(0);
+            }
+        }
         /// <summary>
         /// Setup から Action の引数を削除。
         /// 購読は呼び出し側（BattleView / PlayZonePresenter）が BattleEventBus で行う。
@@ -71,6 +83,9 @@ namespace TechC.ODDESEY.Battle
             isPlaced = false;
 
             rootCanvas = GetComponentInParent<Canvas>();
+
+            lastDamage = cardInstance.GetEffectiveValue(0);
+            lastProbability = cardInstance.GetEffectiveProbability(0);
             RefreshDisplay();
         }
 

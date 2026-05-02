@@ -31,6 +31,7 @@ namespace TechC.ODDESEY.Battle
 
         private LuckGaugeModel luckGauge;
         private CardResolver resolver; // ← 解決を委譲するクラス
+        private List<ITurnEffect> activeEffects = new();
 
         private int playerHp;
         private int enemyHp;
@@ -94,6 +95,10 @@ namespace TechC.ODDESEY.Battle
         public TurnData BeginTurn()
         {
             turnCount++;
+
+            foreach (var effect in activeEffects)
+                effect.OnTurnStart(this);
+
             DrawToFull();
             PlaceEnemyCards();
 
@@ -141,6 +146,7 @@ namespace TechC.ODDESEY.Battle
             luckGauge.TickDown();
             for (int i = 0; i < playZone.Length; i++)
                 playZone[i]?.Clear();
+            activeEffects.RemoveAll(e => e.IsExpired);
         }
 
         /// <summary>敵にダメージを与える。</summary>
@@ -193,6 +199,9 @@ namespace TechC.ODDESEY.Battle
         /// </summary>
         public bool TrySpendLuckGauge(float cost) => luckGauge.TrySpend(cost);
 
+
+        public void AddTurnEffect(ITurnEffect effect) => activeEffects.Add(effect);
+
         /// <summary>
         /// ダメージ軽減率を適用する。
         /// </summary>
@@ -212,14 +221,19 @@ namespace TechC.ODDESEY.Battle
                 if (deck.Count == 0) ShuffleDiscardToDeck();
                 if (deck.Count == 0) break;
 
-                var cardData = deck[0];
-                deck.RemoveAt(0);
+                // ▼ ランダムドローに変更
+                int index = UnityEngine.Random.Range(0, deck.Count);
+                var cardData = deck[index];
+                deck.RemoveAt(index);
 
                 var instance = new CardInstance(cardData);
                 bool isHotMode = luckGauge?.IsHotMode ?? false;
                 instance.RollValues(isHotMode);
                 hand.Add(instance);
             }
+
+            foreach (var effect in activeEffects)
+                effect.OnAfterDraw(this, hand);
 
             CustomLogger.Info(
                 $"ドロー完了: 手札={hand.Count}, デッキ={deck.Count}, 捨て札={discardPile.Count}",
