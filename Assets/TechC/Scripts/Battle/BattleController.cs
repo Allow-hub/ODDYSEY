@@ -32,6 +32,7 @@ namespace TechC.ODDESEY.Battle
         {
             battleLogic = new BattleLogic();
             battleView.Init();
+            Time.timeScale = 3;
 
             BattleEventBus.Subscribe<CardBrokenEvent>(OnCardBroken);
             BattleEventBus.Subscribe<LuckGaugeSpendRequestEvent>(OnLuckGaugeSpendRequested);

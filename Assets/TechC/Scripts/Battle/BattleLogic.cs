@@ -221,8 +221,10 @@ namespace TechC.ODDESEY.Battle
                 if (deck.Count == 0) ShuffleDiscardToDeck();
                 if (deck.Count == 0) break;
 
-                var cardData = deck[0];
-                deck.RemoveAt(0);
+                // ▼ ランダムドローに変更
+                int index = UnityEngine.Random.Range(0, deck.Count);
+                var cardData = deck[index];
+                deck.RemoveAt(index);
 
                 var instance = new CardInstance(cardData);
                 bool isHotMode = luckGauge?.IsHotMode ?? false;
@@ -232,6 +234,7 @@ namespace TechC.ODDESEY.Battle
 
             foreach (var effect in activeEffects)
                 effect.OnAfterDraw(this, hand);
+
             CustomLogger.Info(
                 $"ドロー完了: 手札={hand.Count}, デッキ={deck.Count}, 捨て札={discardPile.Count}",
                 LogTagUtil.TagCard);
