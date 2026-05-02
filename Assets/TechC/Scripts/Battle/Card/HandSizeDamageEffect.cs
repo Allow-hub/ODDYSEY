@@ -72,6 +72,7 @@ namespace TechC.ODDESEY.Battle
                 : Random.Range(ProbabilityMin, ProbabilityMax);
 
             slot.Value = 0; // EvaluateResolve で上書きされる
+            slot.ValueRange = (MultiplierMin, MultiplierMax);
         }
     }
 }

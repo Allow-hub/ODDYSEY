@@ -60,6 +60,7 @@ namespace TechC.ODDESEY.Battle
             slot.Value = isHotMode
                 ? BaseDamageMax
                 : Random.Range(BaseDamageMin, BaseDamageMax + 1);
+            slot.ValueRange = (BaseDamageMin, BaseDamageMax);
         }
     }
 }

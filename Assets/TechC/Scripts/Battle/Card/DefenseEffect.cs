@@ -45,6 +45,7 @@ namespace TechC.ODDESEY.Battle
         {
             slot.RolledProbability = isHotMode ? ProbabilityMax : Random.Range(ProbabilityMin, ProbabilityMax);
             slot.Value = isHotMode ? ReductionMax : Random.Range(ReductionMin, ReductionMax + 1);
+            slot.ValueRange = (ReductionMin, ReductionMax);
         }
     }
 }

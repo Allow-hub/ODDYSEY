@@ -78,6 +78,7 @@ namespace TechC.ODDESEY.Battle
         public int GetBaseValue(int i) => slots[i].Value;
         public float GetBonusProbability(int i) => slots[i].BonusProbability;
         public int GetBonusValue(int i) => slots[i].BonusValue;
+        public (int, int) GetBaseValueRange(int i) => slots[i].ValueRange;
 
         public void SetBonusProbability(int i, float v) => slots[i].BonusProbability = v;
         public void SetBonusValue(int i, int v) => slots[i].BonusValue = v;

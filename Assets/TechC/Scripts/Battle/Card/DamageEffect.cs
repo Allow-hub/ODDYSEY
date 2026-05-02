@@ -73,6 +73,8 @@ namespace TechC.ODDESEY.Battle
             slot.Value = isHotMode
                 ? DamageMax
                 : Random.Range(DamageMin, DamageMax + 1);
+
+            slot.ValueRange = (DamageMin, DamageMax);
         }
     }
 }

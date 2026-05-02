@@ -71,9 +71,11 @@ namespace TechC.ODDESEY.Battle
     {
         public float RolledProbability;
         public int Value;
+        public (int,int) ValueRange; //効果の抽選範囲
 
         public float BonusProbability;
         public int BonusValue;
+
 
         public float EffectiveProbability => Mathf.Min(RolledProbability + BonusProbability, 1f);
         public int EffectiveValue => Value + BonusValue;

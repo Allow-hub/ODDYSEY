@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
@@ -5,8 +6,11 @@ using UnityEngine;
 
 namespace TechC.ODDESEY.Battle
 {
-    [CreateAssetMenu(menuName = "ODDESEY/CardEffect/ProbabilityEffect")]
-    public class ProbabilityEffect : CardEffectBase, ITurnEffect
+    /// <summary>
+    /// 効果数値を次のターン最大化
+    /// </summary>
+    [CreateAssetMenu(menuName = "ODDESEY/CardEffect/EffectiveEffect")]
+    public class EffectiveEffect : CardEffectBase, ITurnEffect
     {
         public bool IsExpired => isExpired;
         private bool isExpired = false;
@@ -17,8 +21,8 @@ namespace TechC.ODDESEY.Battle
             {
                 if (card.GetEffectiveProbability(0) != card.OriginalData.Effects[0].ProbabilityMax)
                 {
-                    CustomLogger.Info($"確率効果発動: {card.OriginalData.CardName} の確率を最大にする", LogTagUtil.TagCard);
-                    card.AddBonusProbability(0, card.OriginalData.Effects[0].ProbabilityMax- card.GetEffectiveProbability(0));
+                    CustomLogger.Info($"効果発動: {card.OriginalData.CardName} の効果数値を最大にする", LogTagUtil.TagCard);
+                    card.AddBonusValue(0, card.GetBaseValueRange(0).Item2 - card.GetEffectiveValue(0));
                 }
             }
             isExpired = true;
