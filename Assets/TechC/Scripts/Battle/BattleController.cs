@@ -83,6 +83,9 @@ namespace TechC.ODDESEY.Battle
                         else
                             await battleView.UpdateEnemyHpAsync(result.EnemyHpAfter, battleLogic.EnemyHpMax);
                     }
+                    bool counterTriggered = result.GetExtra<bool>(ResultKeys.CounterTriggered);
+                    if (counterTriggered)
+                        await battleView.UpdateEnemyHpAsync(result.EnemyHpAfter, battleLogic.EnemyHpMax);
 
                     if (result.IsBattleEnd)
                     {
@@ -97,6 +100,7 @@ namespace TechC.ODDESEY.Battle
                             await battleView.ShowLoseEffectAsync();
                             OnBattleLost?.Invoke();
                         }
+                        break;
                     }
 
                     CustomLogger.Info($"カード「{result.DamageDealt}」解決完了 (isHit={result.IsHit}, Player={result.IsPlayer})", LogTagUtil.TagBattle);

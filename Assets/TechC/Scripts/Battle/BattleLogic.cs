@@ -40,6 +40,12 @@ namespace TechC.ODDESEY.Battle
         private int turnCount;
         private EnemyData currentEnemy;
         private IEnemyCardPlacementStrategy enemyPlacementStrategy;
+        
+        private int currentTurnEnemyProbabilityReductionRate = 0; // 確率ダウン量（%）
+
+        private bool hasCounter = false;     // カウンター登録済みか
+        private float counterProbability = 0f; // 反撃発動確率
+        private int counterDamage = 0;       // 反撃ダメージ量
 
         // ─── ダメージ軽減バッファ ─────────────────────────────────────────
         private int currentTurnDamageReductionRate = 0;
@@ -127,6 +133,10 @@ namespace TechC.ODDESEY.Battle
         {
             // ターン開始時に軽減率をリセット
             currentTurnDamageReductionRate = 0;
+            currentTurnEnemyProbabilityReductionRate = 0;
+            hasCounter = false;
+            counterProbability = 0f;
+            counterDamage = 0;
 
             var results = resolver.ResolveAll(
                 playZone,
@@ -294,6 +304,54 @@ namespace TechC.ODDESEY.Battle
                     $"敵カード配置: {cardData.CardName} → Slot {slotIndex}",
                     LogTagUtil.TagBattle);
             }
+        }
+
+
+
+        // ─── 公開メソッド（SetDamageReduction の隣に追加）────────────────────
+
+        /// <summary>
+        /// このターンの敵カード命中確率ダウン量を設定する。
+        /// ProbabilityDownEffect から呼ばれる。
+        /// </summary>
+        public void SetEnemyProbabilityReduction(int rate)
+            => currentTurnEnemyProbabilityReductionRate = Mathf.Clamp(rate, 0, 100);
+
+        /// <summary>
+        /// 現在の確率ダウン量を返す。CardResolver が敵カード配置時に参照する。
+        /// </summary>
+        public int EnemyProbabilityReductionRate => currentTurnEnemyProbabilityReductionRate;
+
+        /// <summary>
+        /// カウンター状態を登録する。CounterEffect から呼ばれる。
+        /// 複数登録時は最後の値で上書き（スタック設計は RegisterCounterStack に拡張）。
+        /// </summary>
+        public void RegisterCounter(float probability, int damage)
+        {
+            hasCounter = true;
+            counterProbability = probability;
+            counterDamage = damage;
+        }
+
+        /// <summary>
+        /// 敵の攻撃が命中したとき CardResolver から呼ばれる。
+        /// カウンター登録済みであれば確率判定して反撃ダメージを与える。
+        /// </summary>
+        /// <returns>反撃が発動したか</returns>
+        public bool TryCounter(CardResolveResult result)
+        {
+            if (!hasCounter) return false;
+
+            bool triggered = UnityEngine.Random.value <= counterProbability;
+            if (!triggered) return false;
+
+            TakeEnemyDamage(counterDamage, result);
+
+            CustomLogger.Info(
+                $"カウンター発動: {counterDamage}ダメージ → 敵HP={EnemyHp}",
+                LogTagUtil.TagCard);
+
+            return true;
         }
     }
 }

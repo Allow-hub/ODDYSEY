@@ -46,5 +46,6 @@ namespace TechC.ODDESEY.Battle
         public const string SelfDamageDealt = "SelfDamageDealt";
         public const string IsCritical = "IsCritical";
         public const string ReductionRate = "ReductionRate";
+        public const string CounterTriggered = "CounterTriggered";
     }
 }
