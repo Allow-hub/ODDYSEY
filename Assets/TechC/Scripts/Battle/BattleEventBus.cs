@@ -81,6 +81,21 @@ namespace TechC.ODDESEY.Battle
     }
 
     /// <summary>
+    /// 運ゲージの返還を要求するイベント。
+    /// 確率・ダメージのダウン操作時に PlayZoneView から発行し、
+    /// BattleController が BattleLogic.AddLuckGauge() に委譲する。
+    /// </summary>
+    public class LuckGaugeRefundEvent
+    {
+        public float Amount { get; }
+
+        public LuckGaugeRefundEvent(float amount)
+        {
+            Amount = amount;
+        }
+    }
+
+    /// <summary>
     /// バトルシーン内で使うシンプルな静的 EventBus。
     /// UniRx 不要・型安全・購読解除は MonoBehaviour の OnDisable/OnDestroy で行う。
     ///

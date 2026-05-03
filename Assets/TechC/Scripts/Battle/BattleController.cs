@@ -36,6 +36,7 @@ namespace TechC.ODDESEY.Battle
 
             BattleEventBus.Subscribe<CardBrokenEvent>(OnCardBroken);
             BattleEventBus.Subscribe<LuckGaugeSpendRequestEvent>(OnLuckGaugeSpendRequested);
+            BattleEventBus.Subscribe<LuckGaugeRefundEvent>(OnLuckGaugeRefunded);
 
             RunBattleAsync().Forget();
         }
@@ -157,11 +158,20 @@ namespace TechC.ODDESEY.Battle
                 battleLogic.IsHotMode
             ));
         }
-
+        /// <summary>
+        /// PlayZoneView からのゲージ返還要求。
+        /// ダウン操作で戻した分のゲージを BattleLogic に加算し、UI を即時同期する。
+        /// </summary>
+        private void OnLuckGaugeRefunded(LuckGaugeRefundEvent ev)
+        {
+            battleLogic.AddLuckGauge(ev.Amount);
+            PublishLuckGaugeChanged();
+        }
         private void OnDestroy()
         {
             BattleEventBus.Unsubscribe<CardBrokenEvent>(OnCardBroken);
             BattleEventBus.Unsubscribe<LuckGaugeSpendRequestEvent>(OnLuckGaugeSpendRequested);
+            BattleEventBus.Unsubscribe<LuckGaugeRefundEvent>(OnLuckGaugeRefunded);
         }
     }
 }

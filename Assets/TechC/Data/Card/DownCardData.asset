@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
   m_Name: DownCardData
   m_EditorClassIdentifier: 
-  CardName: 
+  CardName: Down
   CardSprite: {fileID: 0}
-  Effects: []
+  Effects:
+  - {fileID: 11400000, guid: d385c5e6957bb334d91b65a4d25ac7d6, type: 2}
   LuckConversionRate: 20

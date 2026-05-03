@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ProbabilityMin: 1
   ProbabilityMax: 1
-  ReductionRateMin: 20
-  ReductionRateMax: 40
+  ReductionRateMin: 60
+  ReductionRateMax: 100

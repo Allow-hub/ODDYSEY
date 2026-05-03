@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
   m_Name: CounterCardData
   m_EditorClassIdentifier: 
-  CardName: 
+  CardName: Counter
   CardSprite: {fileID: 0}
-  Effects: []
+  Effects:
+  - {fileID: 11400000, guid: 5244864a6f81ef2439985024ffe15cf1, type: 2}
   LuckConversionRate: 20
