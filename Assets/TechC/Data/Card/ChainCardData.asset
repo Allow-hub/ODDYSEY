@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
-  m_Name: EffeData
+  m_Name: ChainCardData
   m_EditorClassIdentifier: 
-  CardName: Eff
+  CardName: Chain
   CardSprite: {fileID: 0}
   Effects:
-  - {fileID: 11400000, guid: c8ef2ccf816bbdc47af9758f2414c444, type: 2}
+  - {fileID: 11400000, guid: 6c14bfd56ea352941903c5fd75114c99, type: 2}
   LuckConversionRate: 20

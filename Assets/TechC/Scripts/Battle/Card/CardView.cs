@@ -12,11 +12,9 @@ namespace TechC.ODDESEY.Battle
     /// 手札のカード1枚を表す View クラス。
     ///
     /// 変更点：
-    ///   - onReturnRequested / onDroppedToSlot の Action を廃止。
-    ///     代わりに BattleEventBus にイベントを発行する。
-    ///   - isPlaced=true のときのクリックで ReturnToHand を直接呼ぶのをやめ、
-    ///     CardPlacedClickedEvent を発行するだけにした。
-    ///     「戻すかどうか」の判断は PlayZonePresenter 側に委譲。
+    ///   - Update() での毎フレーム比較を廃止。
+    ///     CardInstance.OnSlotValueChanged イベントを購読し、
+    ///     値が変わったときだけ RefreshDisplay() を呼ぶようにした。
     /// </summary>
     public class CardView : MonoBehaviour,
         IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
@@ -45,14 +43,10 @@ namespace TechC.ODDESEY.Battle
         private Vector2 dealTargetPos;
         private bool isDealing = false;
 
-        private float lastProbability;
-        private int lastDamage;
+        // ▼ 削除：lastProbability / lastDamage フィールドは不要になった
+        // private float lastProbability;
+        // private int lastDamage;
 
-        /// <summary>
-        /// スロットへの配置が確定したかどうか。
-        /// EventSystem は OnDrop → OnEndDrag の順で呼ぶため、
-        /// OnDrop 側で true にしておくと OnEndDrag の手札戻しを防げる。
-        /// </summary>
         private bool isPlaced = false;
 
         private void Awake()
@@ -61,22 +55,11 @@ namespace TechC.ODDESEY.Battle
             rectTransform = GetComponent<RectTransform>();
         }
 
-        private void Update()
-        {
-            if(cardData == null || cardInstance == null) return;
-            if(cardInstance.GetEffectiveValue(0) != lastDamage || cardInstance.GetEffectiveProbability(0) != lastProbability)
-            {
-                RefreshDisplay();
-                lastDamage = cardInstance.GetEffectiveValue(0);
-                lastProbability = cardInstance.GetEffectiveProbability(0);
-            }
-        }
-        /// <summary>
-        /// Setup から Action の引数を削除。
-        /// 購読は呼び出し側（BattleView / PlayZonePresenter）が BattleEventBus で行う。
-        /// </summary>
         public void Setup(CardInstance cardInstance)
         {
+            // ▼ 前のインスタンスの購読を必ず解除してからセットアップ
+            UnsubscribeFromInstance();
+
             this.cardInstance = cardInstance;
             cardData = cardInstance.OriginalData;
             instanceId = cardInstance.InstanceId;
@@ -84,9 +67,24 @@ namespace TechC.ODDESEY.Battle
 
             rootCanvas = GetComponentInParent<Canvas>();
 
-            lastDamage = cardInstance.GetEffectiveValue(0);
-            lastProbability = cardInstance.GetEffectiveProbability(0);
+            // ▼ 値変更イベントを購読
+            cardInstance.OnSlotValueChanged += RefreshDisplay;
+
             RefreshDisplay();
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeFromInstance();
+        }
+
+        /// <summary>
+        /// 購読を安全に解除する。Setup 前・OnDestroy 両方から呼ぶ。
+        /// </summary>
+        private void UnsubscribeFromInstance()
+        {
+            if (cardInstance != null)
+                cardInstance.OnSlotValueChanged -= RefreshDisplay;
         }
 
         public void SetEnemyAppearance()
@@ -103,9 +101,6 @@ namespace TechC.ODDESEY.Battle
             damageText.text = $"{cardInstance.GetEffectiveValue(0)}";
         }
 
-        /// <summary>
-        /// ドロー・手札追加時のアニメーション。
-        /// </summary>
         public async UniTask PlayDealAnimationAsync(Vector2 startPos, Vector2 targetPos)
         {
             isDealing = true;
@@ -127,12 +122,9 @@ namespace TechC.ODDESEY.Battle
             isDealing = false;
         }
 
-        /// <summary>
-        /// カードを砕くアニメーション。
-        /// </summary>
         public async UniTask PlayBreakAnimationAsync()
         {
-            await UniTask.Delay(1); // 仮
+            await UniTask.Delay(1);
         }
 
         public void OnBeginDrag(PointerEventData eventData)
@@ -156,10 +148,6 @@ namespace TechC.ODDESEY.Battle
             transform.position = worldPos;
         }
 
-        /// <summary>
-        /// ドラッグ終了。
-        /// スロット未配置なら手札位置へ戻し、CardReturnedToHandEvent を発行。
-        /// </summary>
         public void OnEndDrag(PointerEventData eventData)
         {
             if (isDealing || isEnemy) return;
@@ -177,11 +165,6 @@ namespace TechC.ODDESEY.Battle
             BattleEventBus.Publish(new CardReturnedToHandEvent(this));
         }
 
-        /// <summary>
-        /// クリック処理。
-        ///   isPlaced=true → CardPlacedClickedEvent を発行。ReturnToHand は呼ばない。
-        ///   isPlaced=false → カード詳細を表示。
-        /// </summary>
         public void OnPointerClick(PointerEventData eventData)
         {
             if (eventData.dragging) return;
@@ -189,7 +172,6 @@ namespace TechC.ODDESEY.Battle
 
             if (isPlaced)
             {
-                // 「戻すかどうか」は PlayZonePresenter が判断する
                 CustomLogger.Info($"配置済みカードクリック: {cardData.CardName} (InstanceId: {instanceId})", LogTagUtil.TagCard);
                 BattleEventBus.Publish(new CardPlacedClickedEvent(this));
             }
@@ -200,9 +182,6 @@ namespace TechC.ODDESEY.Battle
             }
         }
 
-        /// <summary>
-        /// スロットへの配置が確定したときに PlayZoneSlotView から呼ぶ。
-        /// </summary>
         public void SetPlacedParent(Transform newParent)
         {
             isPlaced = true;
@@ -211,9 +190,6 @@ namespace TechC.ODDESEY.Battle
             cardImage.raycastTarget = true;
         }
 
-        /// <summary>
-        /// スロットから手札へ戻す。PlayZonePresenter から呼ぶ。
-        /// </summary>
         public void ReturnToHand(Transform handParent)
         {
             isPlaced = false;

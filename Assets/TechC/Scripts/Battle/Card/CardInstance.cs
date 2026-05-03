@@ -1,16 +1,17 @@
-using UnityEngine;
+using System;
 
 namespace TechC.ODDESEY.Battle
 {
     /// <summary>
     /// 手札に配られたカード1枚のインスタンス。
-    /// CardData への参照 + EffectSlot でロール済み値を保持する。
     ///
-    /// リファクタリング変更点：
-    ///   - ExecuteAll() を追加。CardResolver がこれを呼ぶことで、
-    ///     解決ループの責任を CardInstance 内に閉じ込めた。
-    ///   - EffectExecutionState の生成・管理は CardResolver が行う。
-    ///     CardInstance は「値の保持と効果の委譲」に専念する。
+    /// 変更点：
+    ///   - OnSlotValueChanged イベントを追加。
+    ///     SetBonusValue / SetBonusProbability / AddBonus系 が呼ばれたとき発火し、
+    ///     CardView の Update ポーリングを不要にした。
+    ///   - ResetIdCounter() を追加。
+    ///     バトル開始時に BattleLogic から呼ぶことで、static な nextId を
+    ///     バトルをまたいで無限に増え続ける問題を解消する。
     /// </summary>
     public class CardInstance
     {
@@ -26,6 +27,12 @@ namespace TechC.ODDESEY.Battle
 
         public bool IsRolled { get; private set; }
 
+        /// <summary>
+        /// ボーナス値・確率が変化したときに発火する。
+        /// CardView がこれを購読することで Update ポーリングを廃止できる。
+        /// </summary>
+        public event Action OnSlotValueChanged;
+
         public CardInstance(CardData data)
         {
             OriginalData = data;
@@ -38,9 +45,11 @@ namespace TechC.ODDESEY.Battle
         }
 
         /// <summary>
-        /// このカードのすべての Effect について RollValue() を呼び出し、ランダム値を決定する。
+        /// バトル開始時に呼ぶ。nextId をリセットしてIDの無限増加を防ぐ。
+        /// BattleLogic.StartBattle() の先頭で呼ぶこと。
         /// </summary>
-        /// <param name="isHotMode">運ゲージがたまっているか</param>
+        public static void ResetIdCounter() => nextId = 1;
+
         public void RollValues(bool isHotMode = false)
         {
             for (int i = 0; i < OriginalData.Effects.Count; i++)
@@ -48,30 +57,19 @@ namespace TechC.ODDESEY.Battle
             IsRolled = true;
         }
 
-        /// <summary>
-        /// このカードのすべての Effect について EvaluateResolve() を呼び出し、解決時の値を決定する。
-        /// </summary>
-        /// <param name="handCount">手札の数</param>
-        /// <param name="isHotMode">運ゲージがたまっているか</param>
         public void EvaluateResolveValues(int handCount, bool isHotMode = false)
         {
             for (int i = 0; i < OriginalData.Effects.Count; i++)
                 OriginalData.Effects[i].EvaluateResolve(slots[i], handCount, isHotMode);
         }
 
-        /// <summary>
-        /// このカードのすべての Effect を順番に実行する。
-        /// state は CardResolver が生成して渡す（Effect間通信の媒介）。
-        /// </summary>
-        /// <param name="context">外部リソースへのアクセス手段</param>
-        /// <param name="state">効果実行中の可変状態</param>
         public void ExecuteAll(EffectContext context, EffectExecutionState state)
         {
             for (int i = 0; i < OriginalData.Effects.Count; i++)
                 OriginalData.Effects[i].Execute(context, state, i);
         }
 
-        // ─── 値の取得・更新 ──────────────────────────────────────────────
+        // ─── 値の取得 ────────────────────────────────────────────────────
         public float GetEffectiveProbability(int i) => slots[i].EffectiveProbability;
         public int GetEffectiveValue(int i) => slots[i].EffectiveValue;
         public float GetBaseProbability(int i) => slots[i].RolledProbability;
@@ -80,12 +78,32 @@ namespace TechC.ODDESEY.Battle
         public int GetBonusValue(int i) => slots[i].BonusValue;
         public (int, int) GetBaseValueRange(int i) => slots[i].ValueRange;
 
-        public void SetBonusProbability(int i, float v) => slots[i].BonusProbability = v;
-        public void SetBonusValue(int i, int v) => slots[i].BonusValue = v;
-        public void AddBonusProbability(int i, float v) => slots[i].BonusProbability += v;
-        public void AddBonusValue(int i, int v) => slots[i].BonusValue += v;
+        // ─── 値の更新（変更後にイベント発火）────────────────────────────
+        public void SetBonusProbability(int i, float v)
+        {
+            slots[i].BonusProbability = v;
+            OnSlotValueChanged?.Invoke();
+        }
 
-        public bool TryExecuteEffect(int i) => Random.value <= GetEffectiveProbability(i);
+        public void SetBonusValue(int i, int v)
+        {
+            slots[i].BonusValue = v;
+            OnSlotValueChanged?.Invoke();
+        }
+
+        public void AddBonusProbability(int i, float v)
+        {
+            slots[i].BonusProbability += v;
+            OnSlotValueChanged?.Invoke();
+        }
+
+        public void AddBonusValue(int i, int v)
+        {
+            slots[i].BonusValue += v;
+            OnSlotValueChanged?.Invoke();
+        }
+
+        public bool TryExecuteEffect(int i) => UnityEngine.Random.value <= GetEffectiveProbability(i);
 
         public T GetEffect<T>(int i) where T : CardEffectBase
         {
@@ -104,6 +122,8 @@ namespace TechC.ODDESEY.Battle
                 slots[i].BonusProbability = 0;
                 slots[i].BonusValue = 0;
             }
+            // Reset後も購読者に通知して表示を同期
+            OnSlotValueChanged?.Invoke();
         }
     }
 }

@@ -64,6 +64,7 @@ namespace TechC.ODDESEY.Battle
         /// <summary>バトル開始：MainManager から呼ぶ。</summary>
         public void StartBattle(GameContext context)
         {
+            CardInstance.ResetIdCounter();
             playerHp = context.PlayerHp;
             PlayerHpMax = context.PlayerHpMax;
 
