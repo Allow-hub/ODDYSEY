@@ -132,16 +132,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 881903321172787403, guid: a581df6dba48b2c449bc6e850af49eb3,
-        type: 3}
-      propertyPath: m_Lens.FieldOfView
-      value: 90
-      objectReference: {fileID: 0}
-    - target: {fileID: 1131050946192815584, guid: a581df6dba48b2c449bc6e850af49eb3,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 2092432260690384989, guid: a581df6dba48b2c449bc6e850af49eb3,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -210,12 +200,12 @@ PrefabInstance:
     - target: {fileID: 3133558817554752861, guid: a581df6dba48b2c449bc6e850af49eb3,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: -7.9598217
       objectReference: {fileID: 0}
     - target: {fileID: 3133558817554752861, guid: a581df6dba48b2c449bc6e850af49eb3,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 3.1
       objectReference: {fileID: 0}
     - target: {fileID: 3133558817554752861, guid: a581df6dba48b2c449bc6e850af49eb3,
         type: 3}
@@ -271,11 +261,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchorMin.x
       value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5968900511694729452, guid: a581df6dba48b2c449bc6e850af49eb3,
-        type: 3}
-      propertyPath: field of view
-      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 5995656695497860430, guid: a581df6dba48b2c449bc6e850af49eb3,
         type: 3}

@@ -24,10 +24,10 @@ namespace TechC.ODDESEY.Battle
 
         // ─── Animation Event から呼ぶ ──────────────────────────────────────
 
-        public void NotifyHitTiming()      => hitTimingTcs?.TrySetResult();
+        public void NotifyHitTiming() => hitTimingTcs?.TrySetResult();
         public void NotifyAttackFinished() => attackFinishedTcs?.TrySetResult();
-        public void NotifyHitFinished()    => NotifyStateFinished(PlayerAnimationType.Hit);
-        public void NotifyMissFinished()   => NotifyStateFinished(PlayerAnimationType.Miss);
+        public void NotifyHitFinished() => NotifyStateFinished(PlayerAnimationType.Hit);
+        public void NotifyMissFinished() => NotifyStateFinished(PlayerAnimationType.Miss);
 
         // ─── ステート完了通知 ──────────────────────────────────────────────
 
@@ -56,7 +56,7 @@ namespace TechC.ODDESEY.Battle
         public async UniTask BeginAttackAnimationAsync(
             CardAnimationType animType = CardAnimationType.Attack)
         {
-            hitTimingTcs      = new UniTaskCompletionSource();
+            hitTimingTcs = new UniTaskCompletionSource();
             attackFinishedTcs = new UniTaskCompletionSource();
 
             var (animHash, camData) = ResolveParams(animType);
@@ -98,9 +98,9 @@ namespace TechC.ODDESEY.Battle
             return animType switch
             {
                 CardAnimationType.MultiAttack => (AnimUtil.MultiAttackHash, multiAttackCameraData ?? attackCameraData),
-                CardAnimationType.Special     => (AnimUtil.SpecialHash,     specialCameraData ?? attackCameraData),
-                CardAnimationType.Defense     => (AnimUtil.DefenseHash,     null),
-                _                             => (AnimUtil.AttackHash,      attackCameraData),
+                CardAnimationType.Special => (AnimUtil.SpecialHash, specialCameraData ?? attackCameraData),
+                CardAnimationType.Defense => (AnimUtil.DefenseHash, null),
+                _ => (AnimUtil.AttackHash, attackCameraData),
             };
         }
     }
