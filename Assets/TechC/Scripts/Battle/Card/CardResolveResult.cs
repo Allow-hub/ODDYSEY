@@ -23,6 +23,7 @@ namespace TechC.ODDESEY.Battle
 
         public bool IsBattleEnd;
         public bool IsWon;
+        public CardAnimationType AnimationType { get; set; } = CardAnimationType.Attack;
 
         /// <summary>
         /// 効果固有の追加情報。新効果を追加するたびにクラスを変更しなくてよい。

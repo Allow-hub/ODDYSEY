@@ -11,19 +11,23 @@ namespace TechC.ODDESEY.Battle
     public class PlayerView : MonoBehaviour
     {
         [SerializeField] private Animator animator;
+
+        [Header("カメラデータ")]
         [SerializeField] private AttackCameraData attackCameraData;
+        [SerializeField] private AttackCameraData multiAttackCameraData;
+        [SerializeField] private AttackCameraData specialCameraData;
 
         private Dictionary<PlayerAnimationType, List<UniTaskCompletionSource>> waiters = new();
         private UniTaskCompletionSource hitTimingTcs;
         private UniTaskCompletionSource attackFinishedTcs;
-        private UniTask cameraTask; // カメラタスクを保持して WaitAttackFinishedAsync で待つ
+        private UniTask cameraTask;
 
         // ─── Animation Event から呼ぶ ──────────────────────────────────────
 
-        public void NotifyHitTiming() => hitTimingTcs?.TrySetResult();
+        public void NotifyHitTiming()      => hitTimingTcs?.TrySetResult();
         public void NotifyAttackFinished() => attackFinishedTcs?.TrySetResult();
-        public void NotifyHitFinished() => NotifyStateFinished(PlayerAnimationType.Hit);
-        public void NotifyMissFinished() => NotifyStateFinished(PlayerAnimationType.Miss);
+        public void NotifyHitFinished()    => NotifyStateFinished(PlayerAnimationType.Hit);
+        public void NotifyMissFinished()   => NotifyStateFinished(PlayerAnimationType.Miss);
 
         // ─── ステート完了通知 ──────────────────────────────────────────────
 
@@ -47,30 +51,31 @@ namespace TechC.ODDESEY.Battle
 
         /// <summary>
         /// 攻撃アニメを開始し、ヒット判定フレームまで待機する。
-        /// カメラタスクは並列で走らせ、WaitAttackFinishedAsync で一緒に待つ。
+        /// CardAnimationType に応じた Animator パラメータとカメラを使う。
         /// </summary>
-        public async UniTask BeginAttackAnimationAsync()
+        public async UniTask BeginAttackAnimationAsync(
+            CardAnimationType animType = CardAnimationType.Attack)
         {
-            hitTimingTcs = new UniTaskCompletionSource();
+            hitTimingTcs      = new UniTaskCompletionSource();
             attackFinishedTcs = new UniTaskCompletionSource();
 
-            animator?.SetBool(AnimUtil.AttackHash, true);
+            var (animHash, camData) = ResolveParams(animType);
+            animator?.SetBool(animHash, true);
+            cameraTask = CameraManager.I.PlayAttackCameraAsync(camData);
 
-            // カメラは並列で開始し、フィールドに保持しておく
-            cameraTask = CameraManager.I.PlayAttackCameraAsync(attackCameraData);
-
-            await hitTimingTcs.Task; // ヒット瞬間まで待つ
+            await hitTimingTcs.Task;
         }
 
         /// <summary>
         /// 攻撃アニメとカメラ演出の両方が完了するまで待つ。
         /// </summary>
-        public async UniTask WaitAttackFinishedAsync()
+        public async UniTask WaitAttackFinishedAsync(
+            CardAnimationType animType = CardAnimationType.Attack)
         {
-            // アニメ完了とカメラ演出完了を両方待つ
             await UniTask.WhenAll(attackFinishedTcs.Task, cameraTask);
-            CustomLogger.Info($"プレイヤー攻撃アニメーション完了", LogTagUtil.TagBattle);
-            animator?.SetBool(AnimUtil.AttackHash, false);
+            var (animHash, _) = ResolveParams(animType);
+            CustomLogger.Info($"プレイヤー攻撃アニメーション完了 ({animType})", LogTagUtil.TagBattle);
+            animator?.SetBool(animHash, false);
         }
 
         /// <summary>
@@ -84,6 +89,19 @@ namespace TechC.ODDESEY.Battle
             await task;
             CustomLogger.Info($"プレイヤー被ダメアニメーション完了 (isHit={isHit})", LogTagUtil.TagBattle);
             animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, false);
+        }
+
+        // ─── 内部処理 ────────────────────────────────────────────────────
+
+        private (int animHash, AttackCameraData camData) ResolveParams(CardAnimationType animType)
+        {
+            return animType switch
+            {
+                CardAnimationType.MultiAttack => (AnimUtil.MultiAttackHash, multiAttackCameraData ?? attackCameraData),
+                CardAnimationType.Special     => (AnimUtil.SpecialHash,     specialCameraData ?? attackCameraData),
+                CardAnimationType.Defense     => (AnimUtil.DefenseHash,     null),
+                _                             => (AnimUtil.AttackHash,      attackCameraData),
+            };
         }
     }
 

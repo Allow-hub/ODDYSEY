@@ -17,6 +17,8 @@ namespace TechC.ODDESEY.Battle
 
         [Header("効果リスト")]
         [SerializeReference] public List<CardEffectBase> Effects = new();
+        [Header("アニメーション")]
+        public CardAnimationType AnimationType = CardAnimationType.Attack;
 
         [Header("運ゲージ還元量")]
         [Tooltip("砕いたとき回復する運ゲージ量（0〜100）")]

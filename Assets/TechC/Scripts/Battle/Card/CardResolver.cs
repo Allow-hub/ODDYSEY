@@ -73,6 +73,7 @@ namespace TechC.ODDESEY.Battle
                     IsHit = false,
                     DamageDealt = 0,
                     CardInstanceId = instance.InstanceId,
+                    AnimationType = instance.OriginalData.AnimationType,
                 };
 
                 var context = new EffectContext

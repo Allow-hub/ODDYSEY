@@ -123,10 +123,11 @@ namespace TechC.ODDESEY.Battle
         /// </summary>
         public async UniTask PlayCardResolveAsync(CardResolveResult result, int playerHpMax, int enemyHpMax)
         {
+            var animType = result.AnimationType;
             if (result.IsPlayer)
             {
                 // Phase1: ヒット判定フレームまで待つ
-                await playerView.BeginAttackAnimationAsync();
+                await playerView.BeginAttackAnimationAsync(animType);
 
                 // Phase2: 敵の被ダメアニメは流すだけ（待たない）
                 currentEnemyView.PlayDamageAnimationAsync(result.IsHit).Forget();
@@ -136,12 +137,12 @@ namespace TechC.ODDESEY.Battle
                     await enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax);
 
                 // Phase3: 攻撃アニメ完了まで待つ
-                await playerView.WaitAttackFinishedAsync();
+                await playerView.WaitAttackFinishedAsync(animType);
             }
             else
             {
                 // Phase1: ヒット判定フレームまで待つ
-                await currentEnemyView.BeginAttackAnimationAsync();
+                await currentEnemyView.BeginAttackAnimationAsync(animType);
 
                 // Phase2: プレイヤーの被ダメアニメは流すだけ（待たない）
                 playerView.PlayDamageAnimationAsync(result.IsHit).Forget();
@@ -151,7 +152,7 @@ namespace TechC.ODDESEY.Battle
                     await playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax);
 
                 // Phase3: 攻撃アニメ完了まで待つ
-                await currentEnemyView.WaitAttackFinishedAsync();
+                await currentEnemyView.WaitAttackFinishedAsync(animType);
             }
 
             // 自傷ダメージ

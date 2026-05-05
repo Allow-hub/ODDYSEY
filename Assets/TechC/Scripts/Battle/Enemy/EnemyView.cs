@@ -11,15 +11,18 @@ namespace TechC.ODDESEY.Battle
     public class EnemyView : MonoBehaviour
     {
         private Animator animator;
+
+        [Header("カメラデータ")]
         [SerializeField] private AttackCameraData attackCameraData;
+        [SerializeField] private AttackCameraData multiAttackCameraData;
+        [SerializeField] private AttackCameraData specialCameraData;
 
         private Dictionary<EnemyStateNotifier.StateType, List<UniTaskCompletionSource>> waiters = new();
         private UniTaskCompletionSource hitTimingTcs;
         private UniTaskCompletionSource attackFinishedTcs;
-        private UniTask cameraTask; // カメラタスクを保持して WaitAttackFinishedAsync で待つ
+        private UniTask cameraTask;
 
         private void Awake() => animator = GetComponent<Animator>();
-
         public void Setup(EnemyData data) { }
 
         // ─── Animation Event から呼ぶ ──────────────────────────────────────
@@ -35,7 +38,6 @@ namespace TechC.ODDESEY.Battle
                 attackFinishedTcs?.TrySetResult();
                 return;
             }
-
             if (!waiters.TryGetValue(type, out var list)) return;
             foreach (var tcs in list) tcs.TrySetResult();
             list.Clear();
@@ -52,35 +54,28 @@ namespace TechC.ODDESEY.Battle
 
         // ─── 公開API ──────────────────────────────────────────────────────
 
-        /// <summary>
-        /// 攻撃アニメを開始し、ヒット判定フレームまで待機する。
-        /// カメラは並列で走らせ、WaitAttackFinishedAsync で一緒に待つ。
-        /// </summary>
-        public async UniTask BeginAttackAnimationAsync()
+        public async UniTask BeginAttackAnimationAsync(
+            CardAnimationType animType = CardAnimationType.Attack)
         {
-            hitTimingTcs = new UniTaskCompletionSource();
+            hitTimingTcs      = new UniTaskCompletionSource();
             attackFinishedTcs = new UniTaskCompletionSource();
 
-            animator?.SetBool(AnimUtil.AttackHash, true);
-
-            cameraTask = CameraManager.I.PlayAttackCameraAsync(attackCameraData);
+            var (animHash, camData) = ResolveParams(animType);
+            animator?.SetBool(animHash, true);
+            cameraTask = CameraManager.I.PlayAttackCameraAsync(camData);
 
             await hitTimingTcs.Task;
         }
 
-        /// <summary>
-        /// 攻撃アニメとカメラ演出の両方が完了するまで待つ。
-        /// </summary>
-        public async UniTask WaitAttackFinishedAsync()
+        public async UniTask WaitAttackFinishedAsync(
+            CardAnimationType animType = CardAnimationType.Attack)
         {
             await UniTask.WhenAll(attackFinishedTcs.Task, cameraTask);
-            CustomLogger.Info($"敵攻撃アニメーション完了", LogTagUtil.TagBattle);
-            animator?.SetBool(AnimUtil.AttackHash, false);
+            var (animHash, _) = ResolveParams(animType);
+            CustomLogger.Info($"敵攻撃アニメーション完了 ({animType})", LogTagUtil.TagBattle);
+            animator?.SetBool(animHash, false);
         }
 
-        /// <summary>
-        /// 被ダメアニメーションを再生する。BattleView から Forget() で呼ぶ。
-        /// </summary>
         public async UniTask PlayDamageAnimationAsync(bool isHit)
         {
             var type = isHit ? EnemyStateNotifier.StateType.Hit : EnemyStateNotifier.StateType.Miss;
@@ -105,6 +100,19 @@ namespace TechC.ODDESEY.Battle
             var task = WaitStateAsync(EnemyStateNotifier.StateType.Defeated);
             animator?.SetTrigger(AnimUtil.DefeatedHash);
             await task;
+        }
+
+        // ─── 内部処理 ────────────────────────────────────────────────────
+
+        private (int animHash, AttackCameraData camData) ResolveParams(CardAnimationType animType)
+        {
+            return animType switch
+            {
+                CardAnimationType.MultiAttack => (AnimUtil.MultiAttackHash, multiAttackCameraData ?? attackCameraData),
+                CardAnimationType.Special     => (AnimUtil.SpecialHash,     specialCameraData ?? attackCameraData),
+                CardAnimationType.Defense     => (AnimUtil.DefenseHash,     null),
+                _                             => (AnimUtil.AttackHash,      attackCameraData),
+            };
         }
     }
 }

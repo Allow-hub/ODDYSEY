@@ -16,4 +16,5 @@ MonoBehaviour:
   CardSprite: {fileID: 0}
   Effects:
   - {fileID: 11400000, guid: 9791a713c9b59a24d944b04f57f31398, type: 2}
+  AnimationType: 1
   LuckConversionRate: 20

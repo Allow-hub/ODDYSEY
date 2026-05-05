@@ -8,9 +8,14 @@ namespace TechC.ODDESEY.Core.Util
     public static class AnimUtil
     {
         public static readonly int EnterHash = Animator.StringToHash("Enter");
-        public static readonly int AttackHash = Animator.StringToHash("Attack");
         public static readonly int HitHash = Animator.StringToHash("Hit");
         public static readonly int MissHash = Animator.StringToHash("Miss");
         public static readonly int DefeatedHash = Animator.StringToHash("Defeated");
+        public static readonly int AttackHash = Animator.StringToHash("Attack");
+
+        public static readonly int MultiAttackHash  = Animator.StringToHash("MultiAttack");
+
+        public static readonly int SpecialHash = Animator.StringToHash("Special");
+        public static readonly int DefenseHash = Animator.StringToHash("Defense");
     }
 }
