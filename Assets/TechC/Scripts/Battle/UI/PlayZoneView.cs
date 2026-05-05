@@ -46,10 +46,10 @@ namespace TechC.ODDESEY.Battle
 
         private void Start()
         {
-            RegisterHoldButton(upPercentageButton,  () => AdjustPercentageUp());
-            RegisterHoldButton(downPercentageButton,() => AdjustPercentageDown());
-            RegisterHoldButton(upDamageButton,      () => AdjustDamage(1));
-            RegisterHoldButton(downDamageButton,    () => AdjustDamage(-1));
+            RegisterHoldButton(upPercentageButton, () => AdjustPercentageUp());
+            RegisterHoldButton(downPercentageButton, () => AdjustPercentageDown());
+            RegisterHoldButton(upDamageButton, () => AdjustDamage(1));
+            RegisterHoldButton(downDamageButton, () => AdjustDamage(-1));
 
             SetButtonsInteractable(false);
         }
@@ -224,7 +224,7 @@ namespace TechC.ODDESEY.Battle
             if (currentCardInstance == null) return;
             int probability = (int)(currentCardInstance.GetEffectiveProbability(0) * 100);
             int damage = currentCardInstance.GetEffectiveValue(0);
-            percentageText.text = $"{probability}%";
+            percentageText.text = $"{probability}";
             damageText.text = damage.ToString();
         }
 

@@ -60,7 +60,7 @@ namespace TechC.ODDESEY.Battle
                     var cardView = obj.GetComponent<CardView>();
                     cardView.Setup(slot.EnemyCardInstance);
                     cardView.SetEnemyAppearance();
-                    
+
                     enemyCardViews[slot.EnemyCardInstance.InstanceId] = cardView;
                     slotViews[i].SetSlotData(slot, cardView); // cardView を渡す
                 }
