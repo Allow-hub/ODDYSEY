@@ -106,13 +106,79 @@ namespace TechC.ODDESEY.Battle
             await UpdateHandAsync(turnData.Hand);
         }
 
-        public async UniTask PlayCardResolveAsync(CardResolveResult result)
+        /// <summary>
+        /// カード解決の演出を再生する。
+        ///
+        /// プレイヤー攻撃時：
+        ///   1. 攻撃アニメ開始 → ヒット判定フレームで停止
+        ///   2. 敵の被ダメアニメを Forget()（待たない）
+        ///   3. HPバー更新を await
+        ///   4. 攻撃アニメ完了まで待つ
+        ///
+        /// 敵攻撃時：
+        ///   1. 攻撃アニメ開始 → ヒット判定フレームで停止
+        ///   2. プレイヤーの被ダメアニメを Forget()（待たない）
+        ///   3. HPバー更新を await
+        ///   4. 攻撃アニメ完了まで待つ
+        /// </summary>
+        public async UniTask PlayCardResolveAsync(CardResolveResult result, int playerHpMax, int enemyHpMax)
         {
             if (result.IsPlayer)
-                await playerView.PlayAttackAnimationAsync();
+            {
+                // Phase1: ヒット判定フレームまで待つ
+                await playerView.BeginAttackAnimationAsync();
+
+                // Phase2: 敵の被ダメアニメは流すだけ（待たない）
+                currentEnemyView.PlayDamageAnimationAsync(result.IsHit).Forget();
+
+                // HPバー更新は await する
+                if (result.DamageDealt > 0)
+                    await enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax);
+
+                // Phase3: 攻撃アニメ完了まで待つ
+                await playerView.WaitAttackFinishedAsync();
+            }
             else
-                await currentEnemyView.PlayAttackAnimationAsync();
+            {
+                // Phase1: ヒット判定フレームまで待つ
+                await currentEnemyView.BeginAttackAnimationAsync();
+
+                // Phase2: プレイヤーの被ダメアニメは流すだけ（待たない）
+                playerView.PlayDamageAnimationAsync(result.IsHit).Forget();
+
+                // HPバー更新は await する
+                if (result.DamageDealt > 0)
+                    await playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax);
+
+                // Phase3: 攻撃アニメ完了まで待つ
+                await currentEnemyView.WaitAttackFinishedAsync();
+            }
+
+            // 自傷ダメージ
+            var selfDamage = result.GetExtra<int>(ResultKeys.SelfDamageDealt);
+            if (selfDamage > 0)
+            {
+                if (result.IsPlayer)
+                {
+                    playerView.PlayDamageAnimationAsync(isHit: true).Forget();
+                    await playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax);
+                }
+                else
+                {
+                    currentEnemyView.PlayDamageAnimationAsync(isHit: true).Forget();
+                    await enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax);
+                }
+            }
+
+            // カウンター
+            bool counterTriggered = result.GetExtra<bool>(ResultKeys.CounterTriggered);
+            if (counterTriggered)
+            {
+                currentEnemyView.PlayDamageAnimationAsync(isHit: true).Forget();
+                await enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax);
+            }
         }
+
 
         public async UniTask UpdatePlayerHpAsync(int current, int max)
             => await playerHpView.UpdateHpAsync(current, max);

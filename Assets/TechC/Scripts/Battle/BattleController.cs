@@ -1,6 +1,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 using TechC.Core.Manager;
+using TechC.ODDESEY.Core.Manager;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
 using UnityEngine;
@@ -32,7 +33,7 @@ namespace TechC.ODDESEY.Battle
         {
             battleLogic = new BattleLogic();
             battleView.Init();
-            Time.timeScale = 3;
+            // Time.timeScale = 3;
 
             BattleEventBus.Subscribe<CardBrokenEvent>(OnCardBroken);
             BattleEventBus.Subscribe<LuckGaugeSpendRequestEvent>(OnLuckGaugeSpendRequested);
@@ -66,28 +67,7 @@ namespace TechC.ODDESEY.Battle
 
                 foreach (var result in resolveResults)
                 {
-                    await battleView.PlayCardResolveAsync(result);
-
-                    if (result.DamageDealt > 0)
-                    {
-                        if (result.IsPlayer)
-                            await battleView.UpdateEnemyHpAsync(result.EnemyHpAfter, battleLogic.EnemyHpMax);
-                        else
-                            await battleView.UpdatePlayerHpAsync(result.PlayerHpAfter, battleLogic.PlayerHpMax);
-                    }
-
-                    var selfDamage = result.GetExtra<int>(ResultKeys.SelfDamageDealt);
-                    if (selfDamage > 0)
-                    {
-                        if (result.IsPlayer)
-                            await battleView.UpdatePlayerHpAsync(result.PlayerHpAfter, battleLogic.PlayerHpMax);
-                        else
-                            await battleView.UpdateEnemyHpAsync(result.EnemyHpAfter, battleLogic.EnemyHpMax);
-                    }
-                    bool counterTriggered = result.GetExtra<bool>(ResultKeys.CounterTriggered);
-                    if (counterTriggered)
-                        await battleView.UpdateEnemyHpAsync(result.EnemyHpAfter, battleLogic.EnemyHpMax);
-
+                    await battleView.PlayCardResolveAsync(result, battleLogic.PlayerHpMax, battleLogic.EnemyHpMax);
                     if (result.IsBattleEnd)
                     {
                         MainManager.I?.SetLackGaugeValue(battleLogic.LuckGauge);
@@ -109,6 +89,7 @@ namespace TechC.ODDESEY.Battle
                 }
 
                 await battleView.RemoveUsedCardsAsync(resolveResults);
+                CameraManager.I.SwitchTo(CameraState.Default);
                 battleLogic.EndTurn();
                 await battleView.UpdateLuckGaugeAsync(
                     battleLogic.LuckGauge,

@@ -8,58 +8,87 @@ using UnityEngine;
 
 namespace TechC.ODDESEY.Battle
 {
-    /// <summary>
-    /// 敵1体の表示を管理する。
-    /// EnemyData から生成され、Animator のステート完了を UniTask で待てる口を提供する。
-    /// </summary>
     public class EnemyView : MonoBehaviour
     {
         private Animator animator;
         [SerializeField] private AttackCameraData attackCameraData;
-        private Dictionary<EnemyStateNotifier.StateType, List<UniTaskCompletionSource>> waiters
-             = new();
 
-        private void Awake()
-        {
-            animator = GetComponent<Animator>();
-        }
+        private Dictionary<EnemyStateNotifier.StateType, List<UniTaskCompletionSource>> waiters = new();
+        private UniTaskCompletionSource hitTimingTcs;
+        private UniTaskCompletionSource attackFinishedTcs;
+        private UniTask cameraTask; // カメラタスクを保持して WaitAttackFinishedAsync で待つ
 
-        /// <summary>
-        /// EnemyData を元に初期化する。BattleView から呼ぶ。
-        /// </summary>
-        public void Setup(EnemyData data)
-        {
-        }
+        private void Awake() => animator = GetComponent<Animator>();
 
-        /// <summary>
-        /// Animator のステート完了を待っている UniTaskCompletionSource に完了通知を送る。
-        /// </summary>
-        /// <param name="type"></param>
+        public void Setup(EnemyData data) { }
+
+        // ─── Animation Event から呼ぶ ──────────────────────────────────────
+
+        public void NotifyHitTiming() => hitTimingTcs?.TrySetResult();
+
+        // ─── EnemyStateNotifier から呼ばれる ──────────────────────────────
+
         public void NotifyStateFinished(EnemyStateNotifier.StateType type)
         {
+            if (type == EnemyStateNotifier.StateType.Attack)
+            {
+                attackFinishedTcs?.TrySetResult();
+                return;
+            }
+
             if (!waiters.TryGetValue(type, out var list)) return;
-
-            foreach (var tcs in list)
-                tcs.TrySetResult();
-
+            foreach (var tcs in list) tcs.TrySetResult();
             list.Clear();
         }
 
-        /// <summary>
-        /// 指定したステートが完了するまで待機する UniTask を返す。
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
         private UniTask WaitStateAsync(EnemyStateNotifier.StateType type)
         {
             var tcs = new UniTaskCompletionSource();
-
             if (!waiters.ContainsKey(type))
                 waiters[type] = new List<UniTaskCompletionSource>();
-
             waiters[type].Add(tcs);
-
             return tcs.Task;
+        }
+
+        // ─── 公開API ──────────────────────────────────────────────────────
+
+        /// <summary>
+        /// 攻撃アニメを開始し、ヒット判定フレームまで待機する。
+        /// カメラは並列で走らせ、WaitAttackFinishedAsync で一緒に待つ。
+        /// </summary>
+        public async UniTask BeginAttackAnimationAsync()
+        {
+            hitTimingTcs = new UniTaskCompletionSource();
+            attackFinishedTcs = new UniTaskCompletionSource();
+
+            animator?.SetBool(AnimUtil.AttackHash, true);
+
+            cameraTask = CameraManager.I.PlayAttackCameraAsync(attackCameraData);
+
+            await hitTimingTcs.Task;
+        }
+
+        /// <summary>
+        /// 攻撃アニメとカメラ演出の両方が完了するまで待つ。
+        /// </summary>
+        public async UniTask WaitAttackFinishedAsync()
+        {
+            await UniTask.WhenAll(attackFinishedTcs.Task, cameraTask);
+            CustomLogger.Info($"敵攻撃アニメーション完了", LogTagUtil.TagBattle);
+            animator?.SetBool(AnimUtil.AttackHash, false);
+        }
+
+        /// <summary>
+        /// 被ダメアニメーションを再生する。BattleView から Forget() で呼ぶ。
+        /// </summary>
+        public async UniTask PlayDamageAnimationAsync(bool isHit)
+        {
+            var type = isHit ? EnemyStateNotifier.StateType.Hit : EnemyStateNotifier.StateType.Miss;
+            var task = WaitStateAsync(type);
+            animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, true);
+            await task;
+            CustomLogger.Info($"敵被ダメアニメーション完了 (isHit={isHit})", LogTagUtil.TagBattle);
+            animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, false);
         }
 
         public async UniTask PlayEnterAnimationAsync()
@@ -69,42 +98,6 @@ namespace TechC.ODDESEY.Battle
             await task;
             CustomLogger.Info($"敵出撃アニメーション完了", LogTagUtil.TagBattle);
             animator?.SetBool(AnimUtil.EnterHash, false);
-        }
-
-        /// <summary>
-        /// 攻撃アニメーションを再生
-        /// </summary>
-        /// <returns></returns>
-        public async UniTask PlayAttackAnimationAsync()
-        {
-            var task = WaitStateAsync(EnemyStateNotifier.StateType.Attack);
-            animator?.SetBool(AnimUtil.AttackHash, true);
-            var cameraTask = CameraManager.I.PlayAttackCameraAsync(attackCameraData);
-            await task;
-            await cameraTask;
-            CustomLogger.Info($"プレイヤー攻撃アニメーション完了", LogTagUtil.TagBattle);
-            animator?.SetBool(AnimUtil.AttackHash, false);
-        }
-
-        /// <summary>
-        /// ダメージを受けた時のアニメーション、成功した場合と失敗する場合がある
-        /// </summary>
-        /// <param name="isHit">攻撃が成功したかどうか</param>
-        /// <returns></returns>
-        public async UniTask PlayDamageAnimation(bool isHit)
-        {
-            var type = isHit
-                        ? EnemyStateNotifier.StateType.Hit
-                        : EnemyStateNotifier.StateType.Miss;
-
-            var task = WaitStateAsync(type);
-
-            animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, true);
-
-            await task;
-
-            CustomLogger.Info($"プレイヤー被ダメージアニメーション完了 (isHit={isHit})", LogTagUtil.TagBattle);
-            animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, false);
         }
 
         public async UniTask PlayDefeatedAnimationAsync()

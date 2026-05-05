@@ -284,9 +284,9 @@ AnimationClip:
   m_HasMotionFloatCurves: 0
   m_Events:
   - time: 1.0833334
-    functionName: NotifyStateFinished
+    functionName: NotifyMissFinished
     data: 
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0
-    intParameter: 4
+    intParameter: 5
     messageOptions: 0

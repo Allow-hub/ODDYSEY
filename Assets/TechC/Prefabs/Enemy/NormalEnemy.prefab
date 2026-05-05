@@ -216,6 +216,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attackCameraData: {fileID: 11400000, guid: 68106ed16e925d3468cbc507fa801a3d, type: 2}
+  multiAttackCameraData: {fileID: 11400000, guid: 68106ed16e925d3468cbc507fa801a3d,
+    type: 2}
+  specialCameraData: {fileID: 11400000, guid: 68106ed16e925d3468cbc507fa801a3d, type: 2}
 --- !u!95 &2635887138843171673
 Animator:
   serializedVersion: 5
