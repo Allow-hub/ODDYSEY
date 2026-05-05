@@ -40,8 +40,9 @@ namespace TechC.ODDESEY.Battle
         private int turnCount;
         private EnemyData currentEnemy;
         private IEnemyCardPlacementStrategy enemyPlacementStrategy;
-        
+
         private int currentTurnEnemyProbabilityReductionRate = 0; // 確率ダウン量（%）
+        private float currentTurnLuckGaugeMultiplier = 1f;
 
         private bool hasCounter = false;     // カウンター登録済みか
         private float counterProbability = 0f; // 反撃発動確率
@@ -134,6 +135,7 @@ namespace TechC.ODDESEY.Battle
             // ターン開始時に軽減率をリセット
             currentTurnDamageReductionRate = 0;
             currentTurnEnemyProbabilityReductionRate = 0;
+            currentTurnLuckGaugeMultiplier = 1f;
             hasCounter = false;
             counterProbability = 0f;
             counterDamage = 0;
@@ -202,7 +204,19 @@ namespace TechC.ODDESEY.Battle
         /// </summary>
         public void SetDamageReduction(int rate) => currentTurnDamageReductionRate = Mathf.Clamp(rate, 0, 100);
 
-        public void AddLuckGauge(float amount) => luckGauge.Add(amount);
+        /// <summary>
+        /// このターンのゲージ蓄積倍率を設定する。
+        /// GaugeAccumulationEffect の OnTurnStart から呼ばれる。
+        /// </summary>
+        public void SetLuckGaugeMultiplier(float multiplier)
+            => currentTurnLuckGaugeMultiplier = Mathf.Max(0f, multiplier);
+
+        /// <summary>
+        /// ゲージを増やす。倍率が設定されている場合は乗算して加算する。
+        /// 既存の AddLuckGauge を差し替える。
+        /// </summary>
+        public void AddLuckGauge(float amount)
+            => luckGauge.Add(amount * currentTurnLuckGaugeMultiplier);
 
         /// <summary>
         /// 運ゲージを消費する。PlayZoneView のカード強化操作から呼ばれる。
