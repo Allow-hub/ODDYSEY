@@ -5427,12 +5427,15 @@ MonoBehaviour:
   - state: 0
     vcam: {fileID: 881903321172787403}
     defaultPriority: 20
+    blendDuration: 0.2
   - state: 1
     vcam: {fileID: 5458110695878082875}
     defaultPriority: 10
+    blendDuration: 0.1
   - state: 2
     vcam: {fileID: 650660295759694345}
     defaultPriority: 10
+    blendDuration: 0.1
   impulseSource: {fileID: 6529268937213552604}
   activePriority: 20
   inactivePriority: 10

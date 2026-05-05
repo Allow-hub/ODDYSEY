@@ -25,10 +25,18 @@ namespace TechC.ODDESEY.Core.Manager
         public CameraState state;
         public CinemachineVirtualCamera vcam;
         [Range(0, 20)] public int defaultPriority = 10;
+
+        [Tooltip("このカメラに切り替えるときのブレンド時間（秒）。0 はカット切り替え。")]
+        public float blendDuration = 0.5f;
     }
 
     /// <summary>
-    /// カメラを管理するクラス
+    /// カメラを管理するクラス。
+    ///
+    /// 変更点：
+    ///   - VCamEntry に blendDuration を追加。
+    ///   - SwitchTo() で CinemachineBrain.m_DefaultBlend を一時的に上書きして
+    ///     ステートごとに異なるブレンド時間を実現する。
     /// </summary>
     public class CameraManager : Singleton<CameraManager>
     {
@@ -37,32 +45,39 @@ namespace TechC.ODDESEY.Core.Manager
 
         [SerializeField] private int activePriority = 20;
         [SerializeField] private int inactivePriority = 10;
+
         private CancellationTokenSource attackCts;
         private Dictionary<CameraState, CinemachineVirtualCamera> vcamMap;
+        private Dictionary<CameraState, float> blendDurationMap;
+        private CinemachineBrain brain;
         private CameraState currentState;
 
         private void Awake()
         {
             Init();
             BuildMap();
-            SwitchTo(CameraState.Default); // 最初は Default カメラに切り替える
+            brain = Camera.main?.GetComponent<CinemachineBrain>();
+            SwitchTo(CameraState.Default);
         }
 
         private void BuildMap()
         {
-            vcamMap = new Dictionary<CameraState, CinemachineVirtualCamera>();
+            vcamMap       = new Dictionary<CameraState, CinemachineVirtualCamera>();
+            blendDurationMap = new Dictionary<CameraState, float>();
+
             foreach (var entry in vcamEntries)
             {
                 if (!vcamMap.ContainsKey(entry.state))
-                    vcamMap[entry.state] = entry.vcam;
+                {
+                    vcamMap[entry.state]          = entry.vcam;
+                    blendDurationMap[entry.state] = entry.blendDuration;
+                }
 
-                // 最初は全て非アクティブ優先度に
                 entry.vcam.Priority = inactivePriority;
                 ForceSwitch(CameraState.Default);
             }
         }
 
-        // ガード条件なしで切り替える
         private void ForceSwitch(CameraState state)
         {
             if (!vcamMap.TryGetValue(state, out var nextVCam))
@@ -74,8 +89,10 @@ namespace TechC.ODDESEY.Core.Manager
             nextVCam.Priority = activePriority;
             currentState = state;
         }
+
         /// <summary>
-        /// 指定したStateのVCamに切り替える
+        /// 指定した State の VCam に切り替える。
+        /// 切り替え先の blendDuration を CinemachineBrain に反映してからプライオリティを変更する。
         /// </summary>
         public void SwitchTo(CameraState state)
         {
@@ -86,23 +103,24 @@ namespace TechC.ODDESEY.Core.Manager
                 return;
             }
 
+            // 切り替え先のブレンド時間を Brain に適用
+            ApplyBlendDuration(state);
+
             // 現在のカメラを下げる
             if (vcamMap.TryGetValue(currentState, out var currentVCam))
                 currentVCam.Priority = inactivePriority;
 
-            // 次のカメラを上げる
             nextVCam.Priority = activePriority;
             currentState = state;
         }
 
         /// <summary>
-        /// 攻撃カメラ演出を再生しアニメーション完了まで待つ
+        /// 攻撃カメラ演出を再生しアニメーション完了まで待つ。
         /// </summary>
         public async UniTask PlayAttackCameraAsync(AttackCameraData data)
         {
             if (data == null) return;
 
-            // 前回の演出が残っていればキャンセル
             attackCts?.Cancel();
             attackCts?.Dispose();
             attackCts = new CancellationTokenSource();
@@ -110,22 +128,19 @@ namespace TechC.ODDESEY.Core.Manager
 
             SwitchTo(data.onAttackState);
 
-            var vcam = GetCurrentVCam();
+            var vcam     = GetCurrentVCam();
             var animator = vcam?.GetComponent<Animator>();
 
             if (animator != null)
             {
                 animator.SetBool(data.AnimTriggerHash, true);
 
-                // 1フレーム待つ
                 await UniTask.Yield(token);
 
-                // Idle(normalizedTime >= 1f)を抜けるまで待つ
                 await UniTask.WaitUntil(() =>
                     animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 1f
                     || animator.IsInTransition(0), cancellationToken: token);
 
-                // 再生が終わるまで待つ
                 await UniTask.WaitUntil(() =>
                     animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f
                     && !animator.IsInTransition(0), cancellationToken: token);
@@ -137,20 +152,34 @@ namespace TechC.ODDESEY.Core.Manager
             SwitchTo(CameraState.Default);
         }
 
+        // ─── 内部処理 ────────────────────────────────────────────────────
+
+        /// <summary>
+        /// 指定ステートの blendDuration を CinemachineBrain.m_DefaultBlend に適用する。
+        /// </summary>
+        private void ApplyBlendDuration(CameraState state)
+        {
+            if (brain == null) return;
+            if (!blendDurationMap.TryGetValue(state, out float duration)) return;
+
+            brain.m_DefaultBlend = new CinemachineBlendDefinition(
+                duration > 0f
+                    ? CinemachineBlendDefinition.Style.EaseInOut
+                    : CinemachineBlendDefinition.Style.Cut,
+                duration
+            );
+        }
+
         private CinemachineVirtualCamera GetCurrentVCam()
         {
             vcamMap.TryGetValue(currentState, out var vcam);
             return vcam;
         }
 
-        /// <summary>
-        /// 現在のStateを返す
-        /// </summary>
         public CameraState CurrentState => currentState;
 
-        // --- ContextMenu デバッグ用 ---
-        [ContextMenu("Switch/Default")] void DbgDefault() => SwitchTo(CameraState.Default);
+        [ContextMenu("Switch/Default")]    void DbgDefault()     => SwitchTo(CameraState.Default);
         [ContextMenu("Switch/BattleStart")] void DbgBattleStart() => SwitchTo(CameraState.BattleStart);
-        [ContextMenu("Switch/Aim")] void DbgAim() => SwitchTo(CameraState.Aim);
+        [ContextMenu("Switch/Aim")]        void DbgAim()         => SwitchTo(CameraState.Aim);
     }
 }
