@@ -11,14 +11,6 @@ using System.Threading;
 
 namespace TechC.ODDESEY.Battle
 {
-    /// <summary>
-    /// 戦闘の見た目を管理する。
-    ///
-    /// 変更点：
-    ///   - CardView.Setup() への onReturnRequested 渡しを廃止。
-    ///   - CardView は BattleEventBus にイベントを発行するだけになったため、
-    ///     BattleView 側での Action 注入が不要になった。
-    /// </summary>
     public class BattleView : MonoBehaviour
     {
         [SerializeField] private Animator anim;
@@ -50,8 +42,12 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private float spacing = 200f;
         [SerializeField] private float y = -300f;
         [SerializeField] private Vector2 deckStartPos = new Vector2(800, -500);
-        private CancellationToken destroyToken;
 
+        [Header("バトルテンポ")]
+        [Tooltip("カード1枚の演出が終わってから次のカードへ進むまでの待機時間（秒）")]
+        [SerializeField] private float cardResolveInterval = 0.3f;
+
+        private CancellationToken destroyToken;
         private EnemyView currentEnemyView;
         private UniTaskCompletionSource confirmTcs;
         private Dictionary<int, CardView> handViews = new();
@@ -107,52 +103,48 @@ namespace TechC.ODDESEY.Battle
         }
 
         /// <summary>
-        /// カード解決の演出を再生する。
+        /// カード1枚の解決演出を再生する。
         ///
-        /// プレイヤー攻撃時：
-        ///   1. 攻撃アニメ開始 → ヒット判定フレームで停止
-        ///   2. 敵の被ダメアニメを Forget()（待たない）
-        ///   3. HPバー更新を await
-        ///   4. 攻撃アニメ完了まで待つ
-        ///
-        /// 敵攻撃時：
-        ///   1. 攻撃アニメ開始 → ヒット判定フレームで停止
-        ///   2. プレイヤーの被ダメアニメを Forget()（待たない）
-        ///   3. HPバー更新を await
-        ///   4. 攻撃アニメ完了まで待つ
+        /// 改善点：
+        ///   - Phase2 で HP更新と攻撃アニメ残り部分を並列実行。
+        ///     「HPが減るタイミング」と「アニメが終わるタイミング」が揃い
+        ///     テンポよく見える。
+        ///   - 被ダメアニメは引き続き Forget()（待たない）。
         /// </summary>
-        public async UniTask PlayCardResolveAsync(CardResolveResult result, int playerHpMax, int enemyHpMax)
+        public async UniTask PlayCardResolveAsync(
+            CardResolveResult result, int playerHpMax, int enemyHpMax)
         {
             var animType = result.AnimationType;
+
             if (result.IsPlayer)
             {
                 // Phase1: ヒット判定フレームまで待つ
                 await playerView.BeginAttackAnimationAsync(animType);
 
-                // Phase2: 敵の被ダメアニメは流すだけ（待たない）
+                // Phase2: 被ダメアニメ・HP更新・攻撃アニメ残りを並列実行
                 currentEnemyView.PlayDamageAnimationAsync(result.IsHit).Forget();
 
-                // HPバー更新は await する
-                if (result.DamageDealt > 0)
-                    await enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax);
-
-                // Phase3: 攻撃アニメ完了まで待つ
-                await playerView.WaitAttackFinishedAsync(animType);
+                await UniTask.WhenAll(
+                    result.DamageDealt > 0
+                        ? enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax)
+                        : UniTask.CompletedTask,
+                    playerView.WaitAttackFinishedAsync(animType)
+                );
             }
             else
             {
                 // Phase1: ヒット判定フレームまで待つ
                 await currentEnemyView.BeginAttackAnimationAsync(animType);
 
-                // Phase2: プレイヤーの被ダメアニメは流すだけ（待たない）
+                // Phase2: 被ダメアニメ・HP更新・攻撃アニメ残りを並列実行
                 playerView.PlayDamageAnimationAsync(result.IsHit).Forget();
 
-                // HPバー更新は await する
-                if (result.DamageDealt > 0)
-                    await playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax);
-
-                // Phase3: 攻撃アニメ完了まで待つ
-                await currentEnemyView.WaitAttackFinishedAsync(animType);
+                await UniTask.WhenAll(
+                    result.DamageDealt > 0
+                        ? playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax)
+                        : UniTask.CompletedTask,
+                    currentEnemyView.WaitAttackFinishedAsync(animType)
+                );
             }
 
             // 自傷ダメージ
@@ -180,7 +172,6 @@ namespace TechC.ODDESEY.Battle
             }
         }
 
-
         public async UniTask UpdatePlayerHpAsync(int current, int max)
             => await playerHpView.UpdateHpAsync(current, max);
 
@@ -207,7 +198,9 @@ namespace TechC.ODDESEY.Battle
                     handViews.Remove(r.CardInstanceId);
                 }
                 else
-                    CustomLogger.Warning($"削除対象のカードViewが見つからない: InstanceId {r.CardInstanceId}", LogTagUtil.TagCard);
+                    CustomLogger.Warning(
+                        $"削除対象のカードViewが見つからない: InstanceId {r.CardInstanceId}",
+                        LogTagUtil.TagCard);
             }
 
             if (!destroyToken.IsCancellationRequested && anim)
@@ -220,15 +213,15 @@ namespace TechC.ODDESEY.Battle
         {
             if (!handViews.TryGetValue(instanceId, out var view))
             {
-                CustomLogger.Warning($"削除対象のカードViewが見つからない: InstanceId {instanceId}", LogTagUtil.TagCard);
+                CustomLogger.Warning(
+                    $"削除対象のカードViewが見つからない: InstanceId {instanceId}",
+                    LogTagUtil.TagCard);
                 return;
             }
 
             await view.PlayBreakAnimationAsync();
 
-            if (view != null)
-                Destroy(view.gameObject);
-
+            if (view != null) Destroy(view.gameObject);
             handViews.Remove(instanceId);
         }
 
@@ -258,6 +251,9 @@ namespace TechC.ODDESEY.Battle
             await UniTask.Delay(4000);
         }
 
+        /// <summary>カード間インターバルを返す（BattleController が使う）</summary>
+        public float CardResolveInterval => cardResolveInterval;
+
         // ================================
         // 内部処理
         // ================================
@@ -275,7 +271,6 @@ namespace TechC.ODDESEY.Battle
                 var targetPos = HandLayoutUtility.GetLinearPosition(i, startX, spacing, y);
 
                 CardView view;
-
                 if (handViews.TryGetValue(instance.InstanceId, out view))
                 {
                     var currentPos = view.GetComponent<RectTransform>().anchoredPosition;
@@ -285,10 +280,7 @@ namespace TechC.ODDESEY.Battle
                 {
                     var obj = Instantiate(cardViewPrefab, handContainer);
                     view = obj.GetComponent<CardView>();
-
-                    // ★ Action の注入なし。CardView は EventBus にイベントを発行するだけ
                     view.Setup(instance);
-
                     handViews[instance.InstanceId] = view;
                     tasks.Add(view.PlayDealAnimationAsync(deckStartPos, targetPos));
                 }
@@ -316,34 +308,28 @@ namespace TechC.ODDESEY.Battle
         private async UniTask FadeAsync(float from, float to, float duration)
         {
             if (fadePanel == null) return;
-
             float t = 0;
             fadePanel.alpha = from;
-
             while (t < duration)
             {
                 t += Time.deltaTime;
                 fadePanel.alpha = Mathf.Lerp(from, to, t / duration);
                 await UniTask.Yield();
             }
-
             fadePanel.alpha = to;
         }
 
         private async UniTask FadeObjectAsync(GameObject obj, float from, float to, float duration)
         {
             var group = obj.GetComponent<CanvasGroup>() ?? obj.AddComponent<CanvasGroup>();
-
             float t = 0;
             group.alpha = from;
-
             while (t < duration)
             {
                 t += Time.deltaTime;
                 group.alpha = Mathf.Lerp(from, to, t / duration);
                 await UniTask.Yield();
             }
-
             group.alpha = to;
         }
     }

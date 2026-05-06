@@ -42760,6 +42760,7 @@ MonoBehaviour:
   spacing: 200
   y: -400
   deckStartPos: {x: 800, y: -500}
+  cardResolveInterval: 0.7
 --- !u!114 &5482016215926344095
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -6,7 +6,16 @@ using UnityEngine.UI;
 namespace TechC.ODDESEY.Battle
 {
     /// <summary>
-    /// 敵とプレイヤー共用のHP表示クラス
+    /// 敵とプレイヤー共用のHP表示クラス。
+    ///
+    /// 変更点：
+    ///   - SlideToAsync と ResetColorAsync を並列実行に変更。
+    ///     HPが減るアニメーションと色リセットが同時に動くのでメリハリが出る。
+    ///   - Time.deltaTime → Time.unscaledDeltaTime に変更。
+    ///     将来的にヒットストップ（TimeScale 変更）を入れても
+    ///     HPバーのアニメーション速度が狂わない。
+    ///   - UpdateHpAsync が既に同じ値なら即リターン。
+    ///     ミス時など DamageDealt=0 で呼ばれても無駄な待ちが発生しない。
     /// </summary>
     public class HpView : MonoBehaviour
     {
@@ -17,15 +26,11 @@ namespace TechC.ODDESEY.Battle
         [Header("Color")]
         [SerializeField] private Color normalColor = Color.green;
         [SerializeField] private Color damagedColor = Color.red;
-        [SerializeField] private float colorResetDuration = 0.5f;
+        [SerializeField] private float colorResetDuration = 0.4f;
 
         [Header("Animation")]
-        [SerializeField] private float slideDuration = 0.3f;
+        [SerializeField] private float slideDuration = 0.25f;
 
-        /// <summary>
-        /// 初期化
-        /// </summary>
-        /// <param name="maxHp">最大HP</param>
         public void Setup(int maxHp)
         {
             hpSlider.maxValue = maxHp;
@@ -35,67 +40,70 @@ namespace TechC.ODDESEY.Battle
         }
 
         /// <summary>
-        /// スライダーの色を更新する
+        /// HPバーを更新する。
+        /// スライドアニメーションと色リセットを並列で実行するのでテンポよく見える。
         /// </summary>
-        /// <param name="currentHp">現在のHP</param>
-        /// <param name="maxHp"></param>
-        /// <returns></returns>
         public async UniTask UpdateHpAsync(int currentHp, int maxHp)
         {
-            // 色をダメージ色に変えてから元に戻す
+            // 変化がなければ即リターン
+            if (Mathf.Approximately(hpSlider.value, currentHp)) return;
+
             fillImage.color = damagedColor;
 
-            // スライダーをアニメーション
-            await SlideToAsync(currentHp, maxHp);
-
-            // 色をリセット
-            await ResetColorAsync();
+            // スライドと色リセットを並列実行
+            await UniTask.WhenAll(
+                SlideToAsync(currentHp, maxHp),
+                ResetColorAsync()
+            );
         }
 
         /// <summary>
-        /// スライダーの数値をアニメーションする
+        /// アニメーションなしで即時更新（バトル開始時など）。
         /// </summary>
-        /// <param name="currentHp">現在のHP</param>
-        /// <param name="maxHp">最大HP</param>
-        /// <returns></returns>
+        public void UpdateImmediate(int currentHp, int maxHp)
+        {
+            hpSlider.value = currentHp;
+            fillImage.color = normalColor;
+            UpdateText(currentHp, maxHp);
+        }
+
+        // ─── 内部処理 ────────────────────────────────────────────────────
+
         private async UniTask SlideToAsync(int currentHp, int maxHp)
         {
             float from = hpSlider.value;
             float to = currentHp;
-            float t = 0;
+            float elapsed = 0f;
 
-            while (t < slideDuration)
+            while (elapsed < slideDuration)
             {
-                t += Time.deltaTime;
-                hpSlider.value = Mathf.Lerp(from, to, t / slideDuration);
+                elapsed += Time.unscaledDeltaTime; // ヒットストップ対応
+                float t = Mathf.Clamp01(elapsed / slideDuration);
+                float eased = 1f - Mathf.Pow(1f - t, 3f); // EaseOutCubic
+                hpSlider.value = Mathf.Lerp(from, to, eased);
                 UpdateText((int)hpSlider.value, maxHp);
-                await UniTask.Yield();
+                await UniTask.Yield(PlayerLoopTiming.Update);
             }
 
             hpSlider.value = to;
+            UpdateText(currentHp, maxHp);
         }
 
-        /// <summary>
-        /// 色を元に戻す
-        /// </summary>
-        /// <returns></returns>
         private async UniTask ResetColorAsync()
         {
-            float t = 0;
-            while (t < colorResetDuration)
+            float elapsed = 0f;
+
+            while (elapsed < colorResetDuration)
             {
-                t += Time.deltaTime;
-                fillImage.color = Color.Lerp(damagedColor, normalColor, t / colorResetDuration);
-                await UniTask.Yield();
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / colorResetDuration);
+                fillImage.color = Color.Lerp(damagedColor, normalColor, t);
+                await UniTask.Yield(PlayerLoopTiming.Update);
             }
+
             fillImage.color = normalColor;
         }
 
-        /// <summary>
-        /// HPのテキストの更新
-        /// </summary>
-        /// <param name="current">現在の値</param>
-        /// <param name="max">最大値</param>
         private void UpdateText(int current, int max)
         {
             if (hpText != null)
