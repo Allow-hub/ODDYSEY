@@ -25,7 +25,11 @@ namespace TechC.ODDESEY.Battle
         // ─── Animation Event から呼ぶ ──────────────────────────────────────
 
         public void NotifyHitTiming() => hitTimingTcs?.TrySetResult();
-        public void NotifyAttackFinished() => attackFinishedTcs?.TrySetResult();
+        public void NotifyAttackFinished()
+        {
+            hitTimingTcs?.TrySetResult();
+            attackFinishedTcs?.TrySetResult();
+        }
         public void NotifyHitFinished() => NotifyStateFinished(PlayerAnimationType.Hit);
         public void NotifyMissFinished() => NotifyStateFinished(PlayerAnimationType.Miss);
 
@@ -76,6 +80,11 @@ namespace TechC.ODDESEY.Battle
             var (animHash, _) = ResolveParams(animType);
             CustomLogger.Info($"プレイヤー攻撃アニメーション完了 ({animType})", LogTagUtil.TagBattle);
             animator?.SetBool(animHash, false);
+        }
+
+        public void PlayHitStopEffect()
+        {
+            HitStopManager.I.Play();
         }
 
         /// <summary>

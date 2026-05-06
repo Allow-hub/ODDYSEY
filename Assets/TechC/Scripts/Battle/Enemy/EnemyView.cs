@@ -35,6 +35,7 @@ namespace TechC.ODDESEY.Battle
         {
             if (type == EnemyStateNotifier.StateType.Attack)
             {
+                hitTimingTcs?.TrySetResult();
                 attackFinishedTcs?.TrySetResult();
                 return;
             }
