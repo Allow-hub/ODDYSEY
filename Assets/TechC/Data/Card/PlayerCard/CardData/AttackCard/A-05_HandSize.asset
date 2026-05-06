@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   CardName: HandSize
   CardSprite: {fileID: 0}
+  Description: "55~65%\u306E\u78BA\u7387\u3067\u3001\u624B\u672D\u679A\u6570 \xD7
+    2~4\u30C0\u30E1\u30FC\u30B8\u3002"
   Effects:
   - {fileID: 11400000, guid: e4089e5585b7b2147928941462f2bc9a, type: 2}
   AnimationType: 0
