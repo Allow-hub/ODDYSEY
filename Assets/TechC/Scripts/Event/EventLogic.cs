@@ -1,4 +1,3 @@
-using TechC.ODDESEY;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Event
