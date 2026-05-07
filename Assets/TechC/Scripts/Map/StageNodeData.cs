@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TechC.ODDESEY.Event;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Map
@@ -10,17 +11,24 @@ namespace TechC.ODDESEY.Map
     {
         Battle,
         Event,
-        Rest,   // 休憩（HP回復など、後で拡張用）
+        Rest,
     }
 
     /// <summary>
     /// マップ上の1ノード（1列）の定義。
-    /// 選択肢が1つなら強制、複数なら選択式。
+    ///
+    /// 変更点：
+    ///   - EventData フィールドを追加。
+    ///     NodeType.Event の選択肢があるノードにのみアサインする。
+    ///     Battle / Rest の場合は null でよい。
     /// </summary>
     [System.Serializable]
     public class StageNodeData
     {
         [Tooltip("この列で選べる選択肢リスト（1つなら強制進行）")]
         public List<NodeType> choices = new() { NodeType.Battle };
+
+        [Tooltip("choices に Event が含まれる場合にアサインする EventData")]
+        public EventData EventData;
     }
 }

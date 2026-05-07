@@ -7,19 +7,8 @@ using TechC.ODDESEY.Map;
 
 namespace TechC.Core.Manager
 {
-    /// <summary>
-    /// MainScene の司令塔。
-    /// Prefab の生成・破棄・切り替えを一手に担う。
-    /// BattlePrefab / MapPrefab / rewardPrefab / EventPrefab を知っている唯一のクラス。
-    /// 
-    /// マップの進行状態（MapProgressState）はここで保持し、
-    /// Prefab 再生成のたびに MapController へ渡して復元させる。
-    /// </summary>
     public class MainManager : Singleton<MainManager>
     {
-        // -------------------------------------------------------
-        // Inspector
-        // -------------------------------------------------------
         [Header("プレハブ")]
         [SerializeField] private GameObject mapPrefab;
         [SerializeField] private GameObject battlePrefab;
@@ -29,67 +18,48 @@ namespace TechC.Core.Manager
         [Header("ステージ定義（ScriptableObject）")]
         [SerializeField] private StageMapData currentStageMapData;
 
-        public float LuckGaugeValue => lackGaugeValue;
-        private float lackGaugeValue = 0f;
+        public float LuckGaugeValue => luckGaugeValue;
+        public int LuckGaugeMax => 100;
+        private float luckGaugeValue = 0f;
 
         [Header("デバッグ用設定")]
         [SerializeField] private StartPhase debugStartPhase = StartPhase.Map;
 
-        // -------------------------------------------------------
-        // 内部フィールド
-        // -------------------------------------------------------
+        [Tooltip("debugStartPhase = Event のときに使う EventData")]
+        [SerializeField] private EventData debugEventData; // ← 追加
+
         private GameObject currentPrefab;
         private MapController mapController;
         private BattleController battleController;
         private RewardController rewardController;
         private EventController eventController;
 
-        /// <summary>
-        /// マップの進行状態。Prefab が破棄されても保持し続ける。
-        /// </summary>
+        private EventData pendingEventData;
         private readonly MapProgressState mapProgress = new();
 
         public GameContext GameContext => gameContext;
         [SerializeField] private DebugGameContext debugContext = new();
         private GameContext gameContext;
 
-        // -------------------------------------------------------
-        // フェーズ定義
-        // -------------------------------------------------------
-        public enum StartPhase
-        {
-            Map,
-            Battle,
-            Result,
-            Event,
-        }
+        public enum StartPhase { Map, Battle, Result, Event }
 
-        // -------------------------------------------------------
-        // 初期化
-        // -------------------------------------------------------
         protected override bool DontDestroy => false;
 
         protected override void OnInit()
         {
             base.OnInit();
             gameContext = debugContext.ToGameContext();
+            luckGaugeValue = gameContext.LuckGauge;
         }
 
         private void Awake() => Init();
-
         private void Start() => EnterPhase(debugStartPhase);
 
-        // -------------------------------------------------------
-        // フェーズ遷移
-        // -------------------------------------------------------
+        // ─── フェーズ遷移 ────────────────────────────────────────────────
 
-        /// <summary>
-        /// 各フェーズへ遷移する。
-        /// </summary>
         public void EnterPhase(StartPhase phase)
         {
             DestroyCurrentPrefab();
-
             switch (phase)
             {
                 case StartPhase.Map: EnterMap(); break;
@@ -99,9 +69,6 @@ namespace TechC.Core.Manager
             }
         }
 
-        /// <summary>
-        /// マップへ遷移。進行状態を復元して渡す。
-        /// </summary>
         private void EnterMap()
         {
             currentPrefab = Instantiate(mapPrefab);
@@ -111,7 +78,6 @@ namespace TechC.Core.Manager
             mapController.OnEventRequested += HandleEventRequested;
             mapController.OnStageCompleted += HandleStageCompleted;
 
-            // 進行状態を渡して復元
             mapController.Initialize(currentStageMapData, mapProgress);
         }
 
@@ -132,7 +98,6 @@ namespace TechC.Core.Manager
             rewardController = currentPrefab.GetComponent<RewardController>();
 
             rewardController.OnResultClosed += HandleResultClosed;
-
             rewardController.Initialize();
         }
 
@@ -143,32 +108,62 @@ namespace TechC.Core.Manager
 
             eventController.OnEventCompleted += HandleEventCompleted;
 
-            eventController.Initialize();
+            // デバッグ直起動の場合は debugEventData を使う
+            var data = pendingEventData ?? debugEventData;
+
+            if (data == null)
+                Debug.LogError("[MainManager] EventData が null です。debugEventData をアサインしてください。");
+
+            eventController.Initialize(data);
         }
 
-        // -------------------------------------------------------
-        // ハンドラ
-        // -------------------------------------------------------
+        // ─── ハンドラ ─────────────────────────────────────────────────────
+
         private void HandleBattleRequested() => EnterPhase(StartPhase.Battle);
-        private void HandleEventRequested() => EnterPhase(StartPhase.Event);
+
+        private void HandleEventRequested(EventData eventData)
+        {
+            pendingEventData = eventData;
+            EnterPhase(StartPhase.Event);
+        }
+
         private void HandleStageCompleted()
         {
-            // ステージクリア → リザルトへ。次回のために進行状態をリセット。
             mapProgress.Reset();
             EnterPhase(StartPhase.Result);
         }
 
-        private void HandleBattleWon() => EnterPhase(StartPhase.Map); // マップに戻り次ノードへ
+        private void HandleBattleWon() => EnterPhase(StartPhase.Map);
         private void HandleBattleLost() => EnterPhase(StartPhase.Result);
-
         private void HandleResultClosed() => EnterPhase(StartPhase.Map);
-        private void HandleEventCompleted() => EnterPhase(StartPhase.Map);
 
-        public void SetLackGaugeValue(float value) => lackGaugeValue = Mathf.Clamp(value, 0f, 100f);
+        private void HandleEventCompleted()
+        {
+            pendingEventData = null; // 使い終わったらリセット
+            EnterPhase(StartPhase.Map);
+        }
 
-        // -------------------------------------------------------
-        // クリーンアップ
-        // -------------------------------------------------------
+        public void SetLackGaugeValue(float value) => luckGaugeValue = Mathf.Clamp(value, 0f, 100f);
+
+        /// <summary>
+        /// カードをデッキに追加する。EventController の GainCard 結果から呼ばれる。
+        /// </summary>
+        public void AddCardToContext(int count)
+        {
+            var context = GameContext;
+            if (context?.RewardCandidates == null) return;
+
+            int added = 0;
+            foreach (var card in context.RewardCandidates)
+            {
+                if (added >= count) break;
+                context.AddCard(card);
+                added++;
+            }
+        }
+
+        // ─── クリーンアップ ───────────────────────────────────────────────
+
         private void DestroyCurrentPrefab()
         {
             if (mapController != null)
@@ -194,7 +189,6 @@ namespace TechC.Core.Manager
                 eventController.OnEventCompleted -= HandleEventCompleted;
                 eventController = null;
             }
-
             if (currentPrefab != null)
             {
                 Destroy(currentPrefab);

@@ -124,7 +124,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1001 &1599738722
+--- !u!1001 &1741140555
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -200,12 +200,12 @@ PrefabInstance:
     - target: {fileID: 3133558817554752861, guid: a581df6dba48b2c449bc6e850af49eb3,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -7.9598217
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3133558817554752861, guid: a581df6dba48b2c449bc6e850af49eb3,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3133558817554752861, guid: a581df6dba48b2c449bc6e850af49eb3,
         type: 3}
@@ -350,10 +350,31 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -7023583498812918162, guid: be6b8ca34b5bfd54bbc5e333611be71c,
+        type: 3}
+      propertyPath: debugEventData
+      value: 
+      objectReference: {fileID: 11400000, guid: 2caa1f394fd969241a292c8f5f67a14f,
+        type: 2}
+    - target: {fileID: -7023583498812918162, guid: be6b8ca34b5bfd54bbc5e333611be71c,
+        type: 3}
+      propertyPath: debugStartPhase
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -7023583498812918162, guid: be6b8ca34b5bfd54bbc5e333611be71c,
+        type: 3}
+      propertyPath: debugContext.LuckGauge
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 832637685491559417, guid: be6b8ca34b5bfd54bbc5e333611be71c,
         type: 3}
       propertyPath: m_Name
       value: MainManager
+      objectReference: {fileID: 0}
+    - target: {fileID: 832637685491559417, guid: be6b8ca34b5bfd54bbc5e333611be71c,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3922228672395292768, guid: be6b8ca34b5bfd54bbc5e333611be71c,
         type: 3}
@@ -415,4 +436,4 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 8579330174305089759}
-  - {fileID: 1599738722}
+  - {fileID: 1741140555}
