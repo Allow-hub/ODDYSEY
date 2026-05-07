@@ -14,12 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nodes:
   - choices: 0000000001000000
+    EventData: {fileID: 11400000, guid: 2caa1f394fd969241a292c8f5f67a14f, type: 2}
   - choices: 00000000
+    EventData: {fileID: 0}
   - choices: 00000000
+    EventData: {fileID: 0}
   - choices: 00000000
+    EventData: {fileID: 0}
   - choices: 0000000001000000
+    EventData: {fileID: 11400000, guid: 2caa1f394fd969241a292c8f5f67a14f, type: 2}
   - choices: 00000000
+    EventData: {fileID: 0}
   - choices: 00000000
+    EventData: {fileID: 0}
   - choices: 00000000
+    EventData: {fileID: 0}
   - choices: 00000000
+    EventData: {fileID: 0}
   - choices: 00000000
+    EventData: {fileID: 0}

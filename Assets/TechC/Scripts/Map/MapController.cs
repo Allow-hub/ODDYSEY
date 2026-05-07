@@ -2,61 +2,52 @@ using System;
 using System.Collections.Generic;
 using TechC.Core.Manager;
 using TechC.ODDESEY.Battle;
+using TechC.ODDESEY.Event;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Map
 {
     /// <summary>
     /// ステージマップの管理。
-    /// ノード選択UI・進行状態を担当し、次フェーズを MainManager に通知する。
+    ///
+    /// 変更点：
+    ///   - OnEventRequested を Action → Action<EventData> に変更。
+    ///     MainManager がどの EventData でイベントを開くか判断できるようにする。
+    ///   - OnNodeChoiceSelected で選択されたノードの EventData を取得して渡す。
     /// </summary>
     public class MapController : MonoBehaviour
     {
-        // -------------------------------------------------------
-        // Inspector
-        // -------------------------------------------------------
         [Header("ノードViewのリスト（上から順、数はStageMapDataのnodes数に合わせる）")]
         [SerializeField] private List<MapNodeView> nodeViews;
 
-        [Header("選択肢ボタンのPrefab（NodeChoiceButton がアタッチされていること）")]
+        [Header("選択肢ボタンのPrefab")]
         [SerializeField] private GameObject choiceButtonPrefab;
 
         [Header("ラッキーゲージ")]
         [SerializeField] private LuckGaugeView luckGaugeView;
 
-        // -------------------------------------------------------
-        // Events
-        // -------------------------------------------------------
+        // ─── Events ───────────────────────────────────────────────────────
         public event Action OnBattleRequested;
-        public event Action OnEventRequested;
+        public event Action<EventData> OnEventRequested; // ← EventData を渡すように変更
         public event Action OnStageCompleted;
 
-        // -------------------------------------------------------
-        // 内部状態
-        // -------------------------------------------------------
+        // ─── 内部状態 ────────────────────────────────────────────────────
         private StageMapData mapData;
         private MapProgressState progressState;
 
-        // -------------------------------------------------------
-        // 初期化
-        // -------------------------------------------------------
+        // ─── 初期化 ───────────────────────────────────────────────────────
 
-        /// <summary>
-        /// MainManager からステージ定義と進行状態を渡して初期化する。
-        /// </summary>
         public void Initialize(StageMapData data, MapProgressState progress)
         {
-            mapData = data;
+            mapData       = data;
             progressState = progress;
 
-            luckGaugeView.Setup(100f);
+            luckGaugeView.Setup(MainManager.I.LuckGaugeMax);
             luckGaugeView.UpdateGaugeImmediate(MainManager.I?.LuckGaugeValue ?? 0f, 100f, false);
             RefreshView();
         }
 
-        // -------------------------------------------------------
-        // ビュー更新
-        // -------------------------------------------------------
+        // ─── ビュー更新 ──────────────────────────────────────────────────
 
         private void RefreshView()
         {
@@ -75,21 +66,20 @@ namespace TechC.ODDESEY.Map
                 nodeViews[i].gameObject.SetActive(true);
 
                 MapNodeView.NodeState state;
-                if (i < current) state = MapNodeView.NodeState.Cleared;
+                if (i < current)      state = MapNodeView.NodeState.Cleared;
                 else if (i == current) state = MapNodeView.NodeState.Active;
-                else state = MapNodeView.NodeState.Locked;
+                else                   state = MapNodeView.NodeState.Locked;
 
-                // buttonPrefab を渡してノードView内で Instantiate させる
                 nodeViews[i].Setup(mapData.nodes[i], state, choiceButtonPrefab, OnNodeChoiceSelected);
             }
         }
 
-        // -------------------------------------------------------
-        // 選択処理
-        // -------------------------------------------------------
+        // ─── 選択処理 ────────────────────────────────────────────────────
 
         private void OnNodeChoiceSelected(NodeType chosenType)
         {
+            // 選択時点のノードインデックスを保持してから進める
+            int selectedNodeIndex = progressState.currentNodeIndex;
             progressState.Advance();
 
             if (progressState.IsCompleted(mapData.nodes.Count))
@@ -100,9 +90,21 @@ namespace TechC.ODDESEY.Map
 
             switch (chosenType)
             {
-                case NodeType.Battle: OnBattleRequested?.Invoke(); break;
-                case NodeType.Event: OnEventRequested?.Invoke(); break;
-                case NodeType.Rest: OnBattleRequested?.Invoke(); break; // 必要なら拡張
+                case NodeType.Battle:
+                    OnBattleRequested?.Invoke();
+                    break;
+
+                case NodeType.Event:
+                    // 選択されたノードの EventData を取得して渡す
+                    var eventData = mapData.nodes[selectedNodeIndex].EventData;
+                    if (eventData == null)
+                        Debug.LogWarning($"[MapController] nodes[{selectedNodeIndex}] に EventData がアサインされていません。");
+                    OnEventRequested?.Invoke(eventData);
+                    break;
+
+                case NodeType.Rest:
+                    OnBattleRequested?.Invoke(); // 必要なら拡張
+                    break;
             }
         }
     }
