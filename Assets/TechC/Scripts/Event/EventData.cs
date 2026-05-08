@@ -1,35 +1,26 @@
+using System.Collections.Generic;
+using TechC.ODDESEY.Battle;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Event
 {
-    /// <summary>
-    /// イベントの結果タイプ。
-    /// </summary>
     public enum EventResultType
     {
-        None,       // 何も起きない
-        HealHp,     // HPを回復する
-        DamageHp,   // HPを減らす
-        GainGauge,  // 運ゲージを増やす
-        LoseGauge,  // 運ゲージを減らす
-        GainCard,   // カードを獲得する
+        None,
+        HealHp,
+        DamageHp,
+        GainGauge,
+        LoseGauge,
+        GainCard,
     }
 
-    /// <summary>
-    /// マップアイコンの種別（プレイヤーに見せる分類）。
-    /// </summary>
     public enum EventMapIconType
     {
-        Card,   // カード獲得系
-        Heal,   // 回復系
-        Risk,   // 高リスク系
+        Card,
+        Heal,
+        Risk,
     }
 
-    /// <summary>
-    /// イベント1件のデータ定義。ScriptableObject として管理する。
-    ///
-    /// 仕様書 9-1 のデータ項目に対応。
-    /// </summary>
     [CreateAssetMenu(fileName = "EventData", menuName = "ODDESEY/EventData")]
     public class EventData : ScriptableObject
     {
@@ -37,23 +28,24 @@ namespace TechC.ODDESEY.Event
         public string EventId;
         public string EventName;
         public EventMapIconType MapIconType;
-
         public GameObject EventPrefab;  // イベントシーンで表示するPrefab（UIでも3Dオブジェクトでも可）
 
-        [TextArea]
+        [TextArea(3, 6)]
         public string Description;
 
-        [Tooltip("挑戦ボタンに表示するテキスト（例：残骸を解析する）")]
+        [Tooltip("挑戦ボタンに表示するテキスト")]
         public string ChallengeText;
 
         [Header("成功率")]
         [Range(0, 100)]
-        [Tooltip("運ゲージ補正前の基礎成功率（%）")]
         public int BaseSuccessRate = 60;
 
         [Header("成功時")]
         public EventResultType SuccessResultType;
         public int SuccessResultValue;
+
+        [Tooltip("SuccessResultType が GainCard のとき、このリストから抽選する")]
+        public List<CardData> SuccessCardCandidates = new();
 
         [TextArea(1, 3)]
         public string SuccessFlavorText;
@@ -62,11 +54,46 @@ namespace TechC.ODDESEY.Event
         public EventResultType FailureResultType;
         public int FailureResultValue;
 
-        [TextArea]
+        [Tooltip("FailureResultType が GainCard のとき、このリストから抽選する")]
+        public List<CardData> FailureCardCandidates = new();
+
+        [TextArea(1, 3)]
         public string FailureFlavorText;
 
         [Header("失敗時の運ゲージ還元量（%）")]
-        [Tooltip("運ゲージを1%以上消費した場合のみ還元される")]
         public int FailureGaugeRefund = 10;
+
+        // ─── ユーティリティ ───────────────────────────────────────────────
+
+        /// <summary>
+        /// 成功時のカード候補からランダムに count 枚取り出す。
+        /// 候補が足りない場合は候補数を上限とする。
+        /// </summary>
+        public List<CardData> DrawSuccessCards(int count)
+            => DrawCards(SuccessCardCandidates, count);
+
+        /// <summary>
+        /// 失敗時のカード候補からランダムに count 枚取り出す。
+        /// </summary>
+        public List<CardData> DrawFailureCards(int count)
+            => DrawCards(FailureCardCandidates, count);
+
+        private static List<CardData> DrawCards(List<CardData> pool, int count)
+        {
+            if (pool == null || pool.Count == 0) return new List<CardData>();
+
+            var copy = new List<CardData>(pool);
+            var result = new List<CardData>();
+            int take = Mathf.Min(count, copy.Count);
+
+            for (int i = 0; i < take; i++)
+            {
+                int idx = Random.Range(0, copy.Count);
+                result.Add(copy[idx]);
+                copy.RemoveAt(idx); // 重複なし抽選
+            }
+
+            return result;
+        }
     }
 }

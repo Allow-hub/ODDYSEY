@@ -1,7 +1,18 @@
+using System.Collections.Generic;
+using TechC.ODDESEY;
+using TechC.ODDESEY.Battle;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Event
 {
+    /// <summary>
+    /// イベントのロジックを管理する純粋C#クラス。
+    ///
+    /// 変更点：
+    ///   - GainCard のとき EventData.DrawSuccessCards / DrawFailureCards で抽選し
+    ///     EventResult.DrawnCards に詰めて返す。
+    ///   - GameContext へのカード追加は行わない（EventController に委譲）。
+    /// </summary>
     public class EventLogic
     {
         private EventData data;
@@ -9,14 +20,8 @@ namespace TechC.ODDESEY.Event
         private int consumedGauge = 0;
 
         public int ReservedGauge { get; private set; } = 0;
-
-        /// <summary>最終成功率（0〜100）</summary>
         public int FinalSuccessRate => Mathf.Clamp(data.BaseSuccessRate + ReservedGauge, 0, 100);
-
-        /// <summary>現在の運ゲージ（整数）</summary>
         public int CurrentGauge => Mathf.FloorToInt(context?.LuckGauge ?? 0f);
-
-        /// <summary>現在ゲージのうち未予約の残量</summary>
         private int AvailableGauge => CurrentGauge - ReservedGauge;
 
         // ─── 初期化 ───────────────────────────────────────────────────────
@@ -34,16 +39,8 @@ namespace TechC.ODDESEY.Event
         public bool TryAddReserved(int amount = 1)
         {
             if (!CanAddReserved()) return false;
-
-            // 追加できる上限：
-            //   ① 未予約残量を超えない
-            //   ② 成功率が 100% を超えない
-            int maxByGauge = AvailableGauge;
-            int maxBySuccessRate = 100 - FinalSuccessRate; // FinalSuccessRate は現在の値
-            int maxAddable = Mathf.Min(maxByGauge, maxBySuccessRate);
-
+            int maxAddable = Mathf.Min(AvailableGauge, 100 - FinalSuccessRate);
             if (maxAddable <= 0) return false;
-
             ReservedGauge += Mathf.Min(amount, maxAddable);
             return true;
         }
@@ -55,38 +52,44 @@ namespace TechC.ODDESEY.Event
             return true;
         }
 
-        /// <summary>
-        /// ゲージを追加できるか。
-        /// 未予約残量が 1% 以上、かつ成功率が 100% 未満。
-        /// </summary>
-        public bool CanAddReserved()
-            => AvailableGauge >= 1 && FinalSuccessRate < 100;
-
+        public bool CanAddReserved() => AvailableGauge >= 1 && FinalSuccessRate < 100;
         public bool CanRemoveReserved() => ReservedGauge > 0;
 
         // ─── 挑戦 ────────────────────────────────────────────────────────
 
         public EventResult ChallengeAndApply()
         {
+            // 1. 消費前に成功率を確定させる
             int successRate = FinalSuccessRate;
-            // 1. ゲージ消費（判定前に確定させる）
+
+            // 2. ゲージ消費
             consumedGauge = ReservedGauge;
             context.SpendGauge(ReservedGauge);
             ReservedGauge = 0;
 
-            // 2. 成功判定
-            //    FinalSuccessRate == 100 のとき Random.Range(0,100) は 0〜99 → 常に true
-            //    FinalSuccessRate == 0  のとき Random.Range(0,100) は 0〜99 → 常に false
+            // 3. 成功判定
             int roll = Random.Range(0, 100);
             bool success = roll < successRate;
 
             var resultType = success ? data.SuccessResultType : data.FailureResultType;
             var resultValue = success ? data.SuccessResultValue : data.FailureResultValue;
 
-            // 3. GameContext に反映
-            ApplyToContext(resultType, resultValue);
+            // 4. GameContext に反映（GainCard 以外）
+            var drawnCards = new List<CardData>();
+            if (resultType == EventResultType.GainCard)
+            {
+                // イベントごとのカード候補から抽選
+                drawnCards = success
+                    ? data.DrawSuccessCards(resultValue)
+                    : data.DrawFailureCards(resultValue);
+                // 実際の追加は EventController に委譲
+            }
+            else
+            {
+                ApplyToContext(resultType, resultValue);
+            }
 
-            // 4. 失敗時の運ゲージ還元（消費ゲージが 1% 以上の場合のみ）
+            // 5. 失敗時の運ゲージ還元
             int refund = 0;
             if (!success && consumedGauge >= 1)
             {
@@ -101,6 +104,7 @@ namespace TechC.ODDESEY.Event
                 ResultValue = resultValue,
                 FlavorText = success ? data.SuccessFlavorText : data.FailureFlavorText,
                 RefundedGauge = refund,
+                DrawnCards = drawnCards,
             };
         }
 
@@ -118,18 +122,7 @@ namespace TechC.ODDESEY.Event
                 case EventResultType.DamageHp: context.DamageHp(value); break;
                 case EventResultType.GainGauge: context.AddGauge(value); break;
                 case EventResultType.LoseGauge: context.SpendGauge(value); break;
-                case EventResultType.GainCard:  /* EventController に委譲 */ break;
-                case EventResultType.None: break;
             }
         }
-    }
-
-    public class EventResult
-    {
-        public bool IsSuccess;
-        public EventResultType ResultType;
-        public int ResultValue;
-        public string FlavorText;
-        public int RefundedGauge;
     }
 }

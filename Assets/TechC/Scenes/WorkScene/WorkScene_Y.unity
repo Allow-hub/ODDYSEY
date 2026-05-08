@@ -350,6 +350,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -7023583498812918162, guid: be6b8ca34b5bfd54bbc5e333611be71c,
+        type: 3}
+      propertyPath: debugStartPhase
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -7023583498812918162, guid: be6b8ca34b5bfd54bbc5e333611be71c,
+        type: 3}
+      propertyPath: debugContext.LuckGauge
+      value: 50
+      objectReference: {fileID: 0}
     - target: {fileID: 832637685491559417, guid: be6b8ca34b5bfd54bbc5e333611be71c,
         type: 3}
       propertyPath: m_Name

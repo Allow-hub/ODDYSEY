@@ -22,8 +22,11 @@ MonoBehaviour:
   BaseSuccessRate: 65
   SuccessResultType: 5
   SuccessResultValue: 1
+  SuccessCardCandidates:
+  - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
   SuccessFlavorText: "\u7FBD\u306E\u65AD\u7247\u306B\u3001\u898B\u899A\u3048\u306E\u306A\u3044\u7D0B\u69D8\u304C\u523B\u307E\u308C\u3066\u3044\u305F\u3002\u89E3\u6790\u3059\u308B\u4FA1\u5024\u306F\u3042\u308B\u3002"
   FailureResultType: 2
   FailureResultValue: 3
+  FailureCardCandidates: []
   FailureFlavorText: "\u89E3\u6790\u3092\u8A66\u307F\u305F\u304C\u3001\u7FBD\u3067\u624B\u3092\u5207\u3063\u3066\u3057\u307E\u3063\u305F\u3002"
   FailureGaugeRefund: 10

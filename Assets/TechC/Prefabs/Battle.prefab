@@ -36742,7 +36742,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   highlightImage: {fileID: 7092042496188969718}
-  highlightColor: {r: 0.9, g: 0.5, b: 0.1, a: 0.8}
+  electricMaterial: {fileID: 2100000, guid: d3340c26f9027124b98b4d9b49b9429f, type: 2}
+  fadeSpeed: 6
   battleView: {fileID: 6061412184378286799}
 --- !u!1 &5175175416969682875
 GameObject:
@@ -38977,6 +38978,31 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3133558817554752861}
     m_Modifications:
+    - target: {fileID: 1605910868791849610, guid: 6070cab4e2b5813418d1e20df5f355d6,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 1605910868791849610, guid: 6070cab4e2b5813418d1e20df5f355d6,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 1605910868791849610, guid: 6070cab4e2b5813418d1e20df5f355d6,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 62
+      objectReference: {fileID: 0}
+    - target: {fileID: 1605910868791849610, guid: 6070cab4e2b5813418d1e20df5f355d6,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 1605910868791849610, guid: 6070cab4e2b5813418d1e20df5f355d6,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 21
+      objectReference: {fileID: 0}
     - target: {fileID: 7954031303054299629, guid: 6070cab4e2b5813418d1e20df5f355d6,
         type: 3}
       propertyPath: m_Name
