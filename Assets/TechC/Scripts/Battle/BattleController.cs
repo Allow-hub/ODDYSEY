@@ -52,7 +52,8 @@ namespace TechC.ODDESEY.Battle
                     await battleView.ShowTurnStartAsync(turnData);
 
                 await battleView.WaitForPlayerConfirmAsync();
-
+                // BattleStart アニメが終わるまで待つ
+                await battleView.WaitForBattleStartAnimAsync();
                 var resolveResults = battleLogic.ConfirmTurn();
                 CustomLogger.Info($"カード解決開始: {resolveResults.Count}枚", LogTagUtil.TagBattle);
 

@@ -46,9 +46,9 @@ MonoBehaviour:
     position:
       serializedVersion: 2
       x: 1449
-      y: -2104
+      y: -2111
       width: 1245
-      height: 2355
+      height: 2368
     contents:
     - model: {fileID: 8926484042661615044}
       id: 0
@@ -98,7 +98,7 @@ MonoBehaviour:
     x: -124
     y: -2136
     width: 3877
-    height: 2563
+    height: 2561
 --- !u!114 &114350483966674976
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1761,7 +1761,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 1
+      m_SerializableObject: 0
     m_Space: -1
   m_Property:
     name: Delay
@@ -1820,7 +1820,7 @@ MonoBehaviour:
   m_Parent: {fileID: 114350483966674976}
   m_Children:
   - {fileID: 8926484042661614991}
-  m_UIPosition: {x: 2178, y: -2045}
+  m_UIPosition: {x: 2245, y: -2052}
   m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots: []
@@ -1924,7 +1924,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 1
+      m_SerializableObject: 0
     m_Space: -1
   m_Property:
     name: Delay

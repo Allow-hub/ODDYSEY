@@ -26,7 +26,8 @@ namespace TechC.ODDESEY.Battle
 
         [Header("見た目")]
         [SerializeField] private Image cardImage;
-
+        [SerializeField] private Outline outline;
+        [SerializeField] private Vector3 dragRotation = new Vector3(0f, 0f, 13f);
         [Header("アニメ設定")]
         [SerializeField] private float moveDuration = 0.25f;
 
@@ -53,6 +54,7 @@ namespace TechC.ODDESEY.Battle
         {
             animator = GetComponent<Animator>();
             rectTransform = GetComponent<RectTransform>();
+            outline.enabled = false;
         }
 
         public void Setup(CardInstance cardInstance)
@@ -130,9 +132,11 @@ namespace TechC.ODDESEY.Battle
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (isDealing || isPlaced || isEnemy) return;
+            outline.enabled = true;
             cardImage.raycastTarget = false;
             originalParent = transform.parent;
             transform.SetParent(rootCanvas.transform, true);
+            transform.localRotation = Quaternion.Euler(dragRotation);
         }
 
         public void OnDrag(PointerEventData eventData)
@@ -151,6 +155,9 @@ namespace TechC.ODDESEY.Battle
         public void OnEndDrag(PointerEventData eventData)
         {
             if (isDealing || isEnemy) return;
+            outline.enabled = false;
+            transform.localRotation = Quaternion.identity;
+
             if (isPlaced)
             {
                 CustomLogger.Info($"カード配置確定: {cardData.CardName} (InstanceId: {instanceId})", LogTagUtil.TagCard);

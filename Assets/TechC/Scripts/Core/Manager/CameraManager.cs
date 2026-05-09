@@ -62,14 +62,14 @@ namespace TechC.ODDESEY.Core.Manager
 
         private void BuildMap()
         {
-            vcamMap       = new Dictionary<CameraState, CinemachineVirtualCamera>();
+            vcamMap = new Dictionary<CameraState, CinemachineVirtualCamera>();
             blendDurationMap = new Dictionary<CameraState, float>();
 
             foreach (var entry in vcamEntries)
             {
                 if (!vcamMap.ContainsKey(entry.state))
                 {
-                    vcamMap[entry.state]          = entry.vcam;
+                    vcamMap[entry.state] = entry.vcam;
                     blendDurationMap[entry.state] = entry.blendDuration;
                 }
 
@@ -128,7 +128,7 @@ namespace TechC.ODDESEY.Core.Manager
 
             SwitchTo(data.onAttackState);
 
-            var vcam     = GetCurrentVCam();
+            var vcam = GetCurrentVCam();
             var animator = vcam?.GetComponent<Animator>();
 
             if (animator != null)
@@ -150,6 +150,33 @@ namespace TechC.ODDESEY.Core.Manager
 
             await UniTask.WaitForSeconds(data.returnDelay, cancellationToken: token);
             SwitchTo(CameraState.Default);
+        }
+
+        /// <summary>
+        /// カメラを切り替えてブレンドが完了するまで待つ。
+        /// </summary>
+        public async UniTask SwitchToAndWaitBlendAsync(CameraState state)
+        {
+            SwitchTo(state);
+
+            // blendDuration だけ待てばブレンド完了
+            if (blendDurationMap.TryGetValue(state, out float duration) && duration > 0f)
+                await UniTask.Delay(
+                    System.TimeSpan.FromSeconds(duration),
+                    ignoreTimeScale: true);
+        }
+        /// <summary>
+        /// Default カメラへ戻し、ブレンドが完了するまで待つ。
+        /// </summary>
+        public async UniTask ReturnToDefaultAsync()
+        {
+            SwitchTo(CameraState.Default);
+
+            // Default への blendDuration だけ待つ
+            if (blendDurationMap.TryGetValue(CameraState.Default, out float duration) && duration > 0f)
+                await UniTask.Delay(
+                    System.TimeSpan.FromSeconds(duration),
+                    ignoreTimeScale: true);
         }
 
         // ─── 内部処理 ────────────────────────────────────────────────────
@@ -178,8 +205,8 @@ namespace TechC.ODDESEY.Core.Manager
 
         public CameraState CurrentState => currentState;
 
-        [ContextMenu("Switch/Default")]    void DbgDefault()     => SwitchTo(CameraState.Default);
+        [ContextMenu("Switch/Default")] void DbgDefault() => SwitchTo(CameraState.Default);
         [ContextMenu("Switch/BattleStart")] void DbgBattleStart() => SwitchTo(CameraState.BattleStart);
-        [ContextMenu("Switch/Aim")]        void DbgAim()         => SwitchTo(CameraState.Aim);
+        [ContextMenu("Switch/Aim")] void DbgAim() => SwitchTo(CameraState.Aim);
     }
 }

@@ -30,18 +30,27 @@ Material:
     m_Ints: []
     m_Floats:
     - _Alpha: 0.85
+    - _ColorMask: 15
     - _FlickerAmount: 0.15
     - _FlickerSpeed: 8
     - _GlowIntensity: 2
+    - _GlowRadius: 1
+    - _GlowStrength: 2
     - _GlowWidth: 0.08
     - _HoloSpeed: 2
     - _HoloStrength: 0.3
+    - _Intensity: 0
     - _ScanlineDensity: 20
     - _ScanlineSpeed: 1.5
     - _ScanlineThickness: 0.08
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _GlowColor: {r: 0.29999998, g: 0.8, b: 1, a: 1}
+    - _GlowColor: {r: 0.67455214, g: 0.09064613, b: 0.9150943, a: 1}
     - _HoloColor: {r: 0, g: 0.6, b: 1, a: 1}
     - _ScanlineColor: {r: 0.29999998, g: 0.9, b: 1, a: 0.6}
   m_BuildTextureStacks: []

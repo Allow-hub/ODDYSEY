@@ -36,6 +36,8 @@ namespace TechC.ODDESEY.Battle
         [Header("Animation")]
         [SerializeField] private float fadeDuration = 0.4f;
         [SerializeField] private float textFadeDuration = 0.3f;
+        [Tooltip("BattleStartアニメ待機時間（秒）")]
+        [SerializeField] private float battleStartAnimDuration = 1.0f;
 
         [Header("Hand Layout")]
         [SerializeField] private float startX = -400f;
@@ -153,12 +155,12 @@ namespace TechC.ODDESEY.Battle
             {
                 if (result.IsPlayer)
                 {
-                    playerView.PlayDamageAnimationAsync(isHit: true).Forget();
+                    // playerView.PlayDamageAnimationAsync(isHit: true).Forget();
                     await playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax);
                 }
                 else
                 {
-                    currentEnemyView.PlayDamageAnimationAsync(isHit: true).Forget();
+                    // currentEnemyView.PlayDamageAnimationAsync(isHit: true).Forget();
                     await enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax);
                 }
             }
@@ -223,6 +225,17 @@ namespace TechC.ODDESEY.Battle
 
             if (view != null) Destroy(view.gameObject);
             handViews.Remove(instanceId);
+        }
+
+        /// <summary>
+        /// ConfirmTurn 後に BattleStart アニメが終わるまで待つ。
+        /// BattleController で WaitForPlayerConfirmAsync の直後に呼ぶ。
+        /// </summary>
+        public async UniTask WaitForBattleStartAnimAsync()
+        {
+            await UniTask.Delay(
+                TimeSpan.FromSeconds(battleStartAnimDuration),
+                ignoreTimeScale: true);
         }
 
         public UniTask WaitForPlayerConfirmAsync()

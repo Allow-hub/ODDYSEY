@@ -57,15 +57,25 @@ namespace TechC.ODDESEY.Battle
         /// 攻撃アニメを開始し、ヒット判定フレームまで待機する。
         /// CardAnimationType に応じた Animator パラメータとカメラを使う。
         /// </summary>
-        public async UniTask BeginAttackAnimationAsync(
-            CardAnimationType animType = CardAnimationType.Attack)
+        public async UniTask BeginAttackAnimationAsync(CardAnimationType animType)
         {
             hitTimingTcs = new UniTaskCompletionSource();
             attackFinishedTcs = new UniTaskCompletionSource();
 
             var (animHash, camData) = ResolveParams(animType);
+
+            // ① カメラを先に切り替えてブレンド完了まで待つ
+            if (camData != null)
+                await CameraManager.I.SwitchToAndWaitBlendAsync(camData.onAttackState);
+
+            // ② カメラが切り替わってからアニメ開始
             animator?.SetBool(animHash, true);
-            cameraTask = CameraManager.I.PlayAttackCameraAsync(camData);
+
+            // ③ カメラのアニメ演出は並列で流す
+            if (camData != null)
+                cameraTask = CameraManager.I.PlayAttackCameraAsync(camData);
+            else
+                cameraTask = UniTask.CompletedTask;
 
             await hitTimingTcs.Task;
         }
@@ -80,6 +90,7 @@ namespace TechC.ODDESEY.Battle
             var (animHash, _) = ResolveParams(animType);
             CustomLogger.Info($"プレイヤー攻撃アニメーション完了 ({animType})", LogTagUtil.TagBattle);
             animator?.SetBool(animHash, false);
+            await CameraManager.I.ReturnToDefaultAsync();
         }
 
         public void PlayHitStopEffect()
