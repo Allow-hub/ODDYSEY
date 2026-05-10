@@ -32,6 +32,10 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private GameObject winEffectObj;
         [SerializeField] private GameObject loseEffectObj;
         [SerializeField] private Button pauseButton;
+        [Header("ダメージポップアップ")]
+        [SerializeField] private DamagePopupManager damagePopupManager;
+        [SerializeField] private Transform playerPopupAnchor;
+        [SerializeField] private Transform enemyPopupAnchor;
 
         [Header("Animation")]
         [SerializeField] private float fadeDuration = 0.4f;
@@ -125,8 +129,18 @@ namespace TechC.ODDESEY.Battle
 
                 // Phase2: 被ダメアニメ・HP更新・攻撃アニメ残りを並列実行
                 currentEnemyView.PlayDamageAnimationAsync(result.IsHit).Forget();
+                // ▼ ヒット・ミス両方でポップアップを出す
+                damagePopupManager.Show(
+                    result.DamageDealt,
+                    isHit: result.IsHit,
+                    isPlayerDamage: false,
+                    isCritical: result.GetExtra<bool>(ResultKeys.IsCritical),
+                    worldPos: enemyPopupAnchor != null
+                                        ? enemyPopupAnchor.position
+                                        : currentEnemyView.transform.position);
 
                 await UniTask.WhenAll(
+                    currentEnemyView.PlayDamageAnimationAsync(result.IsHit),
                     result.DamageDealt > 0
                         ? enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax)
                         : UniTask.CompletedTask,
@@ -140,8 +154,18 @@ namespace TechC.ODDESEY.Battle
 
                 // Phase2: 被ダメアニメ・HP更新・攻撃アニメ残りを並列実行
                 playerView.PlayDamageAnimationAsync(result.IsHit).Forget();
+                // ▼ ヒット・ミス両方でポップアップを出す
+                damagePopupManager.Show(
+                    result.DamageDealt,
+                    isHit: result.IsHit,
+                    isPlayerDamage: true,
+                    isCritical: false,
+                    worldPos: playerPopupAnchor != null
+                    ? playerPopupAnchor.position
+                    : playerView.transform.position);
 
                 await UniTask.WhenAll(
+                    playerView.PlayDamageAnimationAsync(result.IsHit),
                     result.DamageDealt > 0
                         ? playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax)
                         : UniTask.CompletedTask,
@@ -155,11 +179,16 @@ namespace TechC.ODDESEY.Battle
             {
                 if (result.IsPlayer)
                 {
+                    // プレイヤー自傷
+                    damagePopupManager.Show(selfDamage, isHit: true, isPlayerDamage: true, isCritical: false,
+                        playerPopupAnchor != null ? playerPopupAnchor.position : playerView.transform.position);
                     // playerView.PlayDamageAnimationAsync(isHit: true).Forget();
                     await playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax);
                 }
                 else
                 {
+                    damagePopupManager.Show(selfDamage, isHit: true, isPlayerDamage: false, isCritical: false,
+                        enemyPopupAnchor != null ? enemyPopupAnchor.position : currentEnemyView.transform.position);
                     // currentEnemyView.PlayDamageAnimationAsync(isHit: true).Forget();
                     await enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax);
                 }

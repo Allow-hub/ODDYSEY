@@ -3,8 +3,6 @@ using System.Threading;
 using Cinemachine;
 using Cysharp.Threading.Tasks;
 using TechC.Core.Manager;
-using TechC.ODDESEY.Util;
-using TechC.VBattle.Core.Extensions;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Core.Manager
@@ -25,24 +23,14 @@ namespace TechC.ODDESEY.Core.Manager
         public CameraState state;
         public CinemachineVirtualCamera vcam;
         [Range(0, 20)] public int defaultPriority = 10;
-
         [Tooltip("このカメラに切り替えるときのブレンド時間（秒）。0 はカット切り替え。")]
         public float blendDuration = 0.5f;
     }
 
-    /// <summary>
-    /// カメラを管理するクラス。
-    ///
-    /// 変更点：
-    ///   - VCamEntry に blendDuration を追加。
-    ///   - SwitchTo() で CinemachineBrain.m_DefaultBlend を一時的に上書きして
-    ///     ステートごとに異なるブレンド時間を実現する。
-    /// </summary>
     public class CameraManager : Singleton<CameraManager>
     {
         [SerializeField] private List<VCamEntry> vcamEntries;
         [SerializeField] private CinemachineImpulseSource impulseSource;
-
         [SerializeField] private int activePriority = 20;
         [SerializeField] private int inactivePriority = 10;
 
@@ -72,7 +60,6 @@ namespace TechC.ODDESEY.Core.Manager
                     vcamMap[entry.state] = entry.vcam;
                     blendDurationMap[entry.state] = entry.blendDuration;
                 }
-
                 entry.vcam.Priority = inactivePriority;
                 ForceSwitch(CameraState.Default);
             }
@@ -80,33 +67,18 @@ namespace TechC.ODDESEY.Core.Manager
 
         private void ForceSwitch(CameraState state)
         {
-            if (!vcamMap.TryGetValue(state, out var nextVCam))
-            {
-                CustomLogger.Warning($"[CameraManager] VCam not found for state: {state}", LogTagUtil.TagCamera);
-                return;
-            }
-
+            if (!vcamMap.TryGetValue(state, out var nextVCam)) return;
             nextVCam.Priority = activePriority;
             currentState = state;
         }
 
-        /// <summary>
-        /// 指定した State の VCam に切り替える。
-        /// 切り替え先の blendDuration を CinemachineBrain に反映してからプライオリティを変更する。
-        /// </summary>
         public void SwitchTo(CameraState state)
         {
             if (currentState == state) return;
-            if (!vcamMap.TryGetValue(state, out var nextVCam))
-            {
-                CustomLogger.Warning($"[CameraManager] VCam not found for state: {state}", LogTagUtil.TagCamera);
-                return;
-            }
+            if (!vcamMap.TryGetValue(state, out var nextVCam)) return;
 
-            // 切り替え先のブレンド時間を Brain に適用
             ApplyBlendDuration(state);
 
-            // 現在のカメラを下げる
             if (vcamMap.TryGetValue(currentState, out var currentVCam))
                 currentVCam.Priority = inactivePriority;
 
@@ -114,8 +86,40 @@ namespace TechC.ODDESEY.Core.Manager
             currentState = state;
         }
 
+        public async UniTask SwitchToAndWaitBlendAsync(CameraState state)
+        {
+            SwitchTo(state);
+            await UniTask.Yield(PlayerLoopTiming.Update);
+
+            int frameCount = 0;
+            while (brain != null && brain.IsBlending)
+            {
+                frameCount++;
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+        }
+
+        public async UniTask ReturnToDefaultAsync()
+        {
+            SwitchTo(CameraState.Default);
+            await UniTask.Yield(PlayerLoopTiming.Update);
+
+            int frameCount = 0;
+            while (brain != null && brain.IsBlending)
+            {
+                frameCount++;
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+        }
+
         /// <summary>
-        /// 攻撃カメラ演出を再生しアニメーション完了まで待つ。
+        /// 攻撃カメラアニメーションを再生して完了まで待つ。
+        ///
+        /// 変更点：
+        ///   normalizedTime による待機をやめ、
+        ///   SetBool → 1フレーム待機 → 遷移開始を確認 → 遷移完了を確認
+        ///   という順序に変更した。
+        ///   これにより「カメラアニメが始まる前に完了判定してしまう」問題を解消する。
         /// </summary>
         public async UniTask PlayAttackCameraAsync(AttackCameraData data)
         {
@@ -126,64 +130,39 @@ namespace TechC.ODDESEY.Core.Manager
             attackCts = new CancellationTokenSource();
             var token = attackCts.Token;
 
-            SwitchTo(data.onAttackState);
-
             var vcam = GetCurrentVCam();
             var animator = vcam?.GetComponent<Animator>();
 
+            Debug.Log($"[Camera] PlayAttackCameraAsync 開始: vcam={vcam?.name}, animator={(animator != null)} at {Time.realtimeSinceStartup:F3}");
+
             if (animator != null)
             {
+                // ① トリガーをセット
                 animator.SetBool(data.AnimTriggerHash, true);
 
-                await UniTask.Yield(token);
-
+                // ② 遷移が開始するまで待つ（IsInTransition が true になるまで）
                 await UniTask.WaitUntil(() =>
-                    animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 1f
-                    || animator.IsInTransition(0), cancellationToken: token);
+                    animator.IsInTransition(0),
+                    cancellationToken: token);
 
+
+                // ③ 遷移が完了するまで待つ（IsInTransition が false になるまで）
                 await UniTask.WaitUntil(() =>
-                    animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f
-                    && !animator.IsInTransition(0), cancellationToken: token);
+                    !animator.IsInTransition(0),
+                    cancellationToken: token);
+
+
+                // ④ アニメが終わるまで待つ（normalizedTime >= 1f）
+                await UniTask.WaitUntil(() =>
+                    animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f,
+                    cancellationToken: token);
 
                 animator.SetBool(data.AnimTriggerHash, false);
             }
 
             await UniTask.WaitForSeconds(data.returnDelay, cancellationToken: token);
-            SwitchTo(CameraState.Default);
         }
 
-        /// <summary>
-        /// カメラを切り替えてブレンドが完了するまで待つ。
-        /// </summary>
-        public async UniTask SwitchToAndWaitBlendAsync(CameraState state)
-        {
-            SwitchTo(state);
-
-            // blendDuration だけ待てばブレンド完了
-            if (blendDurationMap.TryGetValue(state, out float duration) && duration > 0f)
-                await UniTask.Delay(
-                    System.TimeSpan.FromSeconds(duration),
-                    ignoreTimeScale: true);
-        }
-        /// <summary>
-        /// Default カメラへ戻し、ブレンドが完了するまで待つ。
-        /// </summary>
-        public async UniTask ReturnToDefaultAsync()
-        {
-            SwitchTo(CameraState.Default);
-
-            // Default への blendDuration だけ待つ
-            if (blendDurationMap.TryGetValue(CameraState.Default, out float duration) && duration > 0f)
-                await UniTask.Delay(
-                    System.TimeSpan.FromSeconds(duration),
-                    ignoreTimeScale: true);
-        }
-
-        // ─── 内部処理 ────────────────────────────────────────────────────
-
-        /// <summary>
-        /// 指定ステートの blendDuration を CinemachineBrain.m_DefaultBlend に適用する。
-        /// </summary>
         private void ApplyBlendDuration(CameraState state)
         {
             if (brain == null) return;
@@ -193,8 +172,7 @@ namespace TechC.ODDESEY.Core.Manager
                 duration > 0f
                     ? CinemachineBlendDefinition.Style.EaseInOut
                     : CinemachineBlendDefinition.Style.Cut,
-                duration
-            );
+                duration);
         }
 
         private CinemachineVirtualCamera GetCurrentVCam()

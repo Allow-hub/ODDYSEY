@@ -24,12 +24,17 @@ namespace TechC.ODDESEY.Battle
 
         // ─── Animation Event から呼ぶ ──────────────────────────────────────
 
-        public void NotifyHitTiming() => hitTimingTcs?.TrySetResult();
+        public void NotifyHitTiming()
+        {
+            hitTimingTcs?.TrySetResult();
+        }
+
         public void NotifyAttackFinished()
         {
             hitTimingTcs?.TrySetResult();
             attackFinishedTcs?.TrySetResult();
         }
+
         public void NotifyHitFinished() => NotifyStateFinished(PlayerAnimationType.Hit);
         public void NotifyMissFinished() => NotifyStateFinished(PlayerAnimationType.Miss);
 
@@ -53,10 +58,6 @@ namespace TechC.ODDESEY.Battle
 
         // ─── 公開API ──────────────────────────────────────────────────────
 
-        /// <summary>
-        /// 攻撃アニメを開始し、ヒット判定フレームまで待機する。
-        /// CardAnimationType に応じた Animator パラメータとカメラを使う。
-        /// </summary>
         public async UniTask BeginAttackAnimationAsync(CardAnimationType animType)
         {
             hitTimingTcs = new UniTaskCompletionSource();
@@ -64,43 +65,35 @@ namespace TechC.ODDESEY.Battle
 
             var (animHash, camData) = ResolveParams(animType);
 
-            // ① カメラを先に切り替えてブレンド完了まで待つ
+            // ① カメラ切り替え＋ブレンド完了を待つ
             if (camData != null)
                 await CameraManager.I.SwitchToAndWaitBlendAsync(camData.onAttackState);
 
-            // ② カメラが切り替わってからアニメ開始
+            // ② アニメ開始
+            animator?.SetBool(animHash, false);
+            await UniTask.Yield();
             animator?.SetBool(animHash, true);
 
-            // ③ カメラのアニメ演出は並列で流す
-            if (camData != null)
-                cameraTask = CameraManager.I.PlayAttackCameraAsync(camData);
-            else
-                cameraTask = UniTask.CompletedTask;
+            // ③ カメラアニメ並列
+            cameraTask = camData != null
+                ? CameraManager.I.PlayAttackCameraAsync(camData)
+                : UniTask.CompletedTask;
 
+            // ④ ヒット判定フレームまで待つ
             await hitTimingTcs.Task;
         }
 
-        /// <summary>
-        /// 攻撃アニメとカメラ演出の両方が完了するまで待つ。
-        /// </summary>
         public async UniTask WaitAttackFinishedAsync(
             CardAnimationType animType = CardAnimationType.Attack)
         {
             await UniTask.WhenAll(attackFinishedTcs.Task, cameraTask);
             var (animHash, _) = ResolveParams(animType);
-            CustomLogger.Info($"プレイヤー攻撃アニメーション完了 ({animType})", LogTagUtil.TagBattle);
             animator?.SetBool(animHash, false);
             await CameraManager.I.ReturnToDefaultAsync();
         }
 
-        public void PlayHitStopEffect()
-        {
-            HitStopManager.I.Play();
-        }
+        public void PlayHitStopEffect() => HitStopManager.I.Play();
 
-        /// <summary>
-        /// 被ダメアニメーションを再生する。BattleView から Forget() で呼ぶ。
-        /// </summary>
         public async UniTask PlayDamageAnimationAsync(bool isHit)
         {
             var type = isHit ? PlayerAnimationType.Hit : PlayerAnimationType.Miss;
@@ -110,8 +103,6 @@ namespace TechC.ODDESEY.Battle
             CustomLogger.Info($"プレイヤー被ダメアニメーション完了 (isHit={isHit})", LogTagUtil.TagBattle);
             animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, false);
         }
-
-        // ─── 内部処理 ────────────────────────────────────────────────────
 
         private (int animHash, AttackCameraData camData) ResolveParams(CardAnimationType animType)
         {
