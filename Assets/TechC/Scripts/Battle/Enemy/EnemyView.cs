@@ -124,6 +124,11 @@ namespace TechC.ODDESEY.Battle
             animator?.SetBool(AnimUtil.EnterHash, false);
         }
 
+        [ContextMenu("Defeat")]
+        public void TestPlayDefeatedAnimation()
+        {
+            PlayDefeatedAnimationAsync().Forget();
+        }
         public async UniTask PlayDefeatedAnimationAsync()
         {
             var task = WaitStateAsync(EnemyStateNotifier.StateType.Defeated);

@@ -45,7 +45,7 @@ namespace TechC.ODDESEY.Core.Manager
             Init();
             BuildMap();
             brain = Camera.main?.GetComponent<CinemachineBrain>();
-            SwitchTo(CameraState.Default);
+            SwitchTo(CameraState.BattleStart);
         }
 
         private void BuildMap()
