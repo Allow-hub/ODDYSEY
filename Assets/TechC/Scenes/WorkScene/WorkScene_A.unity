@@ -180,12 +180,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1322115378881958939, guid: adc13e9e96de69b4fbebbf57c7f6a711,
-        type: 3}
-      propertyPath: m_Sprite
-      value: 
-      objectReference: {fileID: 21300000, guid: f1364397fbb63d34aa7aeb95960db636,
-        type: 3}
     - target: {fileID: 1648131958718064661, guid: adc13e9e96de69b4fbebbf57c7f6a711,
         type: 3}
       propertyPath: m_SizeDelta.x
@@ -577,11 +571,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: BossEnemy
-      objectReference: {fileID: 0}
-    - target: {fileID: 4010116763971566608, guid: d26b4404bad879c4dbae925ae8618ffe,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
