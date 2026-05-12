@@ -29,7 +29,6 @@ namespace TechC.ODDESEY.Battle
 
         public void NotifyHitTiming()
         {
-            Debug.Log($"[Enemy] NotifyHitTiming at {Time.realtimeSinceStartup:F3}");
             hitTimingTcs?.TrySetResult();
         }
 
@@ -39,7 +38,6 @@ namespace TechC.ODDESEY.Battle
         {
             if (type == EnemyStateNotifier.StateType.Attack)
             {
-                Debug.Log($"[Enemy] NotifyStateFinished(Attack) at {Time.realtimeSinceStartup:F3}");
                 hitTimingTcs?.TrySetResult();
                 attackFinishedTcs?.TrySetResult();
                 return;
@@ -70,14 +68,12 @@ namespace TechC.ODDESEY.Battle
 
             if (camData != null)
             {
-                Debug.Log($"[Enemy] カメラブレンド開始 at {Time.realtimeSinceStartup:F3}");
                 await CameraManager.I.SwitchToAndWaitBlendAsync(camData.onAttackState);
-                Debug.Log($"[Enemy] カメラブレンド完了 → アニメ開始 at {Time.realtimeSinceStartup:F3}");
             }
 
             animator?.SetBool(animHash, false);
             await UniTask.Yield();
-            animator?.SetBool(animHash, true); Debug.Log($"[Enemy] SetBool({animHash}, true) at {Time.realtimeSinceStartup:F3}");
+            animator?.SetBool(animHash, true); 
 
             cameraTask = camData != null
                 ? CameraManager.I.PlayAttackCameraAsync(camData)
@@ -88,10 +84,10 @@ namespace TechC.ODDESEY.Battle
             var hit = hitTimingTcs.Task;
 
             int index = await UniTask.WhenAny(hit, timeout);
-            if (index == 1)
-                Debug.LogWarning($"[Enemy] HitTiming タイムアウト（Animation Event が来なかった）at {Time.realtimeSinceStartup:F3}");
-            else
-                Debug.Log($"[Enemy] HitTiming到達 at {Time.realtimeSinceStartup:F3}");
+            // if (index == 1)
+            //     Debug.LogWarning($"[Enemy] HitTiming タイムアウト（Animation Event が来なかった）at {Time.realtimeSinceStartup:F3}");
+            // else
+            //     Debug.Log($"[Enemy] HitTiming到達 at {Time.realtimeSinceStartup:F3}");
         }
 
         public async UniTask WaitAttackFinishedAsync(
@@ -99,10 +95,8 @@ namespace TechC.ODDESEY.Battle
         {
             await UniTask.WhenAll(attackFinishedTcs.Task, cameraTask);
             var (animHash, _) = ResolveParams(animType);
-            Debug.Log($"[Enemy] 攻撃アニメ完了 ({animType}) at {Time.realtimeSinceStartup:F3}");
             animator?.SetBool(animHash, false);
             await CameraManager.I.ReturnToDefaultAsync();
-            Debug.Log($"[Enemy] Default復帰完了 at {Time.realtimeSinceStartup:F3}");
         }
 
         public async UniTask PlayDamageAnimationAsync(bool isHit)

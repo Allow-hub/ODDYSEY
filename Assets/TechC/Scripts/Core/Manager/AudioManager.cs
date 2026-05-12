@@ -1,12 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 namespace TechC.Core.Manager
 {
-    /// <summary>
-    /// 音関連のマネージャー
-    /// </summary>
     public class AudioManager : Singleton<AudioManager>
     {
         [SerializeField] private AudioData audioData;
@@ -17,481 +15,298 @@ namespace TechC.Core.Manager
         [Range(0f, 1f)] public float bgmVolume = 1.0f;
         [Range(0f, 1f)] public float seVolume = 1.0f;
         [Range(0f, 1f)] public float voiceVolume = 1.0f;
+        [Range(0f, 1f)] public float ambientVolume = 1.0f; // 環境音（雨など）用
 
         #endregion
 
-        // オーディオソース
+        [Header("SE ランダムピッチ設定")]
+        [Tooltip("SE を連続再生するときにピッチをランダムにずらす範囲（±）")]
+        [SerializeField, Range(0f, 0.5f)] private float sePitchVariance = 0.05f;
+
         private AudioSource bgmSource;
-        private AudioSource bgmCrossSource; // クロスフェード用の予備BGM
+        private AudioSource bgmCrossSource;
         private List<AudioSource> seSources = new List<AudioSource>();
 
-        // SE用のプール設定
         [SerializeField] private int seSourceCount = 10;
 
-        // 現在再生中のBGM
         private BGMID currentBGM = BGMID.None;
         private bool isBgmFading = false;
+
         protected override bool DontDestroy => true;
 
-        /// <summary>
-        /// Singletonの初期化処理をoverride
-        /// </summary>
         protected override void OnInit()
         {
             base.OnInit();
-            // BGM用のAudioSourceを2つ作成（クロスフェード用）
-            GameObject bgmObject = new GameObject("BGM_Source");
-            bgmObject.transform.parent = transform;
-            bgmSource = bgmObject.AddComponent<AudioSource>();
+
+            var bgmObj = new GameObject("BGM_Source");
+            bgmObj.transform.parent = transform;
+            bgmSource = bgmObj.AddComponent<AudioSource>();
             bgmSource.playOnAwake = false;
 
-            GameObject bgmCrossObject = new GameObject("BGM_Cross_Source");
-            bgmCrossObject.transform.parent = transform;
-            bgmCrossSource = bgmCrossObject.AddComponent<AudioSource>();
+            var bgmCrossObj = new GameObject("BGM_Cross_Source");
+            bgmCrossObj.transform.parent = transform;
+            bgmCrossSource = bgmCrossObj.AddComponent<AudioSource>();
             bgmCrossSource.playOnAwake = false;
 
-            // SE用のAudioSourceをプール作成
             CreateAudioSourcePool("SE_Source", seSourceCount, seSources);
         }
 
-        /// <summary>
-        /// AudioSourceプールを作成
-        /// </summary>
         private void CreateAudioSourcePool(string name, int count, List<AudioSource> pool)
         {
-            GameObject poolParent = new GameObject(name + "_Pool");
+            var poolParent = new GameObject(name + "_Pool");
             poolParent.transform.parent = transform;
 
             for (int i = 0; i < count; i++)
             {
-                GameObject sourceObj = new GameObject(name + "_" + i);
-                sourceObj.transform.parent = poolParent.transform;
-                AudioSource source = sourceObj.AddComponent<AudioSource>();
-                source.playOnAwake = false;
-                pool.Add(source);
+                var obj = new GameObject($"{name}_{i}");
+                obj.transform.parent = poolParent.transform;
+                var src = obj.AddComponent<AudioSource>();
+                src.playOnAwake = false;
+                pool.Add(src);
             }
         }
+
         #region BGM 関連
 
-        /// <summary>
-        /// BGMを再生
-        /// </summary>
         public void PlayBGM(BGMID id, bool isCrossFade = true)
         {
-            if (currentBGM == id)
-                return;
+            if (currentBGM == id) return;
 
-            if (isBgmFading)
-            {
-                StopAllCoroutines();
-                isBgmFading = false;
-            }
+            if (isBgmFading) { StopAllCoroutines(); isBgmFading = false; }
 
-            AudioData.BGMInfo bgmInfo = audioData.GetBGM(id);
-            if (bgmInfo == null || bgmInfo.clip == null)
+            var info = audioData.GetBGM(id);
+            if (info == null || info.clip == null)
             {
-                // 例1: Warning
                 Debug.LogWarning($"BGM の ID {id} が見つかりません");
-
                 return;
             }
 
             currentBGM = id;
 
             if (isCrossFade && bgmSource.isPlaying)
-            {
-                StartCoroutine(CrossFadeBGM(bgmInfo));
-            }
+                StartCoroutine(CrossFadeBGM(info));
             else
             {
-                bgmSource.clip = bgmInfo.clip;
-                bgmSource.volume = bgmInfo.volume * bgmVolume * masterVolume;
-                bgmSource.pitch = bgmInfo.pitch;
-                bgmSource.loop = bgmInfo.loop;
+                bgmSource.clip = info.clip;
+                bgmSource.volume = info.volume * bgmVolume * masterVolume;
+                bgmSource.pitch = info.pitch;
+                bgmSource.loop = info.loop;
 
-                if (bgmInfo.fadeInTime > 0)
+                if (info.fadeInTime > 0)
                 {
                     bgmSource.volume = 0;
                     bgmSource.Play();
-                    StartCoroutine(FadeBGM(bgmSource, 0, bgmInfo.volume * bgmVolume * masterVolume, bgmInfo.fadeInTime));
+                    StartCoroutine(FadeBGM(bgmSource, 0,
+                        info.volume * bgmVolume * masterVolume, info.fadeInTime));
                 }
-                else
-                {
-                    bgmSource.Play();
-                }
+                else bgmSource.Play();
             }
         }
 
-        /// <summary>
-        /// BGMを停止
-        /// </summary>
         public void StopBGM(float fadeOutTime = 0.5f)
         {
-            if (!bgmSource.isPlaying)
-                return;
+            if (!bgmSource.isPlaying) return;
 
-            AudioData.BGMInfo bgmInfo = audioData.GetBGM(currentBGM);
-            float actualFadeTime = bgmInfo != null ? bgmInfo.fadeOutTime : fadeOutTime;
+            var info = audioData.GetBGM(currentBGM);
+            float fadeTime = info != null ? info.fadeOutTime : fadeOutTime;
 
-            if (actualFadeTime > 0)
-            {
-                StartCoroutine(FadeBGM(bgmSource, bgmSource.volume, 0, actualFadeTime, true));
-            }
-            else
-            {
-                bgmSource.Stop();
-            }
+            if (fadeTime > 0) StartCoroutine(FadeBGM(bgmSource, bgmSource.volume, 0, fadeTime, true));
+            else bgmSource.Stop();
 
             currentBGM = BGMID.None;
         }
 
-        /// <summary>
-        /// BGMのクロスフェード処理
-        /// </summary>
-        private IEnumerator CrossFadeBGM(AudioData.BGMInfo newBgmInfo)
+        private IEnumerator CrossFadeBGM(AudioData.BGMInfo newInfo)
         {
             isBgmFading = true;
+            var current = bgmSource;
+            var next = bgmCrossSource;
 
-            // 現在のBGMを別のソースにコピー
-            AudioSource currentSource = bgmSource;
-            AudioSource nextSource = bgmCrossSource;
+            next.clip = newInfo.clip; next.volume = 0;
+            next.pitch = newInfo.pitch; next.loop = newInfo.loop;
+            next.Play();
 
-            // 次のBGMを設定
-            nextSource.clip = newBgmInfo.clip;
-            nextSource.volume = 0;
-            nextSource.pitch = newBgmInfo.pitch;
-            nextSource.loop = newBgmInfo.loop;
-            nextSource.Play();
-
-            float startVolume = currentSource.volume;
-            float endVolume = newBgmInfo.volume * bgmVolume * masterVolume;
-            float fadeTime = Mathf.Max(newBgmInfo.fadeInTime, 0.5f);
-
+            float startVol = current.volume;
+            float endVol = newInfo.volume * bgmVolume * masterVolume;
+            float fadeTime = Mathf.Max(newInfo.fadeInTime, 0.5f);
             float timer = 0;
+
             while (timer < fadeTime)
             {
-                timer += Time.deltaTime;
-                float t = timer / fadeTime;
-                currentSource.volume = Mathf.Lerp(startVolume, 0, t);
-                nextSource.volume = Mathf.Lerp(0, endVolume, t);
+                timer += Time.deltaTime; float t = timer / fadeTime;
+                current.volume = Mathf.Lerp(startVol, 0, t);
+                next.volume = Mathf.Lerp(0, endVol, t);
                 yield return null;
             }
 
-            // フェード完了後、ソースを入れ替え
-            currentSource.Stop();
+            current.Stop();
             SwapBGMSources();
             isBgmFading = false;
         }
 
-        /// <summary>
-        /// BGMのフェード処理
-        /// </summary>
-        private IEnumerator FadeBGM(AudioSource source, float startVolume, float endVolume, float fadeTime, bool stopAfterFade = false)
+        private IEnumerator FadeBGM(AudioSource src, float from, float to,
+            float fadeTime, bool stopAfter = false)
         {
             isBgmFading = true;
-
             float timer = 0;
             while (timer < fadeTime)
             {
                 timer += Time.deltaTime;
-                float t = timer / fadeTime;
-                source.volume = Mathf.Lerp(startVolume, endVolume, t);
+                src.volume = Mathf.Lerp(from, to, timer / fadeTime);
                 yield return null;
             }
-
-            if (stopAfterFade)
-            {
-                source.Stop();
-            }
-
+            if (stopAfter) src.Stop();
             isBgmFading = false;
         }
 
-        /// <summary>
-        /// BGMソースの入れ替え
-        /// </summary>
         private void SwapBGMSources()
         {
-            AudioSource temp = bgmSource;
-            bgmSource = bgmCrossSource;
-            bgmCrossSource = temp;
+            var tmp = bgmSource; bgmSource = bgmCrossSource; bgmCrossSource = tmp;
         }
 
-        /// <summary>
-        /// BGMの音量設定
-        /// </summary>
         public void SetBGMVolume(float volume)
         {
             bgmVolume = Mathf.Clamp01(volume);
             if (bgmSource.isPlaying && !isBgmFading)
             {
-                AudioData.BGMInfo bgmInfo = audioData.GetBGM(currentBGM);
-                if (bgmInfo != null)
-                {
-                    bgmSource.volume = bgmInfo.volume * bgmVolume * masterVolume;
-                }
+                var info = audioData.GetBGM(currentBGM);
+                if (info != null) bgmSource.volume = info.volume * bgmVolume * masterVolume;
             }
         }
 
         #endregion
 
-        #region SE 関連
+        #region SE 関連（ランダムピッチあり）
 
-        /// <summary>
-        /// 共通SEを再生
-        /// </summary>
         public AudioSource PlaySE(SEID id)
         {
-            AudioData.SEInfo seInfo = audioData.GetSE(id);
-            if (seInfo == null || seInfo.clip == null)
+            var info = audioData.GetSE(id);
+            if (info == null || info.clip == null)
             {
-                // 例2: Warning
                 Debug.LogWarning($"SE の ID {id} が見つかりません");
-
                 return null;
             }
-
-            // 未使用のAudioSourceを探す
-            AudioSource source = GetAvailableAudioSource(seSources);
-            if (source == null)
-            {
-                Debug.LogWarning("利用可能な SE AudioSource が見つかりません。プールのサイズを増やすことを検討してください。");
-
-                return null;
-            }
-
-            source.clip = seInfo.clip;
-            source.volume = seInfo.volume * seVolume * masterVolume;
-            source.pitch = seInfo.pitch;
-            source.loop = seInfo.loop;
-            source.Play();
-
-            return source;
+            return PlaySEInternal(info, randomizePitch: true);
         }
 
-        /// <summary>
-        /// 指定したSEが再生中でなければ再生する
-        /// </summary>
         public AudioSource PlaySE(SEID id, bool preventDuplicate)
         {
-            if (!preventDuplicate)
-            {
-                return PlaySE(id);
-            }
+            if (!preventDuplicate) return PlaySE(id);
 
-            AudioData.SEInfo seInfo = audioData.GetSE(id);
-            if (seInfo == null || seInfo.clip == null)
-            {
-                return null;
-            }
+            var info = audioData.GetSE(id);
+            if (info == null || info.clip == null) return null;
 
-            // すでに同じクリップが再生中かチェック
-            foreach (AudioSource source in seSources)
-            {
-                if (source.isPlaying && source.clip == seInfo.clip)
-                {
-                    // すでに再生中
-                    return null;
-                }
-            }
+            foreach (var s in seSources)
+                if (s.isPlaying && s.clip == info.clip) return null;
 
-            // 未使用のAudioSourceを探す
-            AudioSource availableSource = GetAvailableAudioSource(seSources);
-            if (availableSource == null)
-            {
-                Debug.LogWarning("利用可能な SE AudioSource が見つかりません。プールのサイズを増やすことを検討してください。");
-
-                return null;
-            }
-
-            availableSource.clip = seInfo.clip;
-            availableSource.volume = seInfo.volume * seVolume * masterVolume;
-            availableSource.pitch = seInfo.pitch;
-            availableSource.loop = seInfo.loop;
-            availableSource.Play();
-
-            return availableSource;
+            return PlaySEInternal(info, randomizePitch: true);
         }
 
-        /// <summary>
-        /// 指定したSEが再生中かつ、再生開始からminSeconds経過していなければ再生しない
-        /// minSeconds以上経過していれば再生する
-        /// </summary>
         public AudioSource PlaySE(SEID id, float minSeconds)
         {
-            AudioData.SEInfo seInfo = audioData.GetSE(id);
-            if (seInfo == null || seInfo.clip == null)
+            var info = audioData.GetSE(id);
+            if (info == null || info.clip == null)
             {
-                // 例3: Warning
                 Debug.LogWarning($"SE の ID {id} が見つかりません");
-
                 return null;
             }
+            foreach (var s in seSources)
+                if (s.isPlaying && s.clip == info.clip && s.time < minSeconds) return null;
 
-            foreach (AudioSource source in seSources)
-            {
-                if (source.isPlaying && source.clip == seInfo.clip)
-                {
-                    if (source.time < minSeconds)
-                    {
-                        // 指定秒数未満なら再生しない
-                        return null;
-                    }
-                    // 指定秒数以上経過していれば再生許可
-                }
-            }
-
-            AudioSource availableSource = GetAvailableAudioSource(seSources);
-            if (availableSource == null)
-            {
-                Debug.LogWarning("利用可能な SE AudioSource が見つかりません。プールのサイズを増やすことを検討してください。");
-
-                return null;
-            }
-
-            availableSource.clip = seInfo.clip;
-            availableSource.volume = seInfo.volume * seVolume * masterVolume;
-            availableSource.pitch = seInfo.pitch;
-            availableSource.loop = seInfo.loop;
-            availableSource.Play();
-
-            return availableSource;
+            return PlaySEInternal(info, randomizePitch: true);
         }
 
-
-        /// <summary>
-        /// SEを停止
-        /// </summary>
-        public void StopSE(AudioSource source)
+        private AudioSource PlaySEInternal(AudioData.SEInfo info, bool randomizePitch)
         {
-            if (source != null && seSources.Contains(source))
+            var src = GetAvailableAudioSource(seSources);
+            if (src == null)
             {
-                source.Stop();
+                Debug.LogWarning("利用可能な SE AudioSource が見つかりません。");
+                return null;
             }
+            src.clip = info.clip;
+            src.volume = info.volume * seVolume * masterVolume;
+            src.pitch = randomizePitch ? ApplyPitchVariance(info.pitch) : info.pitch;
+            src.loop = info.loop;
+            src.Play();
+            return src;
         }
 
-        /// <summary>
-        /// すべてのSEを停止
-        /// </summary>
+        public void StopSE(AudioSource src)
+        {
+            if (src != null && seSources.Contains(src)) src.Stop();
+        }
+
         public void StopAllSE()
         {
-            // 共通SE停止
-            foreach (AudioSource source in seSources)
-            {
-                if (source.isPlaying)
-                {
-                    source.Stop();
-                }
-            }
+            foreach (var s in seSources) if (s.isPlaying) s.Stop();
         }
 
-        /// <summary>
-        /// SE音量設定
-        /// </summary>
         public void SetSEVolume(float volume)
         {
             seVolume = Mathf.Clamp01(volume);
-
-            // 共通SEの音量調整
-            foreach (AudioSource source in seSources)
-            {
-                if (source.isPlaying)
+            foreach (var s in seSources)
+                if (s.isPlaying)
                 {
-                    // 元の音量に対する比率を維持
-                    float ratio = source.volume / (seVolume * masterVolume);
-                    source.volume = ratio * seVolume * masterVolume;
+                    float ratio = seVolume > 0 ? s.volume / (seVolume * masterVolume) : 0f;
+                    s.volume = ratio * seVolume * masterVolume;
                 }
-            }
+        }
+
+        #endregion
+
+        #region 環境音（雨など）管理──ランダムピッチなし ─────────────────────
+
+        /// <summary>
+        /// 外部の LoopingAudioSource が使う音量スケールを返す。
+        /// BaseRainScript から呼んで、LoopingAudioSource の targetVolume にかける。
+        /// </summary>
+        public float GetAmbientVolumeScale() => ambientVolume * masterVolume;
+
+        public void SetAmbientVolume(float volume)
+        {
+            ambientVolume = Mathf.Clamp01(volume);
         }
 
         #endregion
 
         #region 共通処理
 
-        /// <summary>
-        /// マスター音量設定
-        /// </summary>
-        /// <summary>
-        /// マスター音量設定
-        /// </summary>
         public void SetMasterVolume(float volume)
         {
-            float prevMasterVolume = masterVolume;
+            float prev = masterVolume;
             masterVolume = Mathf.Clamp01(volume);
 
-            if (Mathf.Approximately(prevMasterVolume, 0f))
+            if (Mathf.Approximately(prev, 0f))
             {
-                // 再計算方式：現在のBGMがあれば情報から設定
-                if (bgmSource.isPlaying && !isBgmFading)
-                {
-                    AudioData.BGMInfo bgmInfo = audioData.GetBGM(currentBGM);
-                    if (bgmInfo != null)
-                    {
-                        bgmSource.volume = bgmInfo.volume * bgmVolume * masterVolume;
-                    }
-                }
-
-                ResetAudioSourceVolumes(seSources, seVolume);
+                var info = audioData.GetBGM(currentBGM);
+                if (bgmSource.isPlaying && !isBgmFading && info != null)
+                    bgmSource.volume = info.volume * bgmVolume * masterVolume;
+                foreach (var s in seSources)
+                    if (s.isPlaying && s.clip != null)
+                        s.volume = seVolume * masterVolume;
             }
             else
             {
-                float volumeRatio = masterVolume / prevMasterVolume;
-
-                if (bgmSource.isPlaying && !isBgmFading)
-                {
-                    bgmSource.volume *= volumeRatio;
-                }
-
-                foreach (AudioSource source in seSources)
-                {
-                    if (source.isPlaying) source.volume *= volumeRatio;
-                }
+                float ratio = masterVolume / prev;
+                if (bgmSource.isPlaying && !isBgmFading) bgmSource.volume *= ratio;
+                foreach (var s in seSources) if (s.isPlaying) s.volume *= ratio;
             }
         }
 
-        /// <summary>
-        /// 再生中のAudioSourceの音量を再計算する補助メソッド
-        /// </summary>
-        private void ResetAudioSourceVolumes(List<AudioSource> sources, float categoryVolume)
-        {
-            foreach (var source in sources)
-            {
-                if (source.isPlaying && source.clip != null)
-                {
-                    source.volume = categoryVolume * masterVolume;
-                }
-            }
-        }
-        /// <summary>
-        /// 未使用のAudioSourceを取得
-        /// </summary>
         private AudioSource GetAvailableAudioSource(List<AudioSource> pool)
         {
-            // 停止中のものを探す
-            foreach (AudioSource source in pool)
-            {
-                if (!source.isPlaying)
-                {
-                    return source;
-                }
-            }
+            foreach (var s in pool) if (!s.isPlaying) return s;
 
-            // すべて使用中の場合は、一番長く再生されているものを選ぶ
-            AudioSource oldestSource = null;
-            float longestTime = 0;
-
-            foreach (AudioSource source in pool)
-            {
-                float playTime = source.time;
-                if (playTime > longestTime)
-                {
-                    longestTime = playTime;
-                    oldestSource = source;
-                }
-            }
-
-            return oldestSource;
+            AudioSource oldest = null; float longest = 0;
+            foreach (var s in pool)
+                if (s.time > longest) { longest = s.time; oldest = s; }
+            return oldest;
         }
+
+        /// <summary>ランダムピッチを適用（SE 専用）</summary>
+        private float ApplyPitchVariance(float basePitch)
+            => basePitch + Random.Range(-sePitchVariance, sePitchVariance);
 
         #endregion
     }

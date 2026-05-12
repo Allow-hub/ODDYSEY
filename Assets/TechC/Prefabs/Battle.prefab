@@ -39472,6 +39472,11 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 1077751332556918286, guid: 6070cab4e2b5813418d1e20df5f355d6,
+        type: 3}
+      propertyPath: WindSoundVolumeModifier
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1276143730459537880, guid: 6070cab4e2b5813418d1e20df5f355d6,
         type: 3}
       propertyPath: m_StaticEditorFlags

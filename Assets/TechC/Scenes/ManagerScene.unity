@@ -389,6 +389,8 @@ MonoBehaviour:
   bgmVolume: 1
   seVolume: 1
   voiceVolume: 1
+  ambientVolume: 0.35
+  sePitchVariance: 0.05
   seSourceCount: 10
 --- !u!4 &823177708
 Transform:

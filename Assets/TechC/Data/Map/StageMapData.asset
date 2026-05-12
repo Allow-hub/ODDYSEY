@@ -20,7 +20,7 @@ MonoBehaviour:
   - choices: 00000000
     EventData: {fileID: 0}
     RewardData: {fileID: 11400000, guid: 0194802b1296d8d4c8ca640c69ef49f7, type: 2}
-    IsBossNode: 1
+    IsBossNode: 0
   - choices: 00000000
     EventData: {fileID: 0}
     RewardData: {fileID: 0}

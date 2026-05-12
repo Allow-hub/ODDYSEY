@@ -133,8 +133,6 @@ namespace TechC.ODDESEY.Core.Manager
             var vcam = GetCurrentVCam();
             var animator = vcam?.GetComponent<Animator>();
 
-            Debug.Log($"[Camera] PlayAttackCameraAsync 開始: vcam={vcam?.name}, animator={(animator != null)} at {Time.realtimeSinceStartup:F3}");
-
             if (animator != null)
             {
                 // ① トリガーをセット
