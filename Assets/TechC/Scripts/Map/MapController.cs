@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TechC.Core.Manager;
 using TechC.ODDESEY.Battle;
 using TechC.ODDESEY.Event;
+using TechC.ODDESEY.Reward;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Map
@@ -11,13 +12,12 @@ namespace TechC.ODDESEY.Map
     /// ステージマップの管理。
     ///
     /// 変更点：
-    ///   - OnEventRequested を Action → Action<EventData> に変更。
-    ///     MainManager がどの EventData でイベントを開くか判断できるようにする。
-    ///   - OnNodeChoiceSelected で選択されたノードの EventData を取得して渡す。
+    ///   - OnBattleRequested を Action<BattleRewardData, bool> に変更。
+    ///     RewardData（報酬候補）と IsBossNode（ボスフラグ）を MainManager に渡す。
     /// </summary>
     public class MapController : MonoBehaviour
     {
-        [Header("ノードViewのリスト（上から順、数はStageMapDataのnodes数に合わせる）")]
+        [Header("ノードViewのリスト")]
         [SerializeField] private List<MapNodeView> nodeViews;
 
         [Header("選択肢ボタンのPrefab")]
@@ -27,8 +27,9 @@ namespace TechC.ODDESEY.Map
         [SerializeField] private LuckGaugeView luckGaugeView;
 
         // ─── Events ───────────────────────────────────────────────────────
-        public event Action OnBattleRequested;
-        public event Action<EventData> OnEventRequested; // ← EventData を渡すように変更
+        /// <summary>RewardData・ボスフラグを含むバトル開始通知</summary>
+        public event Action<BattleRewardData, bool> OnBattleRequested;
+        public event Action<EventData> OnEventRequested;
         public event Action OnStageCompleted;
 
         // ─── 内部状態 ────────────────────────────────────────────────────
@@ -39,10 +40,10 @@ namespace TechC.ODDESEY.Map
 
         public void Initialize(StageMapData data, MapProgressState progress)
         {
-            mapData       = data;
+            mapData = data;
             progressState = progress;
 
-            luckGaugeView.Setup(MainManager.I.LuckGaugeMax);
+            luckGaugeView.Setup(100f);
             luckGaugeView.UpdateGaugeImmediate(MainManager.I?.LuckGaugeValue ?? 0f, 100f, false);
             RefreshView();
         }
@@ -52,7 +53,6 @@ namespace TechC.ODDESEY.Map
         private void RefreshView()
         {
             if (mapData == null) return;
-
             int current = progressState.currentNodeIndex;
 
             for (int i = 0; i < nodeViews.Count; i++)
@@ -66,9 +66,9 @@ namespace TechC.ODDESEY.Map
                 nodeViews[i].gameObject.SetActive(true);
 
                 MapNodeView.NodeState state;
-                if (i < current)      state = MapNodeView.NodeState.Cleared;
+                if (i < current) state = MapNodeView.NodeState.Cleared;
                 else if (i == current) state = MapNodeView.NodeState.Active;
-                else                   state = MapNodeView.NodeState.Locked;
+                else state = MapNodeView.NodeState.Locked;
 
                 nodeViews[i].Setup(mapData.nodes[i], state, choiceButtonPrefab, OnNodeChoiceSelected);
             }
@@ -78,8 +78,7 @@ namespace TechC.ODDESEY.Map
 
         private void OnNodeChoiceSelected(NodeType chosenType)
         {
-            // 選択時点のノードインデックスを保持してから進める
-            int selectedNodeIndex = progressState.currentNodeIndex;
+            int selectedIndex = progressState.currentNodeIndex;
             progressState.Advance();
 
             if (progressState.IsCompleted(mapData.nodes.Count))
@@ -88,22 +87,23 @@ namespace TechC.ODDESEY.Map
                 return;
             }
 
+            var node = mapData.nodes[selectedIndex];
+
             switch (chosenType)
             {
                 case NodeType.Battle:
-                    OnBattleRequested?.Invoke();
+                    // RewardData と IsBossNode を渡す
+                    OnBattleRequested?.Invoke(node.RewardData, node.IsBossNode);
                     break;
 
                 case NodeType.Event:
-                    // 選択されたノードの EventData を取得して渡す
-                    var eventData = mapData.nodes[selectedNodeIndex].EventData;
-                    if (eventData == null)
-                        Debug.LogWarning($"[MapController] nodes[{selectedNodeIndex}] に EventData がアサインされていません。");
-                    OnEventRequested?.Invoke(eventData);
+                    if (node.EventData == null)
+                        Debug.LogWarning($"[MapController] nodes[{selectedIndex}] に EventData がアサインされていません。");
+                    OnEventRequested?.Invoke(node.EventData);
                     break;
 
                 case NodeType.Rest:
-                    OnBattleRequested?.Invoke(); // 必要なら拡張
+                    OnBattleRequested?.Invoke(null, false);
                     break;
             }
         }

@@ -1,12 +1,10 @@
 using System.Collections.Generic;
 using TechC.ODDESEY.Event;
+using TechC.ODDESEY.Reward;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Map
 {
-    /// <summary>
-    /// ノードの種類
-    /// </summary>
     public enum NodeType
     {
         Battle,
@@ -15,12 +13,11 @@ namespace TechC.ODDESEY.Map
     }
 
     /// <summary>
-    /// マップ上の1ノード（1列）の定義。
+    /// マップ上の1ノードの定義。
     ///
     /// 変更点：
-    ///   - EventData フィールドを追加。
-    ///     NodeType.Event の選択肢があるノードにのみアサインする。
-    ///     Battle / Rest の場合は null でよい。
+    ///   - RewardData を追加。Battle ノードのバトル勝利後に使う報酬候補。
+    ///   - IsBossNode を追加。true のとき勝利後はリザルト画面へ遷移する。
     /// </summary>
     [System.Serializable]
     public class StageNodeData
@@ -30,5 +27,11 @@ namespace TechC.ODDESEY.Map
 
         [Tooltip("choices に Event が含まれる場合にアサインする EventData")]
         public EventData EventData;
+
+        [Tooltip("choices に Battle が含まれる場合の報酬カード候補")]
+        public BattleRewardData RewardData;
+
+        [Tooltip("ボスバトル。true のとき勝利後はカード選択をスキップしてリザルトへ遷移する")]
+        public bool IsBossNode = false;
     }
 }
