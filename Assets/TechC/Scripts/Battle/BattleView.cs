@@ -335,6 +335,7 @@ namespace TechC.ODDESEY.Battle
         public async UniTask ShowWinEffectAsync()
         {
             winEffectObj.SetActive(true);
+            currentEnemyView.PlayDefeatedAnimationAsync().Forget();
             await UniTask.Delay(4000);
         }
 

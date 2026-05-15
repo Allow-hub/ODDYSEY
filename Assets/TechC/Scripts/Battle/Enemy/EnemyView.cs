@@ -117,12 +117,7 @@ namespace TechC.ODDESEY.Battle
             CustomLogger.Info($"敵出撃アニメーション完了", LogTagUtil.TagBattle);
             animator?.SetBool(AnimUtil.EnterHash, false);
         }
-
-        [ContextMenu("Defeat")]
-        public void TestPlayDefeatedAnimation()
-        {
-            PlayDefeatedAnimationAsync().Forget();
-        }
+        
         public async UniTask PlayDefeatedAnimationAsync()
         {
             var task = WaitStateAsync(EnemyStateNotifier.StateType.Defeated);

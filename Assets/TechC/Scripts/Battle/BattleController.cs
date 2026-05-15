@@ -65,7 +65,7 @@ namespace TechC.ODDESEY.Battle
 
                     if (result.IsBattleEnd)
                     {
-                        MainManager.I?.SetLackGaugeValue(battleLogic.LuckGauge);
+                        MainManager.I?.SetLuckGaugeValue(battleLogic.LuckGauge);
                         if (result.IsWon)
                         {
                             await battleView.ShowWinEffectAsync();

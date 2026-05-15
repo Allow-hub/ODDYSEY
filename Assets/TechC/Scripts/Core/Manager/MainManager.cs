@@ -159,7 +159,7 @@ namespace TechC.Core.Manager
 
         private void HandleBattleWon()
         {
-            SetLackGaugeValue(luckGaugeValue);
+            SetLuckGaugeValue(luckGaugeValue);
             battleWinCount++;
 
             if (pendingIsBoss)
@@ -230,7 +230,7 @@ namespace TechC.Core.Manager
 
         // ─── ユーティリティ ───────────────────────────────────────────────
 
-        public void SetLackGaugeValue(float value) => luckGaugeValue = Mathf.Clamp(value, 0f, 100f);
+        public void SetLuckGaugeValue(float value) => luckGaugeValue = Mathf.Clamp(value, 0f, 100f);
 
         public void AddCardToContext(int count)
         {

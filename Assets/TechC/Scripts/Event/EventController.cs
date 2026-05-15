@@ -95,7 +95,7 @@ namespace TechC.ODDESEY.Event
         {
             var context = MainManager.I?.GameContext;
             if (context == null) return;
-            MainManager.I.SetLackGaugeValue(context.LuckGauge);
+            MainManager.I.SetLuckGaugeValue(context.LuckGauge);
             luckGaugeView.UpdateGaugeImmediate(context.LuckGauge, MainManager.I.LuckGaugeMax, true);
         }
 
