@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6708bc7d66b2a3242938440f443d44a7, type: 3}
   m_Name: A-01_DamageEffect
   m_EditorClassIdentifier: 
-  ProbabilityMin: 0.4
-  ProbabilityMax: 0.5
-  DamageMin: 5
-  DamageMax: 15
+  ProbabilityMin: 1
+  ProbabilityMax: 1
+  DamageMin: 50
+  DamageMax: 60
   UsePositionBonus: 0
   RequiredSlotIndex: 0
   PositionBonusDamage: 5
