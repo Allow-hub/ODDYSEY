@@ -34,9 +34,7 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private Button pauseButton;
 
         [Header("バトルUI フェードイン")]
-        [Tooltip("バトル開始時にフェードインさせる Canvas Group（HP・ゲージ等をまとめた親）")]
         [SerializeField] private CanvasGroup battleUIGroup;
-        [Tooltip("フェードイン時間（秒）")]
         [SerializeField] private float battleUIFadeDuration = 0.5f;
 
         [Header("ダメージポップアップ")]
@@ -55,8 +53,17 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private Vector2 deckStartPos = new Vector2(800, -500);
 
         [Header("バトルテンポ")]
-        [Tooltip("カード1枚の演出が終わってから次のカードへ進むまでの待機時間（秒）")]
         [SerializeField] private float cardResolveInterval = 0.3f;
+
+        [Header("勝利演出")]
+        [Tooltip("ヒットストップの TimeScale")]
+        [SerializeField, Range(0f, 1f)] private float winSlowTimeScale = 0.05f;
+        [Tooltip("スローモーションの継続時間（実時間・秒）")]
+        [SerializeField] private float winSlowDuration = 0.6f;
+        [Tooltip("スローから通常に戻る補間時間（実時間・秒）")]
+        [SerializeField] private float winSlowRecovery = 0.3f;
+        [Tooltip("スロー終了後 BattleEnd アニメ開始までの待機（実時間・秒）")]
+        [SerializeField] private float winBeforeAnimDelay = 0.1f;
 
         private CancellationToken destroyToken;
         private EnemyView currentEnemyView;
@@ -72,7 +79,6 @@ namespace TechC.ODDESEY.Battle
             loseEffectObj.SetActive(false);
             if (fadePanel != null) fadePanel.alpha = 1f;
 
-            // バトルUIは最初は非表示にしておく
             if (battleUIGroup != null)
             {
                 battleUIGroup.alpha = 0f;
@@ -115,10 +121,6 @@ namespace TechC.ODDESEY.Battle
             await battleStartTcs.Task;
         }
 
-        /// <summary>
-        /// BattleStartNotifier（StateMachineBehaviour）から呼ばれる。
-        /// BattleStart アニメが終わったことを通知する。
-        /// </summary>
         public void NotifyBattleStartFinished()
         {
             battleStartTcs?.TrySetResult();
@@ -126,10 +128,6 @@ namespace TechC.ODDESEY.Battle
             CameraManager.I?.SwitchTo(CameraState.Default);
         }
 
-        /// <summary>
-        /// Animation Event から呼ぶ。
-        /// BattleStart アニメの任意フレームで battleUIGroup をフェードインさせる。
-        /// </summary>
         public void FadeInBattleUI()
         {
             FadeInBattleUIAsync().Forget();
@@ -149,7 +147,6 @@ namespace TechC.ODDESEY.Battle
                 battleUIGroup.alpha = Mathf.Clamp01(elapsed / battleUIFadeDuration);
                 await UniTask.Yield();
             }
-
             battleUIGroup.alpha = 1f;
         }
 
@@ -158,15 +155,6 @@ namespace TechC.ODDESEY.Battle
             await UpdateHandAsync(turnData.Hand);
         }
 
-        /// <summary>
-        /// カード1枚の解決演出を再生する。
-        ///
-        /// 改善点：
-        ///   - Phase2 で HP更新と攻撃アニメ残り部分を並列実行。
-        ///     「HPが減るタイミング」と「アニメが終わるタイミング」が揃い
-        ///     テンポよく見える。
-        ///   - 被ダメアニメは引き続き Forget()（待たない）。
-        /// </summary>
         public async UniTask PlayCardResolveAsync(
             CardResolveResult result, int playerHpMax, int enemyHpMax)
         {
@@ -174,12 +162,13 @@ namespace TechC.ODDESEY.Battle
 
             if (result.IsPlayer)
             {
-                // Phase1: ヒット判定フレームまで待つ
                 await playerView.BeginAttackAnimationAsync(animType);
 
-                // Phase2: 被ダメアニメ・HP更新・攻撃アニメ残りを並列実行
+                // 敵撃破ヒット時のみスローをかける
+                if (result.IsBattleEnd && result.IsWon && result.IsHit)
+                    await PlayWinSlowAsync();
+
                 currentEnemyView.PlayDamageAnimationAsync(result.IsHit).Forget();
-                // ▼ ヒット・ミス両方でポップアップを出す
                 damagePopupManager.Show(
                     result.DamageDealt,
                     isHit: result.IsHit,
@@ -194,17 +183,15 @@ namespace TechC.ODDESEY.Battle
                     result.DamageDealt > 0
                         ? enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax)
                         : UniTask.CompletedTask,
-                    playerView.WaitAttackFinishedAsync(animType)
+                    playerView.WaitAttackFinishedAsync(animType,
+                        skipCameraReturn: result.IsBattleEnd && result.IsWon)
                 );
             }
             else
             {
-                // Phase1: ヒット判定フレームまで待つ
                 await currentEnemyView.BeginAttackAnimationAsync(animType);
 
-                // Phase2: 被ダメアニメ・HP更新・攻撃アニメ残りを並列実行
                 playerView.PlayDamageAnimationAsync(result.IsHit).Forget();
-                // ▼ ヒット・ミス両方でポップアップを出す
                 damagePopupManager.Show(
                     result.DamageDealt,
                     isHit: result.IsHit,
@@ -219,17 +206,16 @@ namespace TechC.ODDESEY.Battle
                     result.DamageDealt > 0
                         ? playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax)
                         : UniTask.CompletedTask,
-                    currentEnemyView.WaitAttackFinishedAsync(animType)
+                    currentEnemyView.WaitAttackFinishedAsync(animType,
+                        skipCameraReturn: result.IsBattleEnd && result.IsWon)
                 );
             }
 
-            // 自傷ダメージ
             var selfDamage = result.GetExtra<int>(ResultKeys.SelfDamageDealt);
             if (selfDamage > 0)
             {
                 if (result.IsPlayer)
                 {
-                    // プレイヤー自傷
                     damagePopupManager.Show(selfDamage, isHit: true, isPlayerDamage: true, isCritical: false,
                         playerPopupAnchor != null ? playerPopupAnchor.position : playerView.transform.position);
                     await playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax);
@@ -242,7 +228,6 @@ namespace TechC.ODDESEY.Battle
                 }
             }
 
-            // カウンター
             bool counterTriggered = result.GetExtra<bool>(ResultKeys.CounterTriggered);
             if (counterTriggered)
             {
@@ -332,11 +317,49 @@ namespace TechC.ODDESEY.Battle
             confirmTcs?.TrySetResult();
         }
 
+        /// <summary>
+        /// 勝利演出。
+        ///
+        /// 流れ：
+        ///   ① スローモーション（HitStop 的なタイムスケール操作）
+        ///   ② 通常速度に戻す
+        ///   ③ Animator で BattleEnd トリガー + 敵死亡アニメを並列再生
+        ///   ④ 敵死亡アニメ完了を待つ
+        /// </summary>
         public async UniTask ShowWinEffectAsync()
         {
+            // BattleEnd アニメ（UI）と敵死亡アニメを同時に開始して完了を待つ
             winEffectObj.SetActive(true);
-            currentEnemyView.PlayDefeatedAnimationAsync().Forget();
-            await UniTask.Delay(4000);
+            anim?.SetTrigger("BattleEnd");
+
+            if (currentEnemyView != null)
+                await currentEnemyView.PlayDefeatedAnimationAsync();
+        }
+
+        /// <summary>
+        /// 撃破ヒット時のスローモーション。
+        /// BeginAttackAnimationAsync 完了後（ヒット判定フレーム）に呼ぶ。
+        /// </summary>
+        private async UniTask PlayWinSlowAsync()
+        {
+            CameraManager.I?.SwitchTo(CameraState.EnemyDied);
+            float prevTimeScale = Time.timeScale;
+            Time.timeScale = winSlowTimeScale;
+
+            await UniTask.Delay(
+                TimeSpan.FromSeconds(winSlowDuration),
+                ignoreTimeScale: true);
+
+            // なめらかに通常速度へ戻す
+            float elapsed = 0f;
+            while (elapsed < winSlowRecovery)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                Time.timeScale = Mathf.Lerp(winSlowTimeScale, prevTimeScale,
+                                      Mathf.Clamp01(elapsed / winSlowRecovery));
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+            Time.timeScale = prevTimeScale;
         }
 
         public async UniTask ShowLoseEffectAsync()

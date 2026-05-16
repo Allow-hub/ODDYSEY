@@ -84,12 +84,14 @@ namespace TechC.ODDESEY.Battle
         }
 
         public async UniTask WaitAttackFinishedAsync(
-            CardAnimationType animType = CardAnimationType.Attack)
+            CardAnimationType animType = CardAnimationType.Attack,
+            bool skipCameraReturn = false)
         {
             await UniTask.WhenAll(attackFinishedTcs.Task, cameraTask);
             var (animHash, _) = ResolveParams(animType);
             animator?.SetBool(animHash, false);
-            await CameraManager.I.ReturnToDefaultAsync();
+            if (!skipCameraReturn)
+                await CameraManager.I.ReturnToDefaultAsync();
         }
 
         public void PlayHitStopEffect() => HitStopManager.I.Play();

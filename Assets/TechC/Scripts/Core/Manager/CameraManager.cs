@@ -12,6 +12,8 @@ namespace TechC.ODDESEY.Core.Manager
         Default,
         PlayerAttack,
         EnemyAttack,
+        EnemyDied,
+        PlayerDied,
         BattleStart,
         Cutscene,
         Aim,

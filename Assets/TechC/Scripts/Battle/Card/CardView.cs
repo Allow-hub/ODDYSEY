@@ -98,8 +98,8 @@ namespace TechC.ODDESEY.Battle
         {
             if (cardData == null) return;
             cardNameText.text = cardData.CardName;
-            var probability = cardInstance.GetEffectiveProbability(0) * 100;
-            probabilityText.text = $"{probability:F0}%";
+            var probability = (int)(cardInstance.GetEffectiveProbability(0) * 100);
+            probabilityText.text = $"{probability}%";
             damageText.text = $"{cardInstance.GetEffectiveValue(0)}";
         }
 
