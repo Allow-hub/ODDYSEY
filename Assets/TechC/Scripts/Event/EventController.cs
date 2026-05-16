@@ -1,56 +1,107 @@
 using System;
+using TechC.Core.Manager;
+using TechC.VBattle.Core.Extensions;
+using TechC.ODDESEY.Battle;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Event
 {
-    /// <summary>
-    /// イベントノードの管理。
-    /// 選択肢の表示・結果適用を担当し、完了を MainManager に通知する。
-    /// </summary>
     public class EventController : MonoBehaviour
     {
-        // -------------------------------------------------------
-        // MainManager へ通知するイベント
-        // -------------------------------------------------------
-
         public event Action OnEventCompleted;
 
-        // -------------------------------------------------------
-        // Inspector 設定
-        // -------------------------------------------------------
+        [SerializeField] private EventView eventView;
+        [SerializeField] private LuckGaugeView luckGaugeView;
+        [SerializeField] private GameObject canvasObj;
+        [SerializeField] private EventData debugEventData;
 
-        [Header("UI")]
-        [SerializeField] private GameObject eventUI;
+        private GameObject currentEventPrefab;
+        private EventLogic logic = new();
 
-        // -------------------------------------------------------
-        // 初期化（MainManager から呼ばれる）
-        // -------------------------------------------------------
+        public void Initialize() => Initialize(debugEventData);
 
-        public void Initialize()
+        public void Initialize(EventData data)
         {
-            if (eventUI != null)
-                eventUI.SetActive(true);
+            if (data == null)
+            {
+                CustomLogger.Error("[EventController] EventData が null です。");
+                return;
+            }
+            if (eventView == null)
+            {
+                CustomLogger.Error("[EventController] EventView が null です。");
+                return;
+            }
 
-            // TODO: PlayerData から現在のノード情報を取得してイベント内容をセット
-            // TODO: 選択肢ボタンを動的に生成する
+            var context = MainManager.I?.GameContext;
+            if (context == null)
+            {
+                CustomLogger.Error("[EventController] GameContext が null です。");
+                return;
+            }
+
+            context.LuckGauge = MainManager.I.LuckGaugeValue;
+            luckGaugeView.Setup(MainManager.I.LuckGaugeMax);  
+            luckGaugeView.UpdateGaugeImmediate(MainManager.I?.LuckGaugeValue ?? 0f, 100f, false);
+            logic.Setup(data, context);
+
+            eventView.Setup(
+                data,
+                logic.CurrentGauge,
+                logic.ReservedGauge,
+                logic.FinalSuccessRate,
+                onChallenge: OnChallengePressed,
+                onCancel: OnCancelPressed,
+                onAddGauge: OnAddGaugePressed,
+                onRemoveGauge: OnRemoveGaugePressed
+            );
+            currentEventPrefab = Instantiate(data.EventPrefab, canvasObj.transform);
+            RefreshView();
         }
 
-        // -------------------------------------------------------
-        // 選択肢（UIボタンから呼ぶ）
-        // -------------------------------------------------------
+        private void OnAddGaugePressed() { logic.TryAddReserved(1); RefreshView(); }
+        private void OnRemoveGaugePressed() { logic.TryRemoveReserved(1); RefreshView(); }
 
-        /// <summary>選択肢インデックスを受け取り結果を適用する</summary>
-        public void SelectChoice(int choiceIndex)
+        private void OnChallengePressed()
         {
-            // TODO: 選択肢に応じて PlayerData を変更（HP増減・カード獲得など）
-            CompleteEvent();
+            var result = logic.ChallengeAndApply();
+
+            // GainCard：抽選済みのカードを GameContext に追加
+            if (result.ResultType == EventResultType.GainCard)
+            {
+                foreach (var card in result.DrawnCards)
+                    MainManager.I?.GameContext?.AddCard(card);
+            }
+
+            SyncGaugeToMainManager();
+            eventView.ShowResult(result, OnResultClosed);
+            Destroy(currentEventPrefab);
+        }
+
+        private void OnCancelPressed() { logic.Cancel(); CompleteEvent(); }
+        private void OnResultClosed() => CompleteEvent();
+
+        private void RefreshView()
+        {
+            eventView.UpdateGaugeInfo(
+                logic.CurrentGauge,
+                logic.ReservedGauge,
+                logic.FinalSuccessRate,
+                logic.CanAddReserved(),
+                logic.CanRemoveReserved());
+        }
+
+        private void SyncGaugeToMainManager()
+        {
+            var context = MainManager.I?.GameContext;
+            if (context == null) return;
+            MainManager.I.SetLuckGaugeValue(context.LuckGauge);
+            luckGaugeView.UpdateGaugeImmediate(context.LuckGauge, MainManager.I.LuckGaugeMax, true);
         }
 
         private void CompleteEvent()
         {
-            if (eventUI != null)
-                eventUI.SetActive(false);
-
+            SyncGaugeToMainManager();
             OnEventCompleted?.Invoke();
         }
     }

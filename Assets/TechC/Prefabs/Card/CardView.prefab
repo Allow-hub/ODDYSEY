@@ -56,7 +56,10 @@ MonoBehaviour:
   probabilityText: {fileID: 909612100961150638}
   damageText: {fileID: 8368261969385386141}
   cardImage: {fileID: 1628214694697326076}
+  outline: {fileID: 8824965055475382675}
   moveDuration: 1
+  dragTiltAngle: 10
+  tiltResetSpeed: 8
 --- !u!1 &3347041217988888205
 GameObject:
   m_ObjectHideFlags: 0
@@ -202,6 +205,7 @@ GameObject:
   - component: {fileID: 5104240305374002063}
   - component: {fileID: 7784006712152333628}
   - component: {fileID: 1628214694697326076}
+  - component: {fileID: 8824965055475382675}
   m_Layer: 5
   m_Name: CardImage
   m_TagString: Untagged
@@ -266,6 +270,21 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &8824965055475382675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4584447164320611765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_EffectColor: {r: 1, g: 0.7783019, b: 0.7783019, a: 0.5}
+  m_EffectDistance: {x: 10, y: -10}
+  m_UseGraphicAlpha: 1
 --- !u!1 &6963045532625791702
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;

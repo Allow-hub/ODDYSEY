@@ -14,6 +14,7 @@ namespace TechC.ODDESEY.Battle
         [Header("基本情報")]
         public string CardName;
         public Sprite CardSprite;
+        public string Description;
 
         [Header("効果リスト")]
         [SerializeReference] public List<CardEffectBase> Effects = new();

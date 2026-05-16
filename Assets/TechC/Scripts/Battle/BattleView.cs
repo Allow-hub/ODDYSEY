@@ -11,14 +11,6 @@ using System.Threading;
 
 namespace TechC.ODDESEY.Battle
 {
-    /// <summary>
-    /// 戦闘の見た目を管理する。
-    ///
-    /// 変更点：
-    ///   - CardView.Setup() への onReturnRequested 渡しを廃止。
-    ///   - CardView は BattleEventBus にイベントを発行するだけになったため、
-    ///     BattleView 側での Action 注入が不要になった。
-    /// </summary>
     public class BattleView : MonoBehaviour
     {
         [SerializeField] private Animator anim;
@@ -41,6 +33,15 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private GameObject loseEffectObj;
         [SerializeField] private Button pauseButton;
 
+        [Header("バトルUI フェードイン")]
+        [SerializeField] private CanvasGroup battleUIGroup;
+        [SerializeField] private float battleUIFadeDuration = 0.5f;
+
+        [Header("ダメージポップアップ")]
+        [SerializeField] private DamagePopupManager damagePopupManager;
+        [SerializeField] private Transform playerPopupAnchor;
+        [SerializeField] private Transform enemyPopupAnchor;
+
         [Header("Animation")]
         [SerializeField] private float fadeDuration = 0.4f;
         [SerializeField] private float textFadeDuration = 0.3f;
@@ -50,10 +51,24 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private float spacing = 200f;
         [SerializeField] private float y = -300f;
         [SerializeField] private Vector2 deckStartPos = new Vector2(800, -500);
-        private CancellationToken destroyToken;
 
+        [Header("バトルテンポ")]
+        [SerializeField] private float cardResolveInterval = 0.3f;
+
+        [Header("勝利演出")]
+        [Tooltip("ヒットストップの TimeScale")]
+        [SerializeField, Range(0f, 1f)] private float winSlowTimeScale = 0.05f;
+        [Tooltip("スローモーションの継続時間（実時間・秒）")]
+        [SerializeField] private float winSlowDuration = 0.6f;
+        [Tooltip("スローから通常に戻る補間時間（実時間・秒）")]
+        [SerializeField] private float winSlowRecovery = 0.3f;
+        [Tooltip("スロー終了後 BattleEnd アニメ開始までの待機（実時間・秒）")]
+        [SerializeField] private float winBeforeAnimDelay = 0.1f;
+
+        private CancellationToken destroyToken;
         private EnemyView currentEnemyView;
         private UniTaskCompletionSource confirmTcs;
+        private UniTaskCompletionSource battleStartTcs;
         private Dictionary<int, CardView> handViews = new();
 
         public void Init()
@@ -63,6 +78,14 @@ namespace TechC.ODDESEY.Battle
             winEffectObj.SetActive(false);
             loseEffectObj.SetActive(false);
             if (fadePanel != null) fadePanel.alpha = 1f;
+
+            if (battleUIGroup != null)
+            {
+                battleUIGroup.alpha = 0f;
+                battleUIGroup.interactable = false;
+                battleUIGroup.blocksRaycasts = false;
+            }
+
             confirmButton?.onClick.AddListener(ConfirmTurn);
             pauseButton?.onClick.AddListener(() => PauseManager.I?.Pause());
             destroyToken = this.GetCancellationTokenOnDestroy();
@@ -74,8 +97,6 @@ namespace TechC.ODDESEY.Battle
 
         public async UniTask PlayBattleStartAsync(TurnData firstTurnData, EnemyData enemyData)
         {
-            battleStartText.SetActive(false);
-
             playerHpView.Setup(firstTurnData.PlayerHpMax);
             enemyHpView.Setup(firstTurnData.EnemyHpMax);
 
@@ -89,16 +110,44 @@ namespace TechC.ODDESEY.Battle
                 await currentEnemyView.PlayEnterAnimationAsync();
             }
 
-            if (battleStartText != null)
-            {
-                await UniTask.Delay(TimeSpan.FromSeconds(0.5f));
-                battleStartText.SetActive(true);
-                await UniTask.Delay(TimeSpan.FromSeconds(0.3f));
-                await FadeObjectAsync(battleStartText, 1f, 0f, textFadeDuration);
-                battleStartText.SetActive(false);
-            }
-
+            await PlayBattleStartAnimAsync();
             await UpdateHandAsync(firstTurnData.Hand);
+        }
+
+        private async UniTask PlayBattleStartAnimAsync()
+        {
+            battleStartTcs = new UniTaskCompletionSource();
+            anim?.SetTrigger("BattleStart");
+            await battleStartTcs.Task;
+        }
+
+        public void NotifyBattleStartFinished()
+        {
+            battleStartTcs?.TrySetResult();
+            anim?.SetBool("BattleStart", false);
+            CameraManager.I?.SwitchTo(CameraState.Default);
+        }
+
+        public void FadeInBattleUI()
+        {
+            FadeInBattleUIAsync().Forget();
+        }
+
+        private async UniTaskVoid FadeInBattleUIAsync()
+        {
+            if (battleUIGroup == null) return;
+
+            battleUIGroup.interactable = true;
+            battleUIGroup.blocksRaycasts = true;
+
+            float elapsed = 0f;
+            while (elapsed < battleUIFadeDuration)
+            {
+                elapsed += Time.deltaTime;
+                battleUIGroup.alpha = Mathf.Clamp01(elapsed / battleUIFadeDuration);
+                await UniTask.Yield();
+            }
+            battleUIGroup.alpha = 1f;
         }
 
         public async UniTask ShowTurnStartAsync(TurnData turnData)
@@ -106,72 +155,79 @@ namespace TechC.ODDESEY.Battle
             await UpdateHandAsync(turnData.Hand);
         }
 
-        /// <summary>
-        /// カード解決の演出を再生する。
-        ///
-        /// プレイヤー攻撃時：
-        ///   1. 攻撃アニメ開始 → ヒット判定フレームで停止
-        ///   2. 敵の被ダメアニメを Forget()（待たない）
-        ///   3. HPバー更新を await
-        ///   4. 攻撃アニメ完了まで待つ
-        ///
-        /// 敵攻撃時：
-        ///   1. 攻撃アニメ開始 → ヒット判定フレームで停止
-        ///   2. プレイヤーの被ダメアニメを Forget()（待たない）
-        ///   3. HPバー更新を await
-        ///   4. 攻撃アニメ完了まで待つ
-        /// </summary>
-        public async UniTask PlayCardResolveAsync(CardResolveResult result, int playerHpMax, int enemyHpMax)
+        public async UniTask PlayCardResolveAsync(
+            CardResolveResult result, int playerHpMax, int enemyHpMax)
         {
             var animType = result.AnimationType;
+
             if (result.IsPlayer)
             {
-                // Phase1: ヒット判定フレームまで待つ
                 await playerView.BeginAttackAnimationAsync(animType);
 
-                // Phase2: 敵の被ダメアニメは流すだけ（待たない）
+                // 敵撃破ヒット時のみスローをかける
+                if (result.IsBattleEnd && result.IsWon && result.IsHit)
+                    await PlayWinSlowAsync();
+
                 currentEnemyView.PlayDamageAnimationAsync(result.IsHit).Forget();
+                damagePopupManager.Show(
+                    result.DamageDealt,
+                    isHit: result.IsHit,
+                    isPlayerDamage: false,
+                    isCritical: result.GetExtra<bool>(ResultKeys.IsCritical),
+                    worldPos: enemyPopupAnchor != null
+                                        ? enemyPopupAnchor.position
+                                        : currentEnemyView.transform.position);
 
-                // HPバー更新は await する
-                if (result.DamageDealt > 0)
-                    await enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax);
-
-                // Phase3: 攻撃アニメ完了まで待つ
-                await playerView.WaitAttackFinishedAsync(animType);
+                await UniTask.WhenAll(
+                    currentEnemyView.PlayDamageAnimationAsync(result.IsHit),
+                    result.DamageDealt > 0
+                        ? enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax)
+                        : UniTask.CompletedTask,
+                    playerView.WaitAttackFinishedAsync(animType,
+                        skipCameraReturn: result.IsBattleEnd && result.IsWon)
+                );
             }
             else
             {
-                // Phase1: ヒット判定フレームまで待つ
                 await currentEnemyView.BeginAttackAnimationAsync(animType);
 
-                // Phase2: プレイヤーの被ダメアニメは流すだけ（待たない）
                 playerView.PlayDamageAnimationAsync(result.IsHit).Forget();
+                damagePopupManager.Show(
+                    result.DamageDealt,
+                    isHit: result.IsHit,
+                    isPlayerDamage: true,
+                    isCritical: false,
+                    worldPos: playerPopupAnchor != null
+                                        ? playerPopupAnchor.position
+                                        : playerView.transform.position);
 
-                // HPバー更新は await する
-                if (result.DamageDealt > 0)
-                    await playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax);
-
-                // Phase3: 攻撃アニメ完了まで待つ
-                await currentEnemyView.WaitAttackFinishedAsync(animType);
+                await UniTask.WhenAll(
+                    playerView.PlayDamageAnimationAsync(result.IsHit),
+                    result.DamageDealt > 0
+                        ? playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax)
+                        : UniTask.CompletedTask,
+                    currentEnemyView.WaitAttackFinishedAsync(animType,
+                        skipCameraReturn: result.IsBattleEnd && result.IsWon)
+                );
             }
 
-            // 自傷ダメージ
             var selfDamage = result.GetExtra<int>(ResultKeys.SelfDamageDealt);
             if (selfDamage > 0)
             {
                 if (result.IsPlayer)
                 {
-                    playerView.PlayDamageAnimationAsync(isHit: true).Forget();
+                    damagePopupManager.Show(selfDamage, isHit: true, isPlayerDamage: true, isCritical: false,
+                        playerPopupAnchor != null ? playerPopupAnchor.position : playerView.transform.position);
                     await playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax);
                 }
                 else
                 {
-                    currentEnemyView.PlayDamageAnimationAsync(isHit: true).Forget();
+                    damagePopupManager.Show(selfDamage, isHit: true, isPlayerDamage: false, isCritical: false,
+                        enemyPopupAnchor != null ? enemyPopupAnchor.position : currentEnemyView.transform.position);
                     await enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax);
                 }
             }
 
-            // カウンター
             bool counterTriggered = result.GetExtra<bool>(ResultKeys.CounterTriggered);
             if (counterTriggered)
             {
@@ -179,7 +235,6 @@ namespace TechC.ODDESEY.Battle
                 await enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax);
             }
         }
-
 
         public async UniTask UpdatePlayerHpAsync(int current, int max)
             => await playerHpView.UpdateHpAsync(current, max);
@@ -207,11 +262,13 @@ namespace TechC.ODDESEY.Battle
                     handViews.Remove(r.CardInstanceId);
                 }
                 else
-                    CustomLogger.Warning($"削除対象のカードViewが見つからない: InstanceId {r.CardInstanceId}", LogTagUtil.TagCard);
+                    CustomLogger.Warning(
+                        $"削除対象のカードViewが見つからない: InstanceId {r.CardInstanceId}",
+                        LogTagUtil.TagCard);
             }
 
             if (!destroyToken.IsCancellationRequested && anim)
-                anim.SetBool("BattleEnd", true);
+                anim.SetBool("TurnEnd", true);
 
             await UniTask.WhenAll(tasks);
         }
@@ -220,36 +277,89 @@ namespace TechC.ODDESEY.Battle
         {
             if (!handViews.TryGetValue(instanceId, out var view))
             {
-                CustomLogger.Warning($"削除対象のカードViewが見つからない: InstanceId {instanceId}", LogTagUtil.TagCard);
+                CustomLogger.Warning(
+                    $"削除対象のカードViewが見つからない: InstanceId {instanceId}",
+                    LogTagUtil.TagCard);
                 return;
             }
 
             await view.PlayBreakAnimationAsync();
-
-            if (view != null)
-                Destroy(view.gameObject);
-
+            if (view != null) Destroy(view.gameObject);
             handViews.Remove(instanceId);
+        }
+
+        public async UniTask WaitForTurnStartAnimAsync()
+        {
+            if (anim == null) return;
+
+            await UniTask.WaitUntil(() =>
+                anim.GetCurrentAnimatorStateInfo(0).IsName("TurnStart")
+                || anim.IsInTransition(0));
+
+            await UniTask.WaitUntil(() => !anim.IsInTransition(0));
+
+            await UniTask.WaitUntil(() =>
+                anim.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f
+                && !anim.IsInTransition(0));
         }
 
         public UniTask WaitForPlayerConfirmAsync()
         {
-            anim?.SetBool("BattleStart", false);
+            anim?.SetBool("TurnStart", false);
             confirmTcs = new UniTaskCompletionSource();
             return confirmTcs.Task;
         }
 
         public void ConfirmTurn()
         {
-            anim?.SetBool("BattleEnd", false);
-            anim?.SetBool("BattleStart", true);
+            anim?.SetBool("TurnEnd", false);
+            anim?.SetBool("TurnStart", true);
             confirmTcs?.TrySetResult();
         }
 
+        /// <summary>
+        /// 勝利演出。
+        ///
+        /// 流れ：
+        ///   ① スローモーション（HitStop 的なタイムスケール操作）
+        ///   ② 通常速度に戻す
+        ///   ③ Animator で BattleEnd トリガー + 敵死亡アニメを並列再生
+        ///   ④ 敵死亡アニメ完了を待つ
+        /// </summary>
         public async UniTask ShowWinEffectAsync()
         {
+            // BattleEnd アニメ（UI）と敵死亡アニメを同時に開始して完了を待つ
             winEffectObj.SetActive(true);
-            await UniTask.Delay(4000);
+            anim?.SetTrigger("BattleEnd");
+
+            if (currentEnemyView != null)
+                await currentEnemyView.PlayDefeatedAnimationAsync();
+        }
+
+        /// <summary>
+        /// 撃破ヒット時のスローモーション。
+        /// BeginAttackAnimationAsync 完了後（ヒット判定フレーム）に呼ぶ。
+        /// </summary>
+        private async UniTask PlayWinSlowAsync()
+        {
+            CameraManager.I?.SwitchTo(CameraState.EnemyDied);
+            float prevTimeScale = Time.timeScale;
+            Time.timeScale = winSlowTimeScale;
+
+            await UniTask.Delay(
+                TimeSpan.FromSeconds(winSlowDuration),
+                ignoreTimeScale: true);
+
+            // なめらかに通常速度へ戻す
+            float elapsed = 0f;
+            while (elapsed < winSlowRecovery)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                Time.timeScale = Mathf.Lerp(winSlowTimeScale, prevTimeScale,
+                                      Mathf.Clamp01(elapsed / winSlowRecovery));
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+            Time.timeScale = prevTimeScale;
         }
 
         public async UniTask ShowLoseEffectAsync()
@@ -257,6 +367,8 @@ namespace TechC.ODDESEY.Battle
             loseEffectObj.SetActive(true);
             await UniTask.Delay(4000);
         }
+
+        public float CardResolveInterval => cardResolveInterval;
 
         // ================================
         // 内部処理
@@ -275,7 +387,6 @@ namespace TechC.ODDESEY.Battle
                 var targetPos = HandLayoutUtility.GetLinearPosition(i, startX, spacing, y);
 
                 CardView view;
-
                 if (handViews.TryGetValue(instance.InstanceId, out view))
                 {
                     var currentPos = view.GetComponent<RectTransform>().anchoredPosition;
@@ -285,10 +396,7 @@ namespace TechC.ODDESEY.Battle
                 {
                     var obj = Instantiate(cardViewPrefab, handContainer);
                     view = obj.GetComponent<CardView>();
-
-                    // ★ Action の注入なし。CardView は EventBus にイベントを発行するだけ
                     view.Setup(instance);
-
                     handViews[instance.InstanceId] = view;
                     tasks.Add(view.PlayDealAnimationAsync(deckStartPos, targetPos));
                 }
@@ -316,34 +424,28 @@ namespace TechC.ODDESEY.Battle
         private async UniTask FadeAsync(float from, float to, float duration)
         {
             if (fadePanel == null) return;
-
             float t = 0;
             fadePanel.alpha = from;
-
             while (t < duration)
             {
                 t += Time.deltaTime;
                 fadePanel.alpha = Mathf.Lerp(from, to, t / duration);
                 await UniTask.Yield();
             }
-
             fadePanel.alpha = to;
         }
 
         private async UniTask FadeObjectAsync(GameObject obj, float from, float to, float duration)
         {
             var group = obj.GetComponent<CanvasGroup>() ?? obj.AddComponent<CanvasGroup>();
-
             float t = 0;
             group.alpha = from;
-
             while (t < duration)
             {
                 t += Time.deltaTime;
                 group.alpha = Mathf.Lerp(from, to, t / duration);
                 await UniTask.Yield();
             }
-
             group.alpha = to;
         }
     }

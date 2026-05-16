@@ -92,6 +92,9 @@ namespace TechC.ODDESEY.Battle
             currentEnemy = context?.CurrentEnemy;
             enemyPlacementStrategy = currentEnemy?.CardDeck?.CreateStrategy();
 
+            // 激アツ状態の変化を購読して手札に即時反映する
+            luckGauge.OnHotModeChanged += HandleHotModeChanged;
+
             // CardResolver を生成（this を渡す）
             resolver = new CardResolver(this);
 
@@ -254,6 +257,10 @@ namespace TechC.ODDESEY.Battle
                 var instance = new CardInstance(cardData);
                 bool isHotMode = luckGauge?.IsHotMode ?? false;
                 instance.RollValues(isHotMode);
+                // 激アツ中にドローしたカードは即時最大化
+                if (luckGauge?.IsHotMode ?? false)
+                    HotModeHandEffect.ApplyToCard(instance, true);
+
                 hand.Add(instance);
             }
 
@@ -352,6 +359,21 @@ namespace TechC.ODDESEY.Battle
         /// カウンター登録済みであれば確率判定して反撃ダメージを与える。
         /// </summary>
         /// <returns>反撃が発動したか</returns>
+        // ─── 激アツハンドラ ───────────────────────────────────────────
+
+        /// <summary>
+        /// 激アツ状態が変化したとき LuckGaugeModel から呼ばれる。
+        ///   enable = true  → 手札全体を最大化
+        ///   enable = false → 手札のボーナスをリセット
+        /// </summary>
+        private void HandleHotModeChanged(bool enable)
+        {
+            HotModeHandEffect.ApplyToHand(hand, enable);
+            CustomLogger.Info(
+                enable ? "[BattleLogic] 激アツ開始！手札を最大化" : "[BattleLogic] 激アツ解除。ボーナスリセット",
+                LogTagUtil.TagBattle);
+        }
+
         public bool TryCounter(CardResolveResult result)
         {
             if (!hasCounter) return false;

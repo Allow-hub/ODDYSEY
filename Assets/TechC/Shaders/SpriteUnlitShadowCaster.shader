@@ -30,25 +30,8 @@ Shader "Custom/SpriteUnlitShadowCaster"
             HLSLPROGRAM
             #pragma vertex   vert
             #pragma fragment frag
-            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-
-            struct Attributes
-            {
-                float4 positionOS : POSITION;
-                float2 uv         : TEXCOORD0;
-                float4 color      : COLOR;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-            };
-
-            struct Varyings
-            {
-                float4 positionHCS : SV_POSITION;
-                float2 uv          : TEXCOORD0;
-                float4 color       : COLOR;
-                UNITY_VERTEX_OUTPUT_STEREO
-            };
 
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
@@ -59,11 +42,23 @@ Shader "Custom/SpriteUnlitShadowCaster"
                 float  _ShadowAlphaCutoff;
             CBUFFER_END
 
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float2 uv         : TEXCOORD0;
+                float4 color      : COLOR;
+            };
+
+            struct Varyings
+            {
+                float4 positionHCS : SV_POSITION;
+                float2 uv          : TEXCOORD0;
+                float4 color       : COLOR;
+            };
+
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
-                UNITY_SETUP_INSTANCE_ID(IN);
-                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
                 OUT.uv          = TRANSFORM_TEX(IN.uv, _MainTex);
                 OUT.color       = IN.color * _Color;
@@ -80,7 +75,6 @@ Shader "Custom/SpriteUnlitShadowCaster"
         }
 
         // ─── Pass 2: ShadowCaster ─────────────────────────────────────────
-        // URP 14 対応: Shadows.hlsl を使わず手動でバイアス適用
         Pass
         {
             Name "ShadowCaster"
@@ -94,12 +88,10 @@ Shader "Custom/SpriteUnlitShadowCaster"
             HLSLPROGRAM
             #pragma vertex   vertShadow
             #pragma fragment fragShadow
-            #pragma multi_compile_instancing
             #pragma multi_compile_shadowcaster
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            // URP 14 では _LightDirection / _LightPosition は自前で宣言する
             float3 _LightDirection;
             float3 _LightPosition;
 
@@ -117,17 +109,14 @@ Shader "Custom/SpriteUnlitShadowCaster"
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
                 float2 uv         : TEXCOORD0;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct VaryingsShadow
             {
                 float4 positionHCS : SV_POSITION;
                 float2 uv          : TEXCOORD0;
-                UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            // URP 14 準拠の手動バイアス関数
             float4 GetShadowPositionHClip(float3 positionOS, float3 normalOS)
             {
                 float3 posWS  = TransformObjectToWorld(positionOS);
@@ -139,14 +128,11 @@ Shader "Custom/SpriteUnlitShadowCaster"
                     float3 lightDir = _LightDirection;
                 #endif
 
-                // 法線方向に少しオフセットしてアクネを防ぐ
-                float  invNdotL = 1.0 - saturate(dot(normWS, lightDir));
-                float  scale    = invNdotL * 0.001;
-                posWS += normWS * scale;
+                float invNdotL = 1.0 - saturate(dot(normWS, lightDir));
+                posWS += normWS * (invNdotL * 0.001);
 
                 float4 posHCS = TransformWorldToHClip(posWS);
 
-                // リバースZの対応
                 #if UNITY_REVERSED_Z
                     posHCS.z = min(posHCS.z, posHCS.w * UNITY_NEAR_CLIP_VALUE);
                 #else
@@ -159,8 +145,6 @@ Shader "Custom/SpriteUnlitShadowCaster"
             VaryingsShadow vertShadow(AttributesShadow IN)
             {
                 VaryingsShadow OUT;
-                UNITY_SETUP_INSTANCE_ID(IN);
-                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 OUT.positionHCS = GetShadowPositionHClip(IN.positionOS.xyz, IN.normalOS);
                 OUT.uv          = TRANSFORM_TEX(IN.uv, _MainTex);
                 return OUT;
