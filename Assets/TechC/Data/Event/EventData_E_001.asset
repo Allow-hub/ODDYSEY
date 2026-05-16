@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 73fb33d6cb59b8d4d918e31838045338, type: 3}
-  m_Name: EventData
+  m_Name: EventData_E_001
   m_EditorClassIdentifier: 
   EventId: E_001
   EventName: "\u5929\u4F7F\u306E\u6B8B\u9AB8"
@@ -20,13 +20,12 @@ MonoBehaviour:
   Description: "\u6226\u5834\u8DE1\u306B\u3001\u5929\u4F7F\u306E\u6B8B\u9AB8\u304C\u8EE2\u304C\u3063\u3066\u3044\u308B\u3002\r\n\u4F55\u304B\u306B\u4F7F\u3048\u308B\u304B\u3082\u3057\u308C\u306A\u3044\u3002"
   ChallengeText: "\u6B8B\u9AB8\u3092\u89E3\u6790\u3059\u308B"
   BaseSuccessRate: 65
-  SuccessResultType: 5
-  SuccessResultValue: 1
-  SuccessCardCandidates:
-  - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+  SuccessActions:
+  - ResultType: 5
+    ResultValue: 1
+    CardCandidates:
+    - {fileID: 11400000, guid: cb9d077bad7863d4596898a4d8dde585, type: 2}
   SuccessFlavorText: "\u7FBD\u306E\u65AD\u7247\u306B\u3001\u898B\u899A\u3048\u306E\u306A\u3044\u7D0B\u69D8\u304C\u523B\u307E\u308C\u3066\u3044\u305F\u3002\u89E3\u6790\u3059\u308B\u4FA1\u5024\u306F\u3042\u308B\u3002"
-  FailureResultType: 2
-  FailureResultValue: 3
-  FailureCardCandidates: []
+  FailureActions: []
   FailureFlavorText: "\u89E3\u6790\u3092\u8A66\u307F\u305F\u304C\u3001\u7FBD\u3067\u624B\u3092\u5207\u3063\u3066\u3057\u307E\u3063\u305F\u3002"
   FailureGaugeRefund: 10

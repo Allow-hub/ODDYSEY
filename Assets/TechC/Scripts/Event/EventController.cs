@@ -41,7 +41,7 @@ namespace TechC.ODDESEY.Event
             }
 
             context.LuckGauge = MainManager.I.LuckGaugeValue;
-            luckGaugeView.Setup(MainManager.I.LuckGaugeMax);  
+            luckGaugeView.Setup(MainManager.I.LuckGaugeMax);
             luckGaugeView.UpdateGaugeImmediate(MainManager.I?.LuckGaugeValue ?? 0f, 100f, false);
             logic.Setup(data, context);
 
@@ -66,11 +66,14 @@ namespace TechC.ODDESEY.Event
         {
             var result = logic.ChallengeAndApply();
 
-            // GainCard：抽選済みのカードを GameContext に追加
-            if (result.ResultType == EventResultType.GainCard)
+            // 全アクションの GainCard を処理
+            foreach (var actionResult in result.ActionResults)
             {
-                foreach (var card in result.DrawnCards)
-                    MainManager.I?.GameContext?.AddCard(card);
+                if (actionResult.ResultType == EventResultType.GainCard)
+                {
+                    foreach (var card in actionResult.DrawnCards)
+                        MainManager.I?.GameContext?.AddCard(card);
+                }
             }
 
             SyncGaugeToMainManager();

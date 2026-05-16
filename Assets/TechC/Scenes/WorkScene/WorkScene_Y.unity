@@ -352,8 +352,14 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -7023583498812918162, guid: be6b8ca34b5bfd54bbc5e333611be71c,
         type: 3}
+      propertyPath: debugEventData
+      value: 
+      objectReference: {fileID: 11400000, guid: 7a80d38910a11ec44b6565d12c4515c2,
+        type: 2}
+    - target: {fileID: -7023583498812918162, guid: be6b8ca34b5bfd54bbc5e333611be71c,
+        type: 3}
       propertyPath: debugStartPhase
-      value: 1
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 832637685491559417, guid: be6b8ca34b5bfd54bbc5e333611be71c,
         type: 3}

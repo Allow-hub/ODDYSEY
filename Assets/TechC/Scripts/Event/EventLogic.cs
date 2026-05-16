@@ -9,9 +9,10 @@ namespace TechC.ODDESEY.Event
     /// イベントのロジックを管理する純粋C#クラス。
     ///
     /// 変更点：
-    ///   - GainCard のとき EventData.DrawSuccessCards / DrawFailureCards で抽選し
-    ///     EventResult.DrawnCards に詰めて返す。
-    ///   - GameContext へのカード追加は行わない（EventController に委譲）。
+    ///   - SuccessActions / FailureActions の複数アクションを順番に処理する。
+    ///   - 各アクションの結果を EventActionResult のリストで返す。
+    ///   - GainCard 以外のアクションは EventLogic 内で Context に反映する。
+    ///   - GainCard は DrawnCards に詰めて EventController に委譲（変更なし）。
     /// </summary>
     public class EventLogic
     {
@@ -59,7 +60,7 @@ namespace TechC.ODDESEY.Event
 
         public EventResult ChallengeAndApply()
         {
-            // 1. 消費前に成功率を確定させる
+            // 1. 消費前に成功率を確定
             int successRate = FinalSuccessRate;
 
             // 2. ゲージ消費
@@ -68,28 +69,20 @@ namespace TechC.ODDESEY.Event
             ReservedGauge = 0;
 
             // 3. 成功判定
-            int roll = Random.Range(0, 100);
-            bool success = roll < successRate;
+            bool success = Random.Range(0, 100) < successRate;
 
-            var resultType = success ? data.SuccessResultType : data.FailureResultType;
-            var resultValue = success ? data.SuccessResultValue : data.FailureResultValue;
+            // 4. 実行するアクションリストを選択
+            var actions = success ? data.SuccessActions : data.FailureActions;
 
-            // 4. GameContext に反映（GainCard 以外）
-            var drawnCards = new List<CardData>();
-            if (resultType == EventResultType.GainCard)
+            // 5. 各アクションを処理
+            var actionResults = new List<EventActionResult>();
+            foreach (var action in actions)
             {
-                // イベントごとのカード候補から抽選
-                drawnCards = success
-                    ? data.DrawSuccessCards(resultValue)
-                    : data.DrawFailureCards(resultValue);
-                // 実際の追加は EventController に委譲
-            }
-            else
-            {
-                ApplyToContext(resultType, resultValue);
+                var actionResult = ProcessAction(action);
+                actionResults.Add(actionResult);
             }
 
-            // 5. 失敗時の運ゲージ還元
+            // 6. 失敗時の運ゲージ還元
             int refund = 0;
             if (!success && consumedGauge >= 1)
             {
@@ -100,11 +93,9 @@ namespace TechC.ODDESEY.Event
             return new EventResult
             {
                 IsSuccess = success,
-                ResultType = resultType,
-                ResultValue = resultValue,
                 FlavorText = success ? data.SuccessFlavorText : data.FailureFlavorText,
                 RefundedGauge = refund,
-                DrawnCards = drawnCards,
+                ActionResults = actionResults,
             };
         }
 
@@ -114,15 +105,43 @@ namespace TechC.ODDESEY.Event
 
         // ─── 内部処理 ────────────────────────────────────────────────────
 
-        private void ApplyToContext(EventResultType type, int value)
+        /// <summary>
+        /// アクション1つを処理する。
+        /// GainCard 以外は Context に即時反映し、GainCard は DrawnCards に詰める。
+        /// </summary>
+        private EventActionResult ProcessAction(EventResultAction action)
         {
-            switch (type)
+            var result = new EventActionResult
             {
-                case EventResultType.HealHp: context.HealHp(value); break;
-                case EventResultType.DamageHp: context.DamageHp(value); break;
-                case EventResultType.GainGauge: context.AddGauge(value); break;
-                case EventResultType.LoseGauge: context.SpendGauge(value); break;
+                ResultType = action.ResultType,
+                ResultValue = action.ResultValue,
+            };
+
+            switch (action.ResultType)
+            {
+                case EventResultType.HealHp:
+                    context.HealHp(action.ResultValue);
+                    break;
+
+                case EventResultType.DamageHp:
+                    context.DamageHp(action.ResultValue);
+                    break;
+
+                case EventResultType.GainGauge:
+                    context.AddGauge(action.ResultValue);
+                    break;
+
+                case EventResultType.LoseGauge:
+                    context.SpendGauge(action.ResultValue);
+                    break;
+
+                case EventResultType.GainCard:
+                    // カード追加は EventController に委譲
+                    result.DrawnCards = data.DrawCards(action, action.ResultValue);
+                    break;
             }
+
+            return result;
         }
     }
 }
