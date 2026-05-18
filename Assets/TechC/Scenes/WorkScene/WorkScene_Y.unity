@@ -359,7 +359,12 @@ PrefabInstance:
     - target: {fileID: -7023583498812918162, guid: be6b8ca34b5bfd54bbc5e333611be71c,
         type: 3}
       propertyPath: debugStartPhase
-      value: 4
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -7023583498812918162, guid: be6b8ca34b5bfd54bbc5e333611be71c,
+        type: 3}
+      propertyPath: debugContext.PlayerHp
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 832637685491559417, guid: be6b8ca34b5bfd54bbc5e333611be71c,
         type: 3}

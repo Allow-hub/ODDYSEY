@@ -330,7 +330,7 @@ namespace TechC.ODDESEY.Battle
         {
             // BattleEnd アニメ（UI）と敵死亡アニメを同時に開始して完了を待つ
             winEffectObj.SetActive(true);
-            anim?.SetTrigger("BattleEnd");
+            // anim?.SetTrigger("BattleEnd");
 
             if (currentEnemyView != null)
                 await currentEnemyView.PlayDefeatedAnimationAsync();

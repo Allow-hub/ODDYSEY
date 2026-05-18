@@ -14,6 +14,8 @@ namespace TechC.ODDESEY.Event
         [SerializeField] private LuckGaugeView luckGaugeView;
         [SerializeField] private GameObject canvasObj;
         [SerializeField] private EventData debugEventData;
+        [Header("HP表示")]
+        [SerializeField] private HpView playerHpView;
 
         private GameObject currentEventPrefab;
         private EventLogic logic = new();
@@ -43,6 +45,14 @@ namespace TechC.ODDESEY.Event
             context.LuckGauge = MainManager.I.LuckGaugeValue;
             luckGaugeView.Setup(MainManager.I.LuckGaugeMax);
             luckGaugeView.UpdateGaugeImmediate(MainManager.I?.LuckGaugeValue ?? 0f, 100f, false);
+
+            // HP表示を初期化
+            if (playerHpView != null)
+            {
+                playerHpView.Setup(context.PlayerHpMax);
+                playerHpView.UpdateImmediate(context.PlayerHp, context.PlayerHpMax);
+            }
+            
             logic.Setup(data, context);
 
             eventView.Setup(

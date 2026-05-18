@@ -25,6 +25,7 @@ namespace TechC.Core.Manager
         ButtonClick,
         MenuOpen,
         MenuClose,
+        PlayerAttack,
     }
 
     #endregion

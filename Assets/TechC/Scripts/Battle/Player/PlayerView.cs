@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using TechC.Core.Manager;
 using TechC.ODDESEY.Core.Manager;
 using TechC.ODDESEY.Core.Util;
 using TechC.ODDESEY.Util;
@@ -115,6 +116,11 @@ namespace TechC.ODDESEY.Battle
                 CardAnimationType.Defense => (AnimUtil.DefenseHash, null),
                 _ => (AnimUtil.AttackHash, attackCameraData),
             };
+        }
+
+        public void PlayAudio(SEID seId)
+        {
+            AudioManager.I?.PlaySE(seId);
         }
     }
 
