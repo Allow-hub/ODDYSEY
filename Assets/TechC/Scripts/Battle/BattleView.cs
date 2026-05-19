@@ -25,6 +25,8 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private GameObject cardViewPrefab;
 
         [Header("UI")]
+        [SerializeField] private ShieldView playerShieldView;
+        [SerializeField] private ShieldView enemyShieldView;
         [SerializeField] private CanvasGroup fadePanel;
         [SerializeField] private GameObject battleStartText;
         [SerializeField] private Transform enemySpawnPoint;
@@ -183,6 +185,18 @@ namespace TechC.ODDESEY.Battle
                     result.DamageDealt > 0
                         ? enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax)
                         : UniTask.CompletedTask,
+                    // プレイヤーがシールドを張った（ShieldEffect）
+                    UpdateShieldViewAsync(
+                        playerShieldView,
+                        result.GetExtra<int>(ResultKeys.PlayerShieldBefore),
+                        result.GetExtra<int>(ResultKeys.PlayerShieldAfter),
+                        result.GetExtra<int>(ResultKeys.PlayerShieldGained)),
+                    // 敵にダメージが通ってシールドが削れた
+                    UpdateShieldViewAsync(
+                        enemyShieldView,
+                        result.GetExtra<int>(ResultKeys.EnemyShieldBefore),
+                        result.GetExtra<int>(ResultKeys.EnemyShieldAfter),
+                        result.GetExtra<int>(ResultKeys.EnemyShieldGained)),
                     playerView.WaitAttackFinishedAsync(animType,
                         skipCameraReturn: result.IsBattleEnd && result.IsWon)
                 );
@@ -206,6 +220,18 @@ namespace TechC.ODDESEY.Battle
                     result.DamageDealt > 0
                         ? playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax)
                         : UniTask.CompletedTask,
+                    // プレイヤーにダメージが通ってシールドが削れた
+                    UpdateShieldViewAsync(
+                        playerShieldView,
+                        result.GetExtra<int>(ResultKeys.PlayerShieldBefore),
+                        result.GetExtra<int>(ResultKeys.PlayerShieldAfter),
+                        result.GetExtra<int>(ResultKeys.PlayerShieldGained)),
+                    // 敵がシールドを張った（ShieldEffect）
+                    UpdateShieldViewAsync(
+                        enemyShieldView,
+                        result.GetExtra<int>(ResultKeys.EnemyShieldBefore),
+                        result.GetExtra<int>(ResultKeys.EnemyShieldAfter),
+                        result.GetExtra<int>(ResultKeys.EnemyShieldGained)),
                     currentEnemyView.WaitAttackFinishedAsync(animType,
                         skipCameraReturn: result.IsBattleEnd && result.IsWon)
                 );
@@ -360,6 +386,26 @@ namespace TechC.ODDESEY.Battle
                 await UniTask.Yield(PlayerLoopTiming.Update);
             }
             Time.timeScale = prevTimeScale;
+        }
+
+        /// <summary>
+        /// シールド表示を更新する。HP更新と並列で WhenAll から呼ぶ。
+        ///   gained > 0  → 付与演出（フェードイン）
+        ///   before ≠ after → 吸収後の値に更新（0ならフェードアウト）
+        ///   変化なし    → 何もしない
+        /// </summary>
+        private UniTask UpdateShieldViewAsync(
+            ShieldView view, int before, int after, int gained)
+        {
+            if (view == null) return UniTask.CompletedTask;
+
+            if (gained > 0)
+                return view.ShowShieldAsync(after);   // 付与：フェードイン
+
+            if (before != after)
+                return view.UpdateShieldAsync(after); // 吸収：即時更新
+
+            return UniTask.CompletedTask;             // 変化なし
         }
 
         public async UniTask ShowLoseEffectAsync()

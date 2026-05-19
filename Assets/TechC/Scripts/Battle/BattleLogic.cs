@@ -41,6 +41,17 @@ namespace TechC.ODDESEY.Battle
         // ─── ダメージ軽減バッファ ─────────────────────────────────────────
         private int currentTurnDamageReductionRate = 0;
 
+        // ─── シールド ─────────────────────────────────────────────────────
+        private ShieldModel playerShield = new();
+        private ShieldModel enemyShield = new();
+
+        public int PlayerShield => playerShield.Current;
+        public int EnemyShield => enemyShield.Current;
+        public void AddPlayerShield(int amount) => playerShield.Add(amount);
+        public void AddEnemyShield(int amount) => enemyShield.Add(amount);
+        public ShieldModel PlayerShieldModel => playerShield;
+        public ShieldModel EnemyShieldModel => enemyShield;
+
         // ─── ターン中の破砕カウント ────────────────────────────────────────
         private int currentTurnScrapCount = 0;
 
@@ -101,6 +112,8 @@ namespace TechC.ODDESEY.Battle
 
             luckGauge.OnHotModeChanged += HandleHotModeChanged;
 
+            playerShield.Reset();
+            enemyShield.Reset();
             resolver = new CardResolver(this);
             isBattleActive = true;
             turnCount = 0;
@@ -164,9 +177,15 @@ namespace TechC.ODDESEY.Battle
             activeEffects.RemoveAll(e => e.IsExpired);
         }
 
-        public void TakeEnemyDamage(int damage, CardResolveResult result)
+        public void TakeEnemyDamage(int damage, CardResolveResult result, bool isPiercing = false)
         {
-            enemyHp = Mathf.Max(0, enemyHp - damage);
+            int shieldBefore = enemyShield.Current;
+            result.SetExtra(ResultKeys.EnemyShieldBefore, shieldBefore);
+
+            int actualDamage = isPiercing ? damage : enemyShield.AbsorbDamage(damage);
+            result.SetExtra(ResultKeys.EnemyShieldAfter, enemyShield.Current);
+
+            enemyHp = Mathf.Max(0, enemyHp - actualDamage);
             result.EnemyHpAfter = enemyHp;
 
             if (enemyHp <= 0)
@@ -177,13 +196,19 @@ namespace TechC.ODDESEY.Battle
             }
         }
 
-        public void TakePlayerDamage(int damage, CardResolveResult result)
+        public void TakePlayerDamage(int damage, CardResolveResult result, bool isPiercing = false)
         {
-            int actualDamage = ApplyReduction(damage);
+            int reducedDamage = ApplyReduction(damage);
+            int shieldBefore = playerShield.Current;
+            result.SetExtra(ResultKeys.PlayerShieldBefore, shieldBefore);
+
+            int actualDamage = isPiercing ? reducedDamage : playerShield.AbsorbDamage(reducedDamage);
+            result.SetExtra(ResultKeys.PlayerShieldAfter, playerShield.Current);
+
             playerHp = Mathf.Max(0, playerHp - actualDamage);
             result.PlayerHpAfter = playerHp;
 
-            CustomLogger.Info($"TakePlayerDamage: raw={damage} reduced={actualDamage} hp={playerHp}", LogTagUtil.TagCard);
+            CustomLogger.Info($"TakePlayerDamage: raw={damage} shield_before={shieldBefore} actual={actualDamage} hp={playerHp}", LogTagUtil.TagCard);
 
             if (playerHp <= 0)
             {

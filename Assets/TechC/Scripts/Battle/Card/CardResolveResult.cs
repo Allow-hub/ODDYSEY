@@ -42,11 +42,32 @@ namespace TechC.ODDESEY.Battle
     }
 
     /// <summary>Extras のキー名定数。タイポ防止と検索性向上のために集約する。</summary>
+
+    /// <summary>
+    /// CardResolveResult.Extras で使うキー定数。
+    /// 新しい Extra 情報を追加するときはここに追記する。
+    /// </summary>
     public static class ResultKeys
     {
         public const string SelfDamageDealt = "SelfDamageDealt";
         public const string IsCritical = "IsCritical";
         public const string ReductionRate = "ReductionRate";
         public const string CounterTriggered = "CounterTriggered";
+
+        // ─── シールド ─────────────────────────────────────────────────────
+        /// <summary>攻撃前のプレイヤーシールド量</summary>
+        public const string PlayerShieldBefore = "PlayerShieldBefore";
+        /// <summary>攻撃後のプレイヤーシールド量</summary>
+        public const string PlayerShieldAfter = "PlayerShieldAfter";
+        /// <summary>攻撃前の敵シールド量</summary>
+        public const string EnemyShieldBefore = "EnemyShieldBefore";
+        /// <summary>攻撃後の敵シールド量</summary>
+        public const string EnemyShieldAfter = "EnemyShieldAfter";
+
+        // ─── シールド付与 ─────────────────────────────────────────────────
+        /// <summary>このカードでプレイヤーに付与したシールド量</summary>
+        public const string PlayerShieldGained = "PlayerShieldGained";
+        /// <summary>このカードで敵に付与したシールド量</summary>
+        public const string EnemyShieldGained = "EnemyShieldGained";
     }
 }
