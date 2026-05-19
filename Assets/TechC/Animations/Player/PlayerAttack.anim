@@ -79,6 +79,8 @@ AnimationClip:
       value: {fileID: 21300000, guid: 4ed1cf75ef8f6774ba509c61be0795c1, type: 3}
     - time: 1.25
       value: {fileID: 21300000, guid: 220288b3667a89b4fbe8116244611f36, type: 3}
+    - time: 1.4833333
+      value: {fileID: 21300000, guid: f1224e010fe4c7d4081a1ac6253e9190, type: 3}
     attribute: m_Sprite
     path: PlayerKari
     classID: 212
@@ -118,12 +120,13 @@ AnimationClip:
     - {fileID: 21300000, guid: 9dbbe17412b799e41ac7670f7391be75, type: 3}
     - {fileID: 21300000, guid: 4ed1cf75ef8f6774ba509c61be0795c1, type: 3}
     - {fileID: 21300000, guid: 220288b3667a89b4fbe8116244611f36, type: 3}
+    - {fileID: 21300000, guid: f1224e010fe4c7d4081a1ac6253e9190, type: 3}
   m_AnimationClipSettings:
     serializedVersion: 2
     m_AdditiveReferencePoseClip: {fileID: 0}
     m_AdditiveReferencePoseTime: 0
     m_StartTime: 0
-    m_StopTime: 1.4833333
+    m_StopTime: 1.5
     m_OrientationOffsetY: 0
     m_Level: 0
     m_CycleOffset: 0

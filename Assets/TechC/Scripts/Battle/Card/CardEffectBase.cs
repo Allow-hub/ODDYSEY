@@ -26,6 +26,20 @@ namespace TechC.ODDESEY.Battle
         public virtual bool EvaluateAtResolve => false;
 
         /// <summary>
+        /// 確率を PlayZoneView で強化できるか。
+        /// false のとき確率ボタンを無効化する。
+        /// 確定発動・条件付き効果など確率強化が意味をなさないものは false にする。
+        /// </summary>
+        public virtual bool CanBoostProbability => true;
+
+        /// <summary>
+        /// ダメージ値を PlayZoneView で強化できるか。
+        /// false のとき値ボタンを無効化する。
+        /// 砕き枚数連動・手札枚数連動など固定計算式のものは false にする。
+        /// </summary>
+        public virtual bool CanBoostValue => true;
+
+        /// <summary>
         /// 効果を実行する。
         /// </summary>
         /// <param name="context">外部リソース（BattleLogic, CardInstance など）へのアクセス手段</param>
@@ -71,7 +85,7 @@ namespace TechC.ODDESEY.Battle
     {
         public float RolledProbability;
         public int Value;
-        public (int,int) ValueRange; //効果の抽選範囲
+        public (int, int) ValueRange; //効果の抽選範囲
 
         public float BonusProbability;
         public int BonusValue;

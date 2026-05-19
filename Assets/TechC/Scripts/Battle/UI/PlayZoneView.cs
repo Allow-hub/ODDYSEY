@@ -178,6 +178,19 @@ namespace TechC.ODDESEY.Battle
             currentCardInstance = evt.Card.CardInstance;
             RefreshDisplay();
             SetButtonsInteractable(true);
+
+            // Effect のフラグを見て強化できないボタンを無効化する
+            if (currentCardInstance.OriginalData.Effects.Count > 0)
+            {
+                var effect = currentCardInstance.OriginalData.Effects[0];
+                bool canProb = effect.CanBoostProbability;
+                bool canValue = effect.CanBoostValue;
+
+                upPercentageButton.interactable = canProb;
+                downPercentageButton.interactable = canProb;
+                upDamageButton.interactable = canValue;
+                downDamageButton.interactable = canValue;
+            }
         }
 
         // ─── 操作 ────────────────────────────────────────────────────────

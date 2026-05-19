@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Deck
   m_EditorClassIdentifier: 
   Entries:
-  - Card: {fileID: 11400000, guid: 39fd9b79d05006244afe273766b9c94f, type: 2}
+  - Card: {fileID: 11400000, guid: 6420565054ccb4d449917b46365bad87, type: 2}
     Count: 2
   - Card: {fileID: 11400000, guid: cb9d077bad7863d4596898a4d8dde585, type: 2}
     Count: 2

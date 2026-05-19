@@ -104,6 +104,7 @@ namespace TechC.ODDESEY.Battle
 
         private void OnCardBroken(CardBrokenEvent ev)
         {
+            battleLogic.IncrementScrapCount();
             battleLogic.AddLuckGauge(ev.LuckGain);
             PublishLuckGaugeChanged();
             battleView.UpdateLuckGaugeAsync(

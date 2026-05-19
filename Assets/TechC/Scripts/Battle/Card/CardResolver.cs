@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using TechC.ODDESEY.Util;
-using TechC.VBattle.Core.Extensions;
 
 namespace TechC.ODDESEY.Battle
 {
@@ -50,18 +48,7 @@ namespace TechC.ODDESEY.Battle
                 if (slot == null || slot.IsEmpty) continue;
 
                 var instance = slot.IsEnemyCard ? slot.EnemyCardInstance : slot.PlayerCardInstance;
-                // プレイヤーカードの ProbabilityDownEffect が登録した値を
-                // 敵カードの BonusProbability に反映する（負値で確率を下げる）
-                if (slot.IsEnemyCard)
-                {
-                    int reductionRate = logic.EnemyProbabilityReductionRate;
-                    if (reductionRate > 0)
-                    {
-                        float reductionAmount = reductionRate / 100f;
-                        for (int ei = 0; ei < instance.OriginalData.Effects.Count; ei++)
-                            instance.AddBonusProbability(ei, -reductionAmount);
-                    }
-                }
+
                 // ── 1. 遅延評価を確定 ────────────────────────────────────
                 instance.EvaluateResolveValues(hand.Count, isHotMode);
 
@@ -73,7 +60,6 @@ namespace TechC.ODDESEY.Battle
                     IsHit = false,
                     DamageDealt = 0,
                     CardInstanceId = instance.InstanceId,
-                    AnimationType = instance.OriginalData.AnimationType,
                 };
 
                 var context = new EffectContext
@@ -95,24 +81,15 @@ namespace TechC.ODDESEY.Battle
                 // ── 4. State → Result に転写 ─────────────────────────────
                 FlushStateToResult(state, result);
 
+                // ── 4.5. ヒット数を BattleLogic に加算（ComboStrikeEffect 用）────
+                if (result.IsHit && result.DamageDealt > 0)
+                    logic.AddHitCount(1);
+
                 results.Add(result);
 
                 // ── 5. プレイヤーカードを捨て札へ ─────────────────────────
                 if (!slot.IsEnemyCard)
                     discardCallback?.Invoke(instance);
-
-                if (slot.IsEnemyCard && result.IsHit)
-                {
-                    bool countered = logic.TryCounter(result);
-                    if (countered)
-                    {
-                        result.SetExtra(ResultKeys.CounterTriggered, true);
-
-                        CustomLogger.Info(
-                            $"カウンター反撃: Slot {slotIndex}",
-                            LogTagUtil.TagBattle);
-                    }
-                }
 
                 // ── 6. バトル終了チェック ────────────────────────────────
                 if (result.IsBattleEnd) break;

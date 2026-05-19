@@ -45,6 +45,7 @@ namespace TechC.ODDESEY.Battle
 
                 totalDamage += damage;
                 hitCount++;
+                context.Logic.AddHitCount(1);
 
                 CustomLogger.Info(
                     $"連続攻撃 {i + 1}回目ヒット: {damage}ダメージ",

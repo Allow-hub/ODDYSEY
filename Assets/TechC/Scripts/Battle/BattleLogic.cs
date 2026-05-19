@@ -7,16 +7,6 @@ using UnityEngine;
 
 namespace TechC.ODDESEY.Battle
 {
-    /// <summary>
-    /// バトルのロジックを管理する。
-    ///
-    /// リファクタリング変更点：
-    ///   ConfirmTurn() の解決ループを CardResolver に委譲した。
-    ///   BattleLogic は「ゲーム状態の管理」に専念し、
-    ///   「カード解決フローの知識」を持たなくてよくなった。
-    ///
-    ///   新しい解決ロジック（チェーン割り込みなど）は CardResolver を変更すれば済む。
-    /// </summary>
     public class BattleLogic
     {
         public event Action<TurnData> OnTurnStarted;
@@ -30,7 +20,7 @@ namespace TechC.ODDESEY.Battle
         private PlayZoneSlot[] playZone;
 
         private LuckGaugeModel luckGauge;
-        private CardResolver resolver; // ← 解決を委譲するクラス
+        private CardResolver resolver;
         private List<ITurnEffect> activeEffects = new();
 
         private int playerHp;
@@ -41,15 +31,33 @@ namespace TechC.ODDESEY.Battle
         private EnemyData currentEnemy;
         private IEnemyCardPlacementStrategy enemyPlacementStrategy;
 
-        private int currentTurnEnemyProbabilityReductionRate = 0; // 確率ダウン量（%）
+        private int currentTurnEnemyProbabilityReductionRate = 0;
         private float currentTurnLuckGaugeMultiplier = 1f;
 
-        private bool hasCounter = false;     // カウンター登録済みか
-        private float counterProbability = 0f; // 反撃発動確率
-        private int counterDamage = 0;       // 反撃ダメージ量
+        private bool hasCounter = false;
+        private float counterProbability = 0f;
+        private int counterDamage = 0;
 
         // ─── ダメージ軽減バッファ ─────────────────────────────────────────
         private int currentTurnDamageReductionRate = 0;
+
+        // ─── ターン中の破砕カウント ────────────────────────────────────────
+        private int currentTurnScrapCount = 0;
+
+        /// <summary>このターンにプレイヤーが砕いたカードの枚数。ScrapCannonEffect が参照する。</summary>
+        public int CurrentTurnScrapCount => currentTurnScrapCount;
+
+        /// <summary>破砕カウントを1増やす。BattleController の OnCardBroken から呼ぶ。</summary>
+        public void IncrementScrapCount() => currentTurnScrapCount++;
+
+        // ─── ターン中の総ヒット数 ─────────────────────────────────────────
+        private int currentTurnHitCount = 0;
+
+        /// <summary>このターンの総ヒット数。ComboStrikeEffect が参照する。</summary>
+        public int CurrentTurnHitCount => currentTurnHitCount;
+
+        /// <summary>ヒット数を加算する。CardResolver がカード解決後に呼ぶ。</summary>
+        public void AddHitCount(int count) => currentTurnHitCount += count;
 
         // ─── 公開プロパティ ───────────────────────────────────────────────
         public bool IsBattleActive => isBattleActive;
@@ -68,7 +76,6 @@ namespace TechC.ODDESEY.Battle
         // ライフサイクル
         // ─────────────────────────────────────────────────────────────────
 
-        /// <summary>バトル開始：MainManager から呼ぶ。</summary>
         public void StartBattle(GameContext context)
         {
             CardInstance.ResetIdCounter();
@@ -82,7 +89,7 @@ namespace TechC.ODDESEY.Battle
             luckGauge = new LuckGaugeModel();
             luckGauge.Add(MainManager.I?.LuckGaugeValue ?? 0f);
 
-            enemyHp = context.CurrentEnemy.Hp; // test
+            enemyHp = context.CurrentEnemy.Hp;
             enemyHpMax = context.CurrentEnemy.Hp;
 
             foreach (var pair in context.Deck)
@@ -92,17 +99,13 @@ namespace TechC.ODDESEY.Battle
             currentEnemy = context?.CurrentEnemy;
             enemyPlacementStrategy = currentEnemy?.CardDeck?.CreateStrategy();
 
-            // 激アツ状態の変化を購読して手札に即時反映する
             luckGauge.OnHotModeChanged += HandleHotModeChanged;
 
-            // CardResolver を生成（this を渡す）
             resolver = new CardResolver(this);
-
             isBattleActive = true;
             turnCount = 0;
         }
 
-        /// <summary>ターン開始：手札をドローし、敵カードを配置する。</summary>
         public TurnData BeginTurn()
         {
             turnCount++;
@@ -127,21 +130,16 @@ namespace TechC.ODDESEY.Battle
             };
         }
 
-        /// <summary>
-        /// ターン確定：プレイゾーンのカードを左から順に解決する。
-        ///
-        /// 旧実装はここに解決ループを直書きしていたが、CardResolver に委譲した。
-        /// BattleLogic は「軽減率のリセット」など状態管理だけを行う。
-        /// </summary>
         public List<CardResolveResult> ConfirmTurn()
         {
-            // ターン開始時に軽減率をリセット
             currentTurnDamageReductionRate = 0;
             currentTurnEnemyProbabilityReductionRate = 0;
             currentTurnLuckGaugeMultiplier = 1f;
             hasCounter = false;
             counterProbability = 0f;
             counterDamage = 0;
+            // scrapCount / hitCount はここでリセットしない
+            // （砕く・ヒットはConfirmTurn前に発生するためEndTurnでリセットする）
 
             var results = resolver.ResolveAll(
                 playZone,
@@ -156,16 +154,16 @@ namespace TechC.ODDESEY.Battle
             return results;
         }
 
-        /// <summary>ターン終了：プレイゾーンをクリアし、運ゲージをダウンする。</summary>
         public void EndTurn()
         {
+            currentTurnScrapCount = 0; // ターン終了時に破砕カウントをリセット
+            currentTurnHitCount = 0; // ターン終了時にヒット数をリセット
             luckGauge.TickDown();
             for (int i = 0; i < playZone.Length; i++)
                 playZone[i]?.Clear();
             activeEffects.RemoveAll(e => e.IsExpired);
         }
 
-        /// <summary>敵にダメージを与える。</summary>
         public void TakeEnemyDamage(int damage, CardResolveResult result)
         {
             enemyHp = Mathf.Max(0, enemyHp - damage);
@@ -179,12 +177,9 @@ namespace TechC.ODDESEY.Battle
             }
         }
 
-        /// <summary>プレイヤーにダメージを与える。軽減率を適用する。</summary>
         public void TakePlayerDamage(int damage, CardResolveResult result)
         {
-            // 軽減率を適用（0〜100%）
             int actualDamage = ApplyReduction(damage);
-
             playerHp = Mathf.Max(0, playerHp - actualDamage);
             result.PlayerHpAfter = playerHp;
 
@@ -201,40 +196,19 @@ namespace TechC.ODDESEY.Battle
         public void ApplyStatusToEnemy(StatusType type, int duration, int stackCount) { }
         public void ApplyStatusToPlayer(StatusType type, int duration, int stackCount) { }
 
-        /// <summary>
-        /// このターンの受けるダメージ軽減率を設定する。
-        /// DefenseEffect から呼ばれる。
-        /// </summary>
-        public void SetDamageReduction(int rate) => currentTurnDamageReductionRate = Mathf.Clamp(rate, 0, 100);
+        public void SetDamageReduction(int rate)
+            => currentTurnDamageReductionRate = Mathf.Clamp(rate, 0, 100);
 
-        /// <summary>
-        /// このターンのゲージ蓄積倍率を設定する。
-        /// GaugeAccumulationEffect の OnTurnStart から呼ばれる。
-        /// </summary>
         public void SetLuckGaugeMultiplier(float multiplier)
             => currentTurnLuckGaugeMultiplier = Mathf.Max(0f, multiplier);
 
-        /// <summary>
-        /// ゲージを増やす。倍率が設定されている場合は乗算して加算する。
-        /// 既存の AddLuckGauge を差し替える。
-        /// </summary>
         public void AddLuckGauge(float amount)
             => luckGauge.Add(amount * currentTurnLuckGaugeMultiplier);
 
-        /// <summary>
-        /// 運ゲージを消費する。PlayZoneView のカード強化操作から呼ばれる。
-        /// 消費できた場合は true / ゲージ不足の場合は false を返す。
-        /// </summary>
         public bool TrySpendLuckGauge(float cost) => luckGauge.TrySpend(cost);
-
 
         public void AddTurnEffect(ITurnEffect effect) => activeEffects.Add(effect);
 
-        /// <summary>
-        /// ダメージ軽減率を適用する。
-        /// </summary>
-        /// <param name="rawDamage"></param>
-        /// <returns></returns>
         private int ApplyReduction(int rawDamage)
         {
             if (currentTurnDamageReductionRate <= 0) return rawDamage;
@@ -249,7 +223,6 @@ namespace TechC.ODDESEY.Battle
                 if (deck.Count == 0) ShuffleDiscardToDeck();
                 if (deck.Count == 0) break;
 
-                // ▼ ランダムドローに変更
                 int index = UnityEngine.Random.Range(0, deck.Count);
                 var cardData = deck[index];
                 deck.RemoveAt(index);
@@ -257,7 +230,7 @@ namespace TechC.ODDESEY.Battle
                 var instance = new CardInstance(cardData);
                 bool isHotMode = luckGauge?.IsHotMode ?? false;
                 instance.RollValues(isHotMode);
-                // 激アツ中にドローしたカードは即時最大化
+
                 if (luckGauge?.IsHotMode ?? false)
                     HotModeHandEffect.ApplyToCard(instance, true);
 
@@ -272,10 +245,6 @@ namespace TechC.ODDESEY.Battle
                 LogTagUtil.TagCard);
         }
 
-        /// <summary>
-        ///　手札が尽きたとき、捨て札をシャッフルしてデッキに戻す。
-        ///　ドロー前に呼ぶこと（DrawToFull から呼ばれる想定）。
-        /// </summary>
         private void ShuffleDiscardToDeck()
         {
             deck.AddRange(discardPile);
@@ -292,9 +261,6 @@ namespace TechC.ODDESEY.Battle
                 LogTagUtil.TagCard);
         }
 
-        /// <summary>
-        /// 敵のカードを配置する
-        /// </summary>
         private void PlaceEnemyCards()
         {
             for (int i = 0; i < playZone.Length; i++)
@@ -327,26 +293,13 @@ namespace TechC.ODDESEY.Battle
             }
         }
 
+        // ─── 公開メソッド ────────────────────────────────────────────────
 
-
-        // ─── 公開メソッド（SetDamageReduction の隣に追加）────────────────────
-
-        /// <summary>
-        /// このターンの敵カード命中確率ダウン量を設定する。
-        /// ProbabilityDownEffect から呼ばれる。
-        /// </summary>
         public void SetEnemyProbabilityReduction(int rate)
             => currentTurnEnemyProbabilityReductionRate = Mathf.Clamp(rate, 0, 100);
 
-        /// <summary>
-        /// 現在の確率ダウン量を返す。CardResolver が敵カード配置時に参照する。
-        /// </summary>
         public int EnemyProbabilityReductionRate => currentTurnEnemyProbabilityReductionRate;
 
-        /// <summary>
-        /// カウンター状態を登録する。CounterEffect から呼ばれる。
-        /// 複数登録時は最後の値で上書き（スタック設計は RegisterCounterStack に拡張）。
-        /// </summary>
         public void RegisterCounter(float probability, int damage)
         {
             hasCounter = true;
@@ -354,18 +307,8 @@ namespace TechC.ODDESEY.Battle
             counterDamage = damage;
         }
 
-        /// <summary>
-        /// 敵の攻撃が命中したとき CardResolver から呼ばれる。
-        /// カウンター登録済みであれば確率判定して反撃ダメージを与える。
-        /// </summary>
-        /// <returns>反撃が発動したか</returns>
         // ─── 激アツハンドラ ───────────────────────────────────────────
 
-        /// <summary>
-        /// 激アツ状態が変化したとき LuckGaugeModel から呼ばれる。
-        ///   enable = true  → 手札全体を最大化
-        ///   enable = false → 手札のボーナスをリセット
-        /// </summary>
         private void HandleHotModeChanged(bool enable)
         {
             HotModeHandEffect.ApplyToHand(hand, enable);
