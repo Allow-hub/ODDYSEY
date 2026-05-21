@@ -17,3 +17,4 @@ MonoBehaviour:
   EnemyPrefab: {fileID: 4010116763971566608, guid: d26b4404bad879c4dbae925ae8618ffe,
     type: 3}
   CardDeck: {fileID: 11400000, guid: 2558ccf8c05b73643b6972d5bad4760c, type: 2}
+  AudioData: {fileID: 11400000, guid: d7fcc2b55c51d6049906072a4e5dcbfa, type: 2}

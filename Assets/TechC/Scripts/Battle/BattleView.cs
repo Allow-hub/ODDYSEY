@@ -34,7 +34,7 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private GameObject winEffectObj;
         [SerializeField] private GameObject loseEffectObj;
         [SerializeField] private Button pauseButton;
-
+        [SerializeField] private Button settingButton;
         [Header("バトルUI フェードイン")]
         [SerializeField] private CanvasGroup battleUIGroup;
         [SerializeField] private float battleUIFadeDuration = 0.5f;
@@ -90,6 +90,7 @@ namespace TechC.ODDESEY.Battle
 
             confirmButton?.onClick.AddListener(ConfirmTurn);
             pauseButton?.onClick.AddListener(() => PauseManager.I?.Pause());
+            settingButton?.onClick.AddListener(() => PauseManager.I?.OnOpenSettings());
             destroyToken = this.GetCancellationTokenOnDestroy();
         }
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using TechC.Core.Manager;
 using TechC.ODDESEY.Core.Manager;
 using TechC.ODDESEY.Core.Util;
 using TechC.ODDESEY.Util;
@@ -21,9 +22,14 @@ namespace TechC.ODDESEY.Battle
         private UniTaskCompletionSource hitTimingTcs;
         private UniTaskCompletionSource attackFinishedTcs;
         private UniTask cameraTask;
+        private EnemyAudioData enemyAudioData;
+
 
         private void Awake() => animator = GetComponent<Animator>();
-        public void Setup(EnemyData data) { }
+        public void Setup(EnemyData data)
+        {
+            enemyAudioData = data.AudioData;
+        }
 
         // ─── Animation Event から呼ぶ ──────────────────────────────────────
 
@@ -136,6 +142,12 @@ namespace TechC.ODDESEY.Battle
                 CardAnimationType.Defense => (AnimUtil.DefenseHash, null),
                 _ => (AnimUtil.AttackHash, attackCameraData),
             };
+        }
+
+        public void PlaySE(EnemyActionSEID seId)
+        {
+            if (enemyAudioData == null) return;
+            AudioManager.I.PlayEnemySE(enemyAudioData, seId);
         }
     }
 }

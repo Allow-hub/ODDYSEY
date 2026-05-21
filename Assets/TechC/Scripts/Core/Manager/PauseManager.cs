@@ -50,7 +50,7 @@ namespace TechC.ODDESEY.Core.Manager
             GameManager.I.LoadSceneAsync(0);
         }
 
-        private void OnOpenSettings()
+        public void OnOpenSettings()
         {
             // TODO:SettingsView を開く
         }

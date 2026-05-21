@@ -5,9 +5,6 @@ namespace TechC.Core.Manager
 {
     #region 列挙型
 
-    /// <summary>
-    /// BGM用の列挙型
-    /// </summary>
     public enum BGMID
     {
         None = -1,
@@ -16,9 +13,6 @@ namespace TechC.Core.Manager
         Stage2,
     }
 
-    /// <summary>
-    /// SE用（共通のSE）
-    /// </summary>
     public enum SEID
     {
         None = -1,
@@ -28,12 +22,22 @@ namespace TechC.Core.Manager
         PlayerAttack,
     }
 
+    /// <summary>
+    /// 敵のアクション種別。
+    /// 敵の種類に関わらず共通のアクション定義として使う。
+    /// </summary>
+    public enum EnemyActionSEID
+    {
+        None = -1,
+        AttackReady,  // 攻撃準備（モーション開始）
+        Attack,       // 攻撃（ヒット判定フレーム）
+        Dodge,        // 回避
+        Hit,          // 被弾
+        Death,        // 死亡
+    }
+
     #endregion
 
-
-    /// <summary>
-    /// 共通音声データを管理するScriptableObject
-    /// </summary>
     [CreateAssetMenu(fileName = "AudioData", menuName = "Audio/AudioData")]
     public class AudioData : ScriptableObject
     {
@@ -65,20 +69,10 @@ namespace TechC.Core.Manager
         [Header("共通SE設定")]
         public List<SEInfo> seList = new List<SEInfo>();
 
-        /// <summary>
-        /// IDからBGMデータを取得
-        /// </summary>
         public BGMInfo GetBGM(BGMID id)
-        {
-            return bgmList.Find(bgm => bgm.id == id);
-        }
+            => bgmList.Find(bgm => bgm.id == id);
 
-        /// <summary>
-        /// IDからSEデータを取得
-        /// </summary>
         public SEInfo GetSE(SEID id)
-        {
-            return seList.Find(se => se.id == id);
-        }
+            => seList.Find(se => se.id == id);
     }
 }

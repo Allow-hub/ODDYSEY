@@ -1,3 +1,4 @@
+using TechC.Core.Manager;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Battle
@@ -19,5 +20,8 @@ namespace TechC.ODDESEY.Battle
         [Header("カードデッキ")]
         [Tooltip("この敵が使うカードプールと配置設定。null の場合はカードを配置しない。")]
         public EnemyCardDeck CardDeck;
+
+        [Header("音声")]
+        public EnemyAudioData AudioData;
     }
 }

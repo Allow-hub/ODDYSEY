@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb1391f2ee651d14d87f2a63502abcb5, type: 3}
+  m_Name: BossEnemyAudioData
+  m_EditorClassIdentifier: 
+  seList:
+  - actionId: 0
+    clips:
+    - {fileID: 8300000, guid: 7aea1ae8723aa014a9d7f2f22d1e92b9, type: 3}
+    volume: 0.5
+    pitch: 1
+  - actionId: 1
+    clips:
+    - {fileID: 8300000, guid: 3e9e6202c4ee6e7428787a37505830c0, type: 3}
+    volume: 0.5
+    pitch: 1
+  - actionId: 2
+    clips:
+    - {fileID: 8300000, guid: 4d0ae0a47815cea4a93a4e7fbbed4902, type: 3}
+    volume: 0.5
+    pitch: 1
+  - actionId: 3
+    clips:
+    - {fileID: 8300000, guid: d9738e4d4ef9ccb4a9d3db4a5a0cc5dd, type: 3}
+    volume: 0.5
+    pitch: 1

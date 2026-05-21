@@ -255,6 +255,40 @@ namespace TechC.Core.Manager
 
         #endregion
 
+        #region 敵SE管理
+
+        /// <summary>
+        /// 敵の SE を再生する。
+        /// EnemyView の Animation Event や EnemyView から呼ぶ。
+        /// ランダムピッチなし（敵の声はキャラ感を出すためピッチ固定）。
+        /// </summary>
+        public AudioSource PlayEnemySE(EnemyAudioData data, EnemyActionSEID actionId)
+        {
+            if (data == null) return null;
+
+            var info = data.GetSE(actionId);
+            if (info == null) return null;
+
+            var clip = data.GetRandomClip(actionId);
+            if (clip == null) return null;
+
+            var src = GetAvailableAudioSource(seSources);
+            if (src == null)
+            {
+                Debug.LogWarning("[AudioManager] 利用可能な SE AudioSource がありません");
+                return null;
+            }
+
+            src.clip = clip;
+            src.volume = info.volume * seVolume * masterVolume;
+            src.pitch = info.pitch; // 敵SEはピッチ固定
+            src.loop = false;
+            src.Play();
+            return src;
+        }
+
+        #endregion
+
         #region 環境音（雨など）管理──ランダムピッチなし ─────────────────────
 
         /// <summary>
