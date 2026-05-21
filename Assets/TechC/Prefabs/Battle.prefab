@@ -953,13 +953,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1464238374039856383}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.0627451}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -38135,10 +38135,10 @@ MonoBehaviour:
   enemyPopupAnchor: {fileID: 8736963183302931841}
   fadeDuration: 1
   textFadeDuration: 0.5
-  startX: -400
-  spacing: 200
-  y: -400
-  deckStartPos: {x: 800, y: -500}
+  startX: -250
+  spacing: 140
+  y: -370
+  deckStartPos: {x: 600, y: -450}
   cardResolveInterval: 0.7
   winSlowTimeScale: 0.05
   winSlowDuration: 0.6

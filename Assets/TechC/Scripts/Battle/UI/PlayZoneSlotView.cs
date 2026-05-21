@@ -56,7 +56,7 @@ namespace TechC.ODDESEY.Battle
             else
             {
                 if (backgroundImage != null)
-                    backgroundImage.color = Color.white;
+                    backgroundImage.color = Color.clear;
             }
         }
 
@@ -128,7 +128,7 @@ namespace TechC.ODDESEY.Battle
         private void SetHighlight(bool on)
         {
             if (highlightImage == null) return;
-            highlightImage.color = on ? highlightColor : Color.white;
+            highlightImage.color = on ? highlightColor : Color.clear;
             // CustomLogger.Info($"スロット {slotIndex} ハイライト {(on ? "ON" : "OFF")}", LogTagUtil.TagBattle);
         }
 
