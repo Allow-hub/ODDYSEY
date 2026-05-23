@@ -17,11 +17,8 @@ namespace TechC.ODDESEY.Battle
         [Header("見た目")]
         public GameObject EnemyPrefab;
         public Sprite EnemySprite;
-
-        [Header("カードデッキ")]
-        [Tooltip("この敵が使うカードプールと配置設定。null の場合はカードを配置しない。")]
-        public EnemyCardDeck CardDeck;
-
+        [Header("行動パターン")]
+        public EnemyActionPattern ActionPattern;
         [Header("音声")]
         public EnemyAudioData AudioData;
     }

@@ -69,5 +69,7 @@ namespace TechC.ODDESEY.Battle
         public const string PlayerShieldGained = "PlayerShieldGained";
         /// <summary>このカードで敵に付与したシールド量</summary>
         public const string EnemyShieldGained = "EnemyShieldGained";
+        /// <summary>削ったゲージ量。</summary>
+        public const string GaugeDrained = "GaugeDrained";
     }
 }
