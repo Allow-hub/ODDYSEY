@@ -27,16 +27,14 @@ namespace TechC.ODDESEY.StageSelect
 
         private void StartNormal()
         {
-            GameManager.I.SetDifficulty(Difficulty.Normal);
-            SceneManager.LoadScene("MainScene");
-            Debug.Log(GameManager.I.CurrentDifficulty);
+            GameManager.I?.SetDifficulty(Difficulty.Normal);
+            GameManager.I?.LoadSceneAsync(2); // シーンインデックス 2 をロード（MainScene）
         }
 
         public void StartHard()
         {
             GameManager.I.SetDifficulty(Difficulty.Hard);
-            SceneManager.LoadScene("MainScene");
-            Debug.Log(GameManager.I.CurrentDifficulty);
+            GameManager.I?.LoadSceneAsync(2); // シーンインデックス 2 をロード（MainScene）
         }
     }
 }

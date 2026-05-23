@@ -25,6 +25,7 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private GameObject cardViewPrefab;
 
         [Header("UI")]
+        [SerializeField] private Image enemyImage;
         [SerializeField] private ShieldView playerShieldView;
         [SerializeField] private ShieldView enemyShieldView;
         [SerializeField] private CanvasGroup fadePanel;
@@ -92,6 +93,7 @@ namespace TechC.ODDESEY.Battle
             pauseButton?.onClick.AddListener(() => PauseManager.I?.Pause());
             settingButton?.onClick.AddListener(() => PauseManager.I?.OnOpenSettings());
             destroyToken = this.GetCancellationTokenOnDestroy();
+            enemyImage.sprite = MainManager.I?.GameContext?.CurrentEnemy?.EnemySprite;
         }
 
         // ================================

@@ -26,6 +26,7 @@ namespace TechC.ODDESEY.Battle
 
         [Header("見た目")]
         [SerializeField] private Image cardImage;
+        [SerializeField] private Sprite defaultSprite;
         [SerializeField] private Outline outline;
         [SerializeField] private Vector3 dragRotation = new Vector3(0f, 0f, 13f);
         [Header("アニメ設定")]
@@ -68,7 +69,9 @@ namespace TechC.ODDESEY.Battle
             isPlaced = false;
 
             rootCanvas = GetComponentInParent<Canvas>();
-
+            cardImage.sprite = cardData.CardSprite == null
+                    ? defaultSprite
+                    : cardData.CardSprite;
             // ▼ 値変更イベントを購読
             cardInstance.OnSlotValueChanged += RefreshDisplay;
 
@@ -99,7 +102,7 @@ namespace TechC.ODDESEY.Battle
             if (cardData == null) return;
             cardNameText.text = cardData.CardName;
             var probability = (int)(cardInstance.GetEffectiveProbability(0) * 100);
-            probabilityText.text = $"{probability}%";
+            probabilityText.text = $"{probability}";
             damageText.text = $"{cardInstance.GetEffectiveValue(0)}";
         }
 

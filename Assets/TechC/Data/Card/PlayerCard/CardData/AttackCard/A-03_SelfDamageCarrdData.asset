@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
   m_Name: A-03_SelfDamageCarrdData
   m_EditorClassIdentifier: 
-  CardName: SelfDamage
-  CardSprite: {fileID: 0}
+  CardName: "\u30C0\u30E2\u30AF\u30EC\u30B9"
+  CardSprite: {fileID: 21300000, guid: ed0dda41021907a418c901991453edf3, type: 3}
   Description: "60~80%\u306E\u78BA\u7387\u306710~25\u30C0\u30E1\u30FC\u30B8\u3002\u3082\u3057\u5916\u308C\u305F\u6642\u3001\u81EA\u5206\u306B5\u30C0\u30E1\u30FC\u30B8"
   Effects:
   - {fileID: 11400000, guid: 6a91ef4e5b2e8a742bc681de2999ca99, type: 2}

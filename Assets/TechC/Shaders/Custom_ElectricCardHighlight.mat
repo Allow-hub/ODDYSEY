@@ -54,3 +54,4 @@ Material:
     - _HoloColor: {r: 0, g: 0.6, b: 1, a: 1}
     - _ScanlineColor: {r: 0.29999998, g: 0.9, b: 1, a: 0.6}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1
