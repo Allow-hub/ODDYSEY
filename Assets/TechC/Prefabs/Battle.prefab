@@ -38256,11 +38256,12 @@ MonoBehaviour:
   upDamageButton: {fileID: 8377909652062040723}
   downDamageButton: {fileID: 257325331967378621}
   damageText: {fileID: 2907213994008826433}
-  percentageAdjustCost: 1
-  damageAdjustCost: 1
-  probabilityOvershootStep: 0.1
-  damageOvershootStep: 1
-  costScaleMax: 16
+  probCostNormal: 1
+  probCostBreak1: 2
+  probCostBreak2: 3
+  valueCostNormal: 5
+  valueCostBreak1: 10
+  valueCostBreak2: 15
   holdDelay: 0.3
   holdIntervalMin: 0.01
   holdIntervalStart: 0.1
@@ -40573,13 +40574,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9109693303855255650, guid: 4f60de247b8ccb84fa03e5d26e15b496,
         type: 3}
+      propertyPath: m_SizeDelta.y
+      value: -0.31227112
+      objectReference: {fileID: 0}
+    - target: {fileID: 9109693303855255650, guid: 4f60de247b8ccb84fa03e5d26e15b496,
+        type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 0.76242065
       objectReference: {fileID: 0}
     - target: {fileID: 9109693303855255650, guid: 4f60de247b8ccb84fa03e5d26e15b496,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 3.812271
+      value: 4.6
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

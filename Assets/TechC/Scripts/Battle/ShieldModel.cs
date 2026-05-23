@@ -18,8 +18,10 @@ namespace TechC.ODDESEY.Battle
     public class ShieldModel
     {
         private int current;
+        private int maxShield = 20;
 
         public int Current => current;
+        public int MaxShield => maxShield;
         public bool HasShield => current > 0;
 
         /// <summary>シールドが加算されたとき発火。引数は加算後の値。付与演出用。</summary>
@@ -37,6 +39,7 @@ namespace TechC.ODDESEY.Battle
         public void Add(int amount)
         {
             if (amount <= 0) return;
+            if(current >= maxShield) return;
             current += amount;
             OnShieldAdded?.Invoke(current);   // 付与演出イベント
             OnShieldChanged?.Invoke(current); // 通常更新イベント

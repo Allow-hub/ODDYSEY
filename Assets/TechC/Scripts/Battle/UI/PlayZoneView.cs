@@ -6,17 +6,6 @@ using UnityEngine.UI;
 
 namespace TechC.ODDESEY.Battle
 {
-    /// <summary>
-    /// プレイゾーン全体を管理する View クラス。
-    ///
-    /// 変更点：
-    ///   - 確率上昇時に 100% を超えないよう上限チェックを追加。
-    ///   - 長押し時間が長いほど加速するアダプティブ速度を実装。
-    ///     holdDelay 経過後、holdAccelInterval ごとに interval を短縮する。
-    ///   - [NEW] Rollの最大値（RolledProbability / Value）を超えた強化には
-    ///     段階的にコストが増加する（超過10%刻み / 1ダメージ刻みごとに2倍）。
-    ///     costScaleMax でスケール倍率の上限を設定できる。
-    /// </summary>
     public class PlayZoneView : MonoBehaviour
     {
         [Header("操作エリア")]
@@ -27,25 +16,27 @@ namespace TechC.ODDESEY.Battle
         [SerializeField] private Button downDamageButton;
         [SerializeField] private TextMeshProUGUI damageText;
 
-        [Header("運ゲージ消費コスト（基本値）")]
-        [SerializeField] private float percentageAdjustCost = 1f;
-        [SerializeField] private float damageAdjustCost = 5f;
+        [Header("限界突破コスト設定（確率）")]
+        [Tooltip("カード上限まで：確率+1%あたりのゲージコスト")]
+        [SerializeField] private float probCostNormal = 1f;
+        [Tooltip("上限突破 +1〜10%：確率+1%あたりのゲージコスト")]
+        [SerializeField] private float probCostBreak1 = 2f;
+        [Tooltip("上限突破 +11%以上：確率+1%あたりのゲージコスト")]
+        [SerializeField] private float probCostBreak2 = 3f;
 
-        [Header("超過コストスケール設定")]
-        [Tooltip("確率の超過1段階あたりの刻み幅（例: 0.1f = 10%ごと）")]
-        [SerializeField] private float probabilityOvershootStep = 0.1f;
-
-        [Tooltip("ダメージの超過1段階あたりの刻み幅（例: 1 = 1ダメージごと）")]
-        [SerializeField] private int damageOvershootStep = 1;
-
-        [Tooltip("コストスケールの最大倍率（段階が増えてもこの倍率で頭打ち）")]
-        [SerializeField] private float costScaleMax = 16f; // 2^4 = 4段階上限相当
+        [Header("限界突破コスト設定（ダメージ・シールド）")]
+        [Tooltip("カード上限まで：+1あたりのゲージコスト")]
+        [SerializeField] private float valueCostNormal = 5f;
+        [Tooltip("上限突破 +1〜5：+1あたりのゲージコスト")]
+        [SerializeField] private float valueCostBreak1 = 10f;
+        [Tooltip("上限突破 +6以上：+1あたりのゲージコスト")]
+        [SerializeField] private float valueCostBreak2 = 15f;
 
         [Header("長押し設定")]
-        [SerializeField] private float holdDelay = 0.5f;
-        [SerializeField] private float holdIntervalMin = 0.04f;
+        [SerializeField] private float holdDelay         = 0.5f;
+        [SerializeField] private float holdIntervalMin   = 0.04f;
         [SerializeField] private float holdIntervalStart = 0.15f;
-        [SerializeField] private float holdAccelTime = 2.0f;
+        [SerializeField] private float holdAccelTime     = 2.0f;
 
         private CardInstance currentCardInstance;
 
@@ -61,71 +52,47 @@ namespace TechC.ODDESEY.Battle
 
         private void Start()
         {
-            RegisterHoldButton(upPercentageButton, () => AdjustPercentageUp());
+            RegisterHoldButton(upPercentageButton,   () => AdjustPercentageUp());
             RegisterHoldButton(downPercentageButton, () => AdjustPercentageDown());
-            RegisterHoldButton(upDamageButton, () => AdjustDamage(1));
-            RegisterHoldButton(downDamageButton, () => AdjustDamage(-1));
+            RegisterHoldButton(upDamageButton,       () => AdjustDamage(1));
+            RegisterHoldButton(downDamageButton,     () => AdjustDamage(-1));
             SetButtonsInteractable(false);
         }
 
-        // ─── 超過コスト計算 ──────────────────────────────────────────────
+        // ─── コスト計算 ──────────────────────────────────────────────────
 
         /// <summary>
-        /// 現在のボーナス確率がRoll最大値をどれだけ超えているかに基づいてコストを算出する。
-        ///
-        /// 超過量を probabilityOvershootStep 刻みで段階カウントし、
-        /// baseCost × 2^段階数 を返す（costScaleMax で頭打ち）。
-        ///
-        /// 例（step=0.1f, baseCost=1f）：
-        ///   超過0〜9%  → 1f
-        ///   超過10〜19% → 2f
-        ///   超過20〜29% → 4f
-        ///   超過30%〜  → 8f（costScaleMax=8の場合）
+        /// 確率強化の次の1%あたりコストを返す。
+        ///   カード上限まで     → probCostNormal（1）
+        ///   上限突破 +1〜10%  → probCostBreak1（2）
+        ///   上限突破 +11%以上 → probCostBreak2（3）
         /// </summary>
         private float CalcProbabilityCost(int slotIndex)
         {
-            float rolled = currentCardInstance.GetBaseProbability(slotIndex);
-            float bonus = currentCardInstance.GetBonusProbability(slotIndex);
+            float rolledMax = currentCardInstance.GetBaseProbability(slotIndex);
+            float bonus     = currentCardInstance.GetBonusProbability(slotIndex);
+            float overshoot = bonus - rolledMax;
 
-            // Rollの最大値を超えていなければ基本コスト
-            float overshoot = bonus - rolled;
-            if (overshoot <= 0f)
-                return percentageAdjustCost;
-
-            // 超過量を step 刻みで段階カウント（floor）
-            int steps = Mathf.FloorToInt(overshoot / probabilityOvershootStep);
-            float scale = Mathf.Pow(2f, steps);
-            scale = Mathf.Min(scale, costScaleMax);
-
-            return percentageAdjustCost * scale;
+            if (overshoot <= 0f)   return probCostNormal;
+            if (overshoot < 0.10f) return probCostBreak1;
+            return probCostBreak2;
         }
 
         /// <summary>
-        /// 現在のボーナスダメージがRoll最大値をどれだけ超えているかに基づいてコストを算出する。
-        ///
-        /// 超過量を damageOvershootStep 刻みで段階カウントし、
-        /// baseCost × 2^段階数 を返す（costScaleMax で頭打ち）。
-        ///
-        /// 例（step=1, baseCost=5f）：
-        ///   超過0  → 5f
-        ///   超過1  → 10f
-        ///   超過2  → 20f
-        ///   超過3+ → 40f（costScaleMax=40の場合）
+        /// ダメージ・シールド強化の次の+1あたりコストを返す。
+        ///   カード上限まで   → valueCostNormal（5）
+        ///   上限突破 +1〜5  → valueCostBreak1（10）
+        ///   上限突破 +6以上 → valueCostBreak2（15）
         /// </summary>
         private float CalcDamageCost(int slotIndex)
         {
-            int rolled = currentCardInstance.GetBaseValue(slotIndex);
-            int bonus = currentCardInstance.GetBonusValue(slotIndex);
+            int rolledMax = currentCardInstance.GetBaseValue(slotIndex);
+            int bonus     = currentCardInstance.GetBonusValue(slotIndex);
+            int overshoot = bonus - rolledMax;
 
-            float overshoot = bonus - rolled;
-            if (overshoot <= 0f)
-                return damageAdjustCost;
-
-            int steps = Mathf.FloorToInt(overshoot / damageOvershootStep);
-            float scale = Mathf.Pow(2f, steps);
-            scale = Mathf.Min(scale, costScaleMax);
-
-            return damageAdjustCost * scale;
+            if (overshoot <= 0) return valueCostNormal;
+            if (overshoot <= 5) return valueCostBreak1;
+            return valueCostBreak2;
         }
 
         // ─── 長押し登録 ──────────────────────────────────────────────────
@@ -161,12 +128,10 @@ namespace TechC.ODDESEY.Battle
             float elapsed = 0f;
             while (true)
             {
-                float t = Mathf.Clamp01(elapsed / holdAccelTime);
+                float t        = Mathf.Clamp01(elapsed / holdAccelTime);
                 float interval = Mathf.Lerp(holdIntervalStart, holdIntervalMin, t);
-
                 action();
                 yield return new WaitForSeconds(interval);
-
                 elapsed += interval;
             }
         }
@@ -179,17 +144,14 @@ namespace TechC.ODDESEY.Battle
             RefreshDisplay();
             SetButtonsInteractable(true);
 
-            // Effect のフラグを見て強化できないボタンを無効化する
+            // Effect のフラグを見て強化できないボタンを無効化
             if (currentCardInstance.OriginalData.Effects.Count > 0)
             {
                 var effect = currentCardInstance.OriginalData.Effects[0];
-                bool canProb = effect.CanBoostProbability;
-                bool canValue = effect.CanBoostValue;
-
-                upPercentageButton.interactable = canProb;
-                downPercentageButton.interactable = canProb;
-                upDamageButton.interactable = canValue;
-                downDamageButton.interactable = canValue;
+                upPercentageButton.interactable   = effect.CanBoostProbability;
+                downPercentageButton.interactable = effect.CanBoostProbability;
+                upDamageButton.interactable       = effect.CanBoostValue;
+                downDamageButton.interactable     = effect.CanBoostValue;
             }
         }
 
@@ -198,12 +160,9 @@ namespace TechC.ODDESEY.Battle
         private void AdjustPercentageUp()
         {
             if (currentCardInstance == null) return;
+            if (currentCardInstance.GetEffectiveProbability(0) >= 1f) return;
 
-            float currentProbability = currentCardInstance.GetEffectiveProbability(0);
-            if (currentProbability >= 1f) return;
-
-            // 現時点の超過コストを計算（消費前に取得する）
-            float cost = CalcProbabilityCost(0);
+            float cost = CalcProbabilityCost(0); // 上昇前のコスト段階で消費
 
             BattleEventBus.Publish(new LuckGaugeSpendRequestEvent(
                 cost: cost,
@@ -215,7 +174,6 @@ namespace TechC.ODDESEY.Battle
                     float afterProb = currentCardInstance.GetEffectiveProbability(0) + addAmount;
                     if (afterProb > 1f)
                         addAmount = 1f - currentCardInstance.GetEffectiveProbability(0);
-
                     if (addAmount <= 0f) return;
 
                     currentCardInstance.AddBonusProbability(0, addAmount);
@@ -231,15 +189,14 @@ namespace TechC.ODDESEY.Battle
             float bonus = currentCardInstance.GetBonusProbability(0);
             if (bonus <= 0f) return;
 
+            // 下げる前にコスト段階を確定する（下げた後に計算すると段階がずれる）
+            float refundCost   = CalcProbabilityCost(0);
             float revertAmount = Mathf.Min(1f / 100f, bonus);
+
             currentCardInstance.AddBonusProbability(0, -revertAmount);
 
-            // 還元コストも現在段階の基本コストで計算
-            // （下げた後の状態でなく、下げる前の状態を基準にするため先に CalcProbabilityCost を呼ぶ）
-            // ※ AddBonusProbability を先に呼んでしまうと1段階前の値が取れないため、
-            //   還元量の割合スケールを掛けて概算で返す（元の設計を踏襲）
             BattleEventBus.Publish(new LuckGaugeRefundEvent(
-                amount: percentageAdjustCost * (revertAmount / (1f / 100f))
+                amount: refundCost * (revertAmount / (1f / 100f))
             ));
 
             RefreshDisplay();
@@ -251,7 +208,7 @@ namespace TechC.ODDESEY.Battle
 
             if (delta > 0)
             {
-                float cost = CalcDamageCost(0);
+                float cost = CalcDamageCost(0); // 上昇前のコスト段階で消費
 
                 BattleEventBus.Publish(new LuckGaugeSpendRequestEvent(
                     cost: cost,
@@ -268,11 +225,14 @@ namespace TechC.ODDESEY.Battle
                 int bonus = currentCardInstance.GetBonusValue(0);
                 if (bonus <= 0) return;
 
-                int revertAmount = Mathf.Min(-delta, bonus);
+                // 下げる前にコスト段階を確定する
+                float refundCost  = CalcDamageCost(0);
+                int revertAmount  = Mathf.Min(-delta, bonus);
+
                 currentCardInstance.AddBonusValue(0, -revertAmount);
 
                 BattleEventBus.Publish(new LuckGaugeRefundEvent(
-                    amount: damageAdjustCost * revertAmount
+                    amount: refundCost * revertAmount
                 ));
 
                 RefreshDisplay();
@@ -284,18 +244,18 @@ namespace TechC.ODDESEY.Battle
         private void RefreshDisplay()
         {
             if (currentCardInstance == null) return;
-            int probability = (int)(currentCardInstance.GetEffectiveProbability(0) * 100);
-            int damage = currentCardInstance.GetEffectiveValue(0);
+            int probability     = (int)(currentCardInstance.GetEffectiveProbability(0) * 100);
+            int damage          = currentCardInstance.GetEffectiveValue(0);
             percentageText.text = $"{probability}";
-            damageText.text = damage.ToString();
+            damageText.text     = damage.ToString();
         }
 
         private void SetButtonsInteractable(bool interactable)
         {
-            upPercentageButton.interactable = interactable;
+            upPercentageButton.interactable   = interactable;
             downPercentageButton.interactable = interactable;
-            upDamageButton.interactable = interactable;
-            downDamageButton.interactable = interactable;
+            upDamageButton.interactable       = interactable;
+            downDamageButton.interactable     = interactable;
         }
     }
 }
