@@ -186,7 +186,6 @@ namespace TechC.ODDESEY.Battle
             // 前ターンのダメージを記録してリセット（次ターンの条件評価に使う）
             lastTurnEnemyDamageTaken = currentTurnEnemyDamageTaken;
             currentTurnEnemyDamageTaken = 0;
-            isAnnouncedNextTurn = false; // 予告は消費済みにする
             luckGauge.TickDown();
             for (int i = 0; i < playZone.Length; i++)
                 playZone[i]?.Clear();
@@ -338,6 +337,10 @@ namespace TechC.ODDESEY.Battle
                 playZone[slot].IsEnemyCard = true;
                 CustomLogger.Info($"敵カード配置: {cards[i].CardName} → Slot {slot}", LogTagUtil.TagBattle);
             }
+
+            // 予告フラグは PlaceEnemyCards で使った後にリセット
+            // （EndTurn でリセットすると次の BeginTurn に届かないため）
+            isAnnouncedNextTurn = false;
         }
 
         // ─── 公開メソッド ────────────────────────────────────────────────

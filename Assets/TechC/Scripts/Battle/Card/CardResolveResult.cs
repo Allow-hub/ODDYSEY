@@ -71,5 +71,8 @@ namespace TechC.ODDESEY.Battle
         public const string EnemyShieldGained = "EnemyShieldGained";
         /// <summary>削ったゲージ量。</summary>
         public const string GaugeDrained = "GaugeDrained";
+        // ─── 予告 ─────────────────────────────────────────────────────────
+        /// <summary>このカードが予告フラグを立てたか。BattleView の演出で参照する。</summary>
+        public const string IsAnnounced = "IsAnnounced";
     }
 }
