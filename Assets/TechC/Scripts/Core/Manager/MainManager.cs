@@ -57,7 +57,7 @@ namespace TechC.Core.Manager
         protected override void OnInit()
         {
             base.OnInit();
-            Time.timeScale = 3f;
+            // Time.timeScale = 3f;
             gameContext = debugContext.ToGameContext();
             luckGaugeValue = gameContext.LuckGauge;
         }
