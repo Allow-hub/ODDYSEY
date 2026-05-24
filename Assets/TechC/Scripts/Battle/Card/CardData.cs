@@ -24,6 +24,8 @@ namespace TechC.ODDESEY.Battle
         [Header("運ゲージ還元量")]
         [Tooltip("砕いたとき回復する運ゲージ量（0〜100）")]
         [Range(0f, 100f)] public float LuckConversionRate = 20f;
+        public bool RemoveFromBattleAfterUse;
+        public bool RemoveFromBattleAfterScrap;
 
         /// <summary>指定した型の効果を取得する（なければ null）</summary>
         public T GetEffect<T>() where T : CardEffectBase

@@ -64,6 +64,7 @@ namespace TechC.ODDESEY.Battle
 
         // ─── ターン中の破砕カウント ────────────────────────────────────────
         private int currentTurnScrapCount = 0;
+        private readonly HashSet<int> brokenInstanceIds = new();
 
         /// <summary>このターンにプレイヤーが砕いたカードの枚数。ScrapCannonEffect が参照する。</summary>
         public int CurrentTurnScrapCount => currentTurnScrapCount;
@@ -172,7 +173,10 @@ namespace TechC.ODDESEY.Battle
                 IsHotMode,
                 discardCallback: instance =>
                 {
-                    discardPile.Add(instance.OriginalData);
+                    bool isNoise = instance.OriginalData.Effects.Count > 0
+                        && instance.OriginalData.Effects[0] is NoiseEffect;
+                    if (!isNoise)
+                        discardPile.Add(instance.OriginalData);
                     hand.Remove(instance);
                 });
 
@@ -186,10 +190,22 @@ namespace TechC.ODDESEY.Battle
             // 前ターンのダメージを記録してリセット（次ターンの条件評価に使う）
             lastTurnEnemyDamageTaken = currentTurnEnemyDamageTaken;
             currentTurnEnemyDamageTaken = 0;
+            isAnnouncedNextTurn = false; // 予告は消費済みにする
             luckGauge.TickDown();
             for (int i = 0; i < playZone.Length; i++)
                 playZone[i]?.Clear();
             activeEffects.RemoveAll(e => e.IsExpired);
+
+            // 手札に残ったカードを捨て札へ（ノイズ系・砕いたカードは除外）
+            foreach (var instance in hand)
+            {
+                bool isNoise = instance.OriginalData.Effects.Count > 0
+                    && instance.OriginalData.Effects[0] is NoiseEffect;
+                if (!isNoise && !brokenInstanceIds.Contains(instance.InstanceId))
+                    discardPile.Add(instance.OriginalData);
+            }
+            hand.Clear();
+            brokenInstanceIds.Clear();
         }
 
         public void TakeEnemyDamage(int damage, CardResolveResult result, bool isPiercing = false)
@@ -259,6 +275,8 @@ namespace TechC.ODDESEY.Battle
 
         private void DrawToFull()
         {
+            if (deck.Count == 0 && discardPile.Count > 0)
+                ShuffleDiscardToDeck();
             while (hand.Count < HandLimit && (deck.Count > 0 || discardPile.Count > 0))
             {
                 if (deck.Count == 0) ShuffleDiscardToDeck();
@@ -337,10 +355,6 @@ namespace TechC.ODDESEY.Battle
                 playZone[slot].IsEnemyCard = true;
                 CustomLogger.Info($"敵カード配置: {cards[i].CardName} → Slot {slot}", LogTagUtil.TagBattle);
             }
-
-            // 予告フラグは PlaceEnemyCards で使った後にリセット
-            // （EndTurn でリセットすると次の BeginTurn に届かないため）
-            isAnnouncedNextTurn = false;
         }
 
         // ─── 公開メソッド ────────────────────────────────────────────────
@@ -354,6 +368,19 @@ namespace TechC.ODDESEY.Battle
         /// </summary>
         public void DrainPlayerLuckGauge(float amount)
             => luckGauge.TrySpend(Mathf.Max(0f, amount));
+
+        /// <summary>
+        /// プレイヤーの捨て札にカードを追加する。
+        /// NoiseInjectEffect / BlackNoiseInjectEffect から呼ぶ。
+        /// 次のシャッフル時にデッキに混入する。
+        /// </summary>
+        public void AddToDiscard(CardData card)
+        {
+            discardPile.Add(card);
+            CustomLogger.Info(
+                $"[デッキ妨害] 捨て札に追加: {card.CardName}",
+                LogTagUtil.TagCard);
+        }
 
         public int EnemyProbabilityReductionRate => currentTurnEnemyProbabilityReductionRate;
 

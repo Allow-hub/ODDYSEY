@@ -15,13 +15,13 @@ MonoBehaviour:
   turns:
   - label: "\u901A\u5E38\u653B\u6483"
     cards:
-    - {fileID: 11400000, guid: e47ea00b0860bf7448da75d453350cd5, type: 2}
-    - {fileID: 11400000, guid: 39fd9b79d05006244afe273766b9c94f, type: 2}
+    - {fileID: 11400000, guid: 5532ae03b1043f845baaafd74f408efc, type: 2}
+    - {fileID: 11400000, guid: 2ddeb4f10d09dcd429582302c8f197f5, type: 2}
     conditions: []
   - label: "\u727D\u5236+\u653B\u6483"
     cards:
-    - {fileID: 11400000, guid: 39fd9b79d05006244afe273766b9c94f, type: 2}
-    - {fileID: 11400000, guid: e47ea00b0860bf7448da75d453350cd5, type: 2}
+    - {fileID: 11400000, guid: 97eeb16c12c3b424db3e3acd929b4bac, type: 2}
+    - {fileID: 11400000, guid: e0d8e323b4347ea4bab9bfff6d4a76a0, type: 2}
     conditions:
     - conditionType: 0
       priority: 0
