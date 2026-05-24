@@ -50,13 +50,17 @@ MonoBehaviour:
     type: 3}
   rewardPrefab: {fileID: 8513737458621193476, guid: 33bf68059aaca8846844b716693b594f,
     type: 3}
+  cardRewardPrefab: {fileID: 5238897202123709343, guid: c24c707d059b5a84ba0ef5005fd92fdb,
+    type: 3}
   eventPrefab: {fileID: 2731581732393259310, guid: 1b11d86faaa841542a368fa0d386a891,
     type: 3}
   currentStageMapData: {fileID: 11400000, guid: 88d9b1f3483589043b1d68c2ffa275aa,
     type: 2}
   debugStartPhase: 1
+  debugEventData: {fileID: 11400000, guid: 2caa1f394fd969241a292c8f5f67a14f, type: 2}
   debugContext:
     PlayerHp: 30
     PlayerHpMax: 30
+    LuckGauge: 50
     InitialDeck: {fileID: 11400000, guid: 44bc08867cc8543449909928e19a20bf, type: 2}
     DebugEnemy: {fileID: 11400000, guid: 4c700648c5e5ada408c3b33c685f8978, type: 2}

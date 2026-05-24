@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
   m_Name: A-01_HighDamage
   m_EditorClassIdentifier: 
-  CardName: HighDamage
-  CardSprite: {fileID: 0}
-  Description: "40~50%\u306E\u78BA\u7387\u30675~15\u30C0\u30E1\u30FC\u30B8"
+  CardName: "\u30A4\u30F3\u30DA\u30EA\u30A2\u30EB"
+  CardSprite: {fileID: 21300000, guid: daf22dc5b21a8694abcf9777c2186a16, type: 3}
+  Description: "40\uFF5E50%\u306E\u78BA\u7387\u30675\uFF5E15\u30C0\u30E1\u30FC\u30B8"
   Effects:
   - {fileID: 11400000, guid: 6a91ef4e5b2e8a742bc681de2999ca99, type: 2}
   AnimationType: 0

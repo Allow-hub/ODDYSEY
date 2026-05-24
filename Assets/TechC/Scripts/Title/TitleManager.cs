@@ -1,8 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using TechC.Core.Manager;
 
 namespace TechC.ODDESEY.Title
 {
@@ -26,7 +25,7 @@ namespace TechC.ODDESEY.Title
 
         private void OnClickStart()
         {
-            SceneManager.LoadScene("StageSelectScene");
+            GameManager.I?.LoadSceneAsync(1); // シーンインデックス 1 をロード（BattleScene）
         }
     }
 }

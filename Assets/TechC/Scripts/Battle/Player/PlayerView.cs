@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using TechC.Core.Manager;
 using TechC.ODDESEY.Core.Manager;
 using TechC.ODDESEY.Core.Util;
 using TechC.ODDESEY.Util;
@@ -24,12 +25,17 @@ namespace TechC.ODDESEY.Battle
 
         // ─── Animation Event から呼ぶ ──────────────────────────────────────
 
-        public void NotifyHitTiming() => hitTimingTcs?.TrySetResult();
+        public void NotifyHitTiming()
+        {
+            hitTimingTcs?.TrySetResult();
+        }
+
         public void NotifyAttackFinished()
         {
             hitTimingTcs?.TrySetResult();
             attackFinishedTcs?.TrySetResult();
         }
+
         public void NotifyHitFinished() => NotifyStateFinished(PlayerAnimationType.Hit);
         public void NotifyMissFinished() => NotifyStateFinished(PlayerAnimationType.Miss);
 
@@ -53,43 +59,44 @@ namespace TechC.ODDESEY.Battle
 
         // ─── 公開API ──────────────────────────────────────────────────────
 
-        /// <summary>
-        /// 攻撃アニメを開始し、ヒット判定フレームまで待機する。
-        /// CardAnimationType に応じた Animator パラメータとカメラを使う。
-        /// </summary>
-        public async UniTask BeginAttackAnimationAsync(
-            CardAnimationType animType = CardAnimationType.Attack)
+        public async UniTask BeginAttackAnimationAsync(CardAnimationType animType)
         {
             hitTimingTcs = new UniTaskCompletionSource();
             attackFinishedTcs = new UniTaskCompletionSource();
 
             var (animHash, camData) = ResolveParams(animType);
-            animator?.SetBool(animHash, true);
-            cameraTask = CameraManager.I.PlayAttackCameraAsync(camData);
 
+            // ① カメラ切り替え＋ブレンド完了を待つ
+            if (camData != null)
+                await CameraManager.I.SwitchToAndWaitBlendAsync(camData.onAttackState);
+
+            // ② アニメ開始
+            animator?.SetBool(animHash, false);
+            await UniTask.Yield();
+            animator?.SetBool(animHash, true);
+
+            // ③ カメラアニメ並列
+            cameraTask = camData != null
+                ? CameraManager.I.PlayAttackCameraAsync(camData)
+                : UniTask.CompletedTask;
+
+            // ④ ヒット判定フレームまで待つ
             await hitTimingTcs.Task;
         }
 
-        /// <summary>
-        /// 攻撃アニメとカメラ演出の両方が完了するまで待つ。
-        /// </summary>
         public async UniTask WaitAttackFinishedAsync(
-            CardAnimationType animType = CardAnimationType.Attack)
+            CardAnimationType animType = CardAnimationType.Attack,
+            bool skipCameraReturn = false)
         {
             await UniTask.WhenAll(attackFinishedTcs.Task, cameraTask);
             var (animHash, _) = ResolveParams(animType);
-            CustomLogger.Info($"プレイヤー攻撃アニメーション完了 ({animType})", LogTagUtil.TagBattle);
             animator?.SetBool(animHash, false);
+            if (!skipCameraReturn)
+                await CameraManager.I.ReturnToDefaultAsync();
         }
 
-        public void PlayHitStopEffect()
-        {
-            HitStopManager.I.Play();
-        }
+        public void PlayHitStopEffect() => HitStopManager.I.Play();
 
-        /// <summary>
-        /// 被ダメアニメーションを再生する。BattleView から Forget() で呼ぶ。
-        /// </summary>
         public async UniTask PlayDamageAnimationAsync(bool isHit)
         {
             var type = isHit ? PlayerAnimationType.Hit : PlayerAnimationType.Miss;
@@ -100,8 +107,6 @@ namespace TechC.ODDESEY.Battle
             animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, false);
         }
 
-        // ─── 内部処理 ────────────────────────────────────────────────────
-
         private (int animHash, AttackCameraData camData) ResolveParams(CardAnimationType animType)
         {
             return animType switch
@@ -111,6 +116,11 @@ namespace TechC.ODDESEY.Battle
                 CardAnimationType.Defense => (AnimUtil.DefenseHash, null),
                 _ => (AnimUtil.AttackHash, attackCameraData),
             };
+        }
+
+        public void PlayAudio(SEID seId)
+        {
+            AudioManager.I?.PlaySE(seId);
         }
     }
 

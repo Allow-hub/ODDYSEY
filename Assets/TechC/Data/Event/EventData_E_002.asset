@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73fb33d6cb59b8d4d918e31838045338, type: 3}
+  m_Name: EventData_E_002
+  m_EditorClassIdentifier: 
+  EventId: E_002
+  EventName: "\u4F11\u61A9"
+  MapIconType: 1
+  EventPrefab: {fileID: 489414843677339333, guid: 2cdb154d6fce0224aa0d19f7ed803bdc,
+    type: 3}
+  Description: "\u3053\u306E\u8FBA\u308A\u306F\u6575\u304C\u5C11\u306A\u3044\u3088\u3046\u3060\u3002\u5C11\u3057\u4F11\u61A9\u3057\u3066\u3044\u3063\u3066\u3082\u3044\u3044\u304B\u3082\u3057\u308C\u306A\u3044\u3002"
+  ChallengeText: "\u4F11\u61A9\u3057\u3066\u3044\u304F"
+  BaseSuccessRate: 70
+  SuccessActions:
+  - ResultType: 1
+    ResultValue: 12
+    CardCandidates: []
+  SuccessFlavorText: "\u675F\u306E\u9593\u306E\u9759\u5BC2\u3002\u50B7\u304C\u7652\u3048\u3066\u3044\u304F\u611F\u899A\u304C\u3042\u308B\u3002"
+  FailureActions: []
+  FailureFlavorText: "\u7FFC\u3092\u306F\u305F\u3081\u304B\u305B\u308B\u97F3\u304C\u805E\u3053\u3048\u308B\u3002\u79FB\u52D5\u3057\u306A\u304F\u3066\u306F\u3002"
+  FailureGaugeRefund: 10

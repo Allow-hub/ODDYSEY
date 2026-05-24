@@ -52,7 +52,8 @@ namespace TechC.ODDESEY.Battle
                     await battleView.ShowTurnStartAsync(turnData);
 
                 await battleView.WaitForPlayerConfirmAsync();
-
+                // TurnStart アニメが終わるまで待つ
+                await battleView.WaitForTurnStartAnimAsync();
                 var resolveResults = battleLogic.ConfirmTurn();
                 CustomLogger.Info($"カード解決開始: {resolveResults.Count}枚", LogTagUtil.TagBattle);
 
@@ -64,7 +65,7 @@ namespace TechC.ODDESEY.Battle
 
                     if (result.IsBattleEnd)
                     {
-                        MainManager.I?.SetLackGaugeValue(battleLogic.LuckGauge);
+                        MainManager.I?.SetLuckGaugeValue(battleLogic.LuckGauge);
                         if (result.IsWon)
                         {
                             await battleView.ShowWinEffectAsync();
@@ -103,6 +104,7 @@ namespace TechC.ODDESEY.Battle
 
         private void OnCardBroken(CardBrokenEvent ev)
         {
+            battleLogic.IncrementScrapCount();
             battleLogic.AddLuckGauge(ev.LuckGain);
             PublishLuckGaugeChanged();
             battleView.UpdateLuckGaugeAsync(

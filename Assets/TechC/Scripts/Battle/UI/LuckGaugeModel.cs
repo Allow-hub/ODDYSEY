@@ -1,44 +1,99 @@
+using System;
+
 namespace TechC.ODDESEY.Battle
 {
     /// <summary>
-    /// 運ゲージのロジックを管理する。BattleLogic が所有する。
+    /// 運ゲージのロジックを管理する。
+    ///
+    /// 変更点：
+    ///   - 激アツ開始しきい値（startThreshold）と解除しきい値（endThreshold）を分離。
+    ///     100% で開始し、0% になるまで継続する。
+    ///   - OnHotModeChanged イベントで BattleLogic に通知する。
     /// </summary>
     public class LuckGaugeModel
     {
         private float current;
         private readonly float max;
-        private readonly float hotModeThreshold; // 激アツモードになるしきい値
+
+        /// <summary>激アツ開始しきい値（デフォルト100%）</summary>
+        private readonly float startThreshold;
+
+        /// <summary>激アツ解除しきい値（デフォルト0%）</summary>
+        private readonly float endThreshold;
+
+        private bool isHotMode = false;
+        private bool prevHotMode = false;
 
         public float Current => current;
         public float Max => max;
         public float Ratio => current / max;
-        public bool IsHotMode => current >= hotModeThreshold;
 
-        public LuckGaugeModel(float max = 100f, float hotModeThreshold = 100f)
+        /// <summary>
+        /// 激アツ状態か。
+        /// 開始：current >= startThreshold
+        /// 解除：current <= endThreshold（一度開始した後）
+        /// </summary>
+        public bool IsHotMode => isHotMode;
+
+        /// <summary>IsHotMode が変化したとき発火。引数は新しい値。</summary>
+        public event Action<bool> OnHotModeChanged;
+
+        public LuckGaugeModel(
+            float max = 100f,
+            float startThreshold = 100f,
+            float endThreshold = 0f)
         {
             this.max = max;
-            this.hotModeThreshold = hotModeThreshold;
+            this.startThreshold = startThreshold;
+            this.endThreshold = endThreshold;
             current = 0f;
+            isHotMode = false;
+            prevHotMode = false;
         }
 
-        /// <summary>ゲージを増やす（上限クランプ）</summary>
-        public void Add(float amount) => current = UnityEngine.Mathf.Clamp(current + amount, 0f, max);
+        public void Add(float amount)
+        {
+            current = UnityEngine.Mathf.Clamp(current + amount, 0f, max);
+            CheckHotModeChange();
+        }
 
-        /// <summary>ゲージを消費する。足りない場合は失敗してfalseを返す</summary>
         public bool TrySpend(float amount)
         {
             if (current < amount) return false;
             current -= amount;
+            CheckHotModeChange();
             return true;
         }
 
-        /// <summary>ターン終了時に自然減少</summary>
         public void TickDown(float amount = 10f)
         {
             current = UnityEngine.Mathf.Clamp(current - amount, 0f, max);
+            CheckHotModeChange();
         }
 
-        /// <summary>リセット</summary>
-        public void Reset() => current = 0f;
+        public void Reset()
+        {
+            current = 0f;
+            isHotMode = false;
+            CheckHotModeChange();
+        }
+
+        private void CheckHotModeChange()
+        {
+            // 激アツ開始：startThreshold 以上になったとき
+            if (!isHotMode && current >= startThreshold)
+                isHotMode = true;
+
+            // 激アツ解除：endThreshold 以下になったとき
+            if (isHotMode && current <= endThreshold)
+                isHotMode = false;
+
+            // 状態が変化したときだけイベント発火
+            if (isHotMode != prevHotMode)
+            {
+                prevHotMode = isHotMode;
+                OnHotModeChanged?.Invoke(isHotMode);
+            }
+        }
     }
 }

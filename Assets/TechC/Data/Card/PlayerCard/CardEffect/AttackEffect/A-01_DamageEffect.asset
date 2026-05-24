@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ProbabilityMin: 0.4
   ProbabilityMax: 0.5
-  DamageMin: 5
-  DamageMax: 15
+  DamageMin: 10
+  DamageMax: 10
   UsePositionBonus: 0
   RequiredSlotIndex: 0
   PositionBonusDamage: 5

@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23e603bd23b2e0a46968177a41981b6a, type: 3}
+  m_Name: NEnemy01_Pattern
+  m_EditorClassIdentifier: Assembly-CSharp::TechC.ODDESEY.Battle.EnemyActionPattern
+  turns:
+  - label: "\u901A\u5E38\u653B\u6483"
+    cards:
+    - {fileID: 11400000, guid: e47ea00b0860bf7448da75d453350cd5, type: 2}
+    - {fileID: 11400000, guid: 39fd9b79d05006244afe273766b9c94f, type: 2}
+    conditions: []
+  - label: "\u727D\u5236+\u653B\u6483"
+    cards:
+    - {fileID: 11400000, guid: 39fd9b79d05006244afe273766b9c94f, type: 2}
+    - {fileID: 11400000, guid: e47ea00b0860bf7448da75d453350cd5, type: 2}
+    conditions:
+    - conditionType: 0
+      priority: 0
+      threshold: 1
+      overrideCards:
+      - {fileID: 11400000, guid: d81946b5d8b4acf49a683882f7db982c, type: 2}
+      - {fileID: 11400000, guid: 39fd9b79d05006244afe273766b9c94f, type: 2}
+      label: 
+  - label: a
+    cards:
+    - {fileID: 11400000, guid: 6420565054ccb4d449917b46365bad87, type: 2}
+    - {fileID: 11400000, guid: 39fd9b79d05006244afe273766b9c94f, type: 2}
+    conditions:
+    - conditionType: 1
+      priority: 1
+      threshold: 0.5
+      overrideCards: []
+      label: 

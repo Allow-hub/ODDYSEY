@@ -2,48 +2,42 @@ using System;
 using System.Collections.Generic;
 using TechC.Core.Manager;
 using TechC.ODDESEY.Battle;
+using TechC.ODDESEY.Event;
+using TechC.ODDESEY.Reward;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Map
 {
     /// <summary>
     /// ステージマップの管理。
-    /// ノード選択UI・進行状態を担当し、次フェーズを MainManager に通知する。
+    ///
+    /// 変更点：
+    ///   - OnBattleRequested を Action<BattleRewardData, bool> に変更。
+    ///     RewardData（報酬候補）と IsBossNode（ボスフラグ）を MainManager に渡す。
     /// </summary>
     public class MapController : MonoBehaviour
     {
-        // -------------------------------------------------------
-        // Inspector
-        // -------------------------------------------------------
-        [Header("ノードViewのリスト（上から順、数はStageMapDataのnodes数に合わせる）")]
+        [Header("ノードViewのリスト")]
         [SerializeField] private List<MapNodeView> nodeViews;
 
-        [Header("選択肢ボタンのPrefab（NodeChoiceButton がアタッチされていること）")]
+        [Header("選択肢ボタンのPrefab")]
         [SerializeField] private GameObject choiceButtonPrefab;
 
         [Header("ラッキーゲージ")]
         [SerializeField] private LuckGaugeView luckGaugeView;
 
-        // -------------------------------------------------------
-        // Events
-        // -------------------------------------------------------
-        public event Action OnBattleRequested;
-        public event Action OnEventRequested;
+        // ─── Events ───────────────────────────────────────────────────────
+        /// <summary>RewardData・ボスフラグを含むバトル開始通知</summary>
+        public event Action<BattleRewardData, bool> OnBattleRequested;
+        public event Action<EventData> OnEventRequested;
         public event Action OnStageCompleted;
 
-        // -------------------------------------------------------
-        // 内部状態
-        // -------------------------------------------------------
+        // ─── 内部状態 ────────────────────────────────────────────────────
         private StageMapData mapData;
         private MapProgressState progressState;
 
-        // -------------------------------------------------------
-        // 初期化
-        // -------------------------------------------------------
+        // ─── 初期化 ───────────────────────────────────────────────────────
 
-        /// <summary>
-        /// MainManager からステージ定義と進行状態を渡して初期化する。
-        /// </summary>
         public void Initialize(StageMapData data, MapProgressState progress)
         {
             mapData = data;
@@ -54,14 +48,11 @@ namespace TechC.ODDESEY.Map
             RefreshView();
         }
 
-        // -------------------------------------------------------
-        // ビュー更新
-        // -------------------------------------------------------
+        // ─── ビュー更新 ──────────────────────────────────────────────────
 
         private void RefreshView()
         {
             if (mapData == null) return;
-
             int current = progressState.currentNodeIndex;
 
             for (int i = 0; i < nodeViews.Count; i++)
@@ -79,17 +70,15 @@ namespace TechC.ODDESEY.Map
                 else if (i == current) state = MapNodeView.NodeState.Active;
                 else state = MapNodeView.NodeState.Locked;
 
-                // buttonPrefab を渡してノードView内で Instantiate させる
                 nodeViews[i].Setup(mapData.nodes[i], state, choiceButtonPrefab, OnNodeChoiceSelected);
             }
         }
 
-        // -------------------------------------------------------
-        // 選択処理
-        // -------------------------------------------------------
+        // ─── 選択処理 ────────────────────────────────────────────────────
 
         private void OnNodeChoiceSelected(NodeType chosenType)
         {
+            int selectedIndex = progressState.currentNodeIndex;
             progressState.Advance();
 
             if (progressState.IsCompleted(mapData.nodes.Count))
@@ -98,11 +87,24 @@ namespace TechC.ODDESEY.Map
                 return;
             }
 
+            var node = mapData.nodes[selectedIndex];
+
             switch (chosenType)
             {
-                case NodeType.Battle: OnBattleRequested?.Invoke(); break;
-                case NodeType.Event: OnEventRequested?.Invoke(); break;
-                case NodeType.Rest: OnBattleRequested?.Invoke(); break; // 必要なら拡張
+                case NodeType.Battle:
+                    // RewardData と IsBossNode を渡す
+                    OnBattleRequested?.Invoke(node.RewardData, node.IsBossNode);
+                    break;
+
+                case NodeType.Event:
+                    if (node.EventData == null)
+                        Debug.LogWarning($"[MapController] nodes[{selectedIndex}] に EventData がアサインされていません。");
+                    OnEventRequested?.Invoke(node.EventData);
+                    break;
+
+                case NodeType.Rest:
+                    OnBattleRequested?.Invoke(null, false);
+                    break;
             }
         }
     }

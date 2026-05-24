@@ -7,28 +7,51 @@ using UnityEngine.UI;
 
 namespace TechC.ODDESEY.Battle
 {
-    /// <summary>
-    /// カードをドロップすると「砕く」処理を行う専用UIエリア。
-    ///
-    /// 変更点：
-    ///   - OnCardBroken event を廃止。
-    ///     BattleController が直接購読していた event の代わりに
-    ///     BattleEventBus.Publish(CardBrokenEvent) で通知する。
-    ///   - BattleController 側の OnCardBroken -= 購読解除も不要になった。
-    /// </summary>
     public class BreakZoneView : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPointerExitHandler
     {
         [Header("見た目")]
-        [SerializeField] private Image highlightImage;
+        [SerializeField] private Image highlightImage; // 加算合成用の専用 Image
 
-        [Header("ハイライトカラー")]
-        [SerializeField] private Color highlightColor = new Color(0.9f, 0.5f, 0.1f, 0.8f);
+        [Header("ハイライト設定")]
+        [SerializeField] private Material electricMaterial;
+        [SerializeField] private float    fadeSpeed = 6f;
 
         [SerializeField] private BattleView battleView;
 
-        // -------------------------------------------------------
-        // IDropHandler
-        // -------------------------------------------------------
+        private Material instancedMaterial;
+        private float    targetIntensity  = 0f;
+        private float    currentIntensity = 0f;
+
+        private static readonly int IntensityPropId = Shader.PropertyToID("_Intensity");
+        private static readonly int LocalTimePropId = Shader.PropertyToID("_LocalTime");
+
+        private void Awake()
+        {
+            if (electricMaterial == null || highlightImage == null) return;
+
+            instancedMaterial       = new Material(electricMaterial);
+            highlightImage.material = instancedMaterial;
+            instancedMaterial.SetFloat(IntensityPropId, 0f);
+            instancedMaterial.SetFloat(LocalTimePropId, 0f);
+        }
+
+        private void OnDestroy()
+        {
+            if (instancedMaterial != null)
+                Destroy(instancedMaterial);
+        }
+
+        private void Update()
+        {
+            if (instancedMaterial == null) return;
+
+            // Intensity をフェード
+            currentIntensity = Mathf.MoveTowards(
+                currentIntensity, targetIntensity, fadeSpeed * Time.deltaTime);
+
+            instancedMaterial.SetFloat(IntensityPropId, currentIntensity);
+            instancedMaterial.SetFloat(LocalTimePropId, Time.time);
+        }
 
         public void OnDrop(PointerEventData eventData)
         {
@@ -45,16 +68,11 @@ namespace TechC.ODDESEY.Battle
             BreakCard(cardView);
         }
 
-        // -------------------------------------------------------
-        // IPointerEnterHandler / IPointerExitHandler
-        // -------------------------------------------------------
-
         public void OnPointerEnter(PointerEventData eventData)
         {
             if (eventData.pointerDrag == null) return;
             var cardView = eventData.pointerDrag.GetComponent<CardView>();
             if (cardView == null || cardView.IsPlaced) return;
-
             SetHighlight(true);
         }
 
@@ -63,9 +81,10 @@ namespace TechC.ODDESEY.Battle
             SetHighlight(false);
         }
 
-        // -------------------------------------------------------
-        // 砕く処理
-        // -------------------------------------------------------
+        private void SetHighlight(bool on)
+        {
+            targetIntensity = on ? 1f : 0f;
+        }
 
         private void BreakCard(CardView cardView)
         {
@@ -78,14 +97,7 @@ namespace TechC.ODDESEY.Battle
         {
             await cardView.PlayBreakAnimationAsync();
             battleView.RemoveCardAsync(cardView.InstanceId).Forget();
-
             BattleEventBus.Publish(new CardBrokenEvent(cardView, luckGain));
-        }
-
-        private void SetHighlight(bool on)
-        {
-            if (highlightImage != null)
-                highlightImage.color = on ? highlightColor : Color.white;
         }
     }
 }

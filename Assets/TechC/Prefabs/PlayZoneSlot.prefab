@@ -59,7 +59,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -91,7 +91,4 @@ MonoBehaviour:
   backgroundImage: {fileID: 3747370793486241324}
   highlightImage: {fileID: 3747370793486241324}
   cardAnchor: {fileID: 5013992477536268373}
-  emptyColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.5}
   highlightColor: {r: 0.4, g: 0.9, b: 0.4, a: 0.8}
-  filledColor: {r: 0.15, g: 0.15, b: 0.15, a: 0.8}
-  enemyColor: {r: 0.9, g: 0.3, b: 0.3, a: 0.6}

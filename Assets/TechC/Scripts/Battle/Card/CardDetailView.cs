@@ -31,7 +31,7 @@ namespace TechC.ODDESEY.Battle
             canvasGroup.interactable = true;
 
             nameText.text = data.CardName;
-            // descriptionText.text = data.Description;
+            descriptionText.text = data.Description;
         }
 
         public void Hide()
