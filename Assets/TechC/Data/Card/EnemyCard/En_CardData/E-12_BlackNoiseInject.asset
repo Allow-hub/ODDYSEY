@@ -10,12 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
-  m_Name: BlackNoiseInject
+  m_Name: E-12_BlackNoiseInject
   m_EditorClassIdentifier: Assembly-CSharp::TechC.ODDESEY.Battle.CardData
   CardName: NoiseInject
   CardSprite: {fileID: 21300000, guid: c83a7476d6faa4149acc432847114661, type: 3}
-  Description: 
+  Description: "\u30D7\u30EC\u30A4\u30E4\u30FC\u306E\u6368\u3066\u672D\u306B\u300C\u30D6\u30E9\u30C3\u30AF\u30CE\u30A4\u30BA\u300D\u30922\u679A\u8FFD\u52A0\u3059\u308B\u3002"
   Effects:
-  - {fileID: 11400000, guid: fbf89cca4d9e94643b10a0717d2cd5da, type: 2}
+  - {fileID: 11400000, guid: 974768f9f24609247bb5d78eccd26da4, type: 2}
   AnimationType: 0
   LuckConversionRate: 20
+  RemoveFromBattleAfterUse: 0
+  RemoveFromBattleAfterScrap: 0

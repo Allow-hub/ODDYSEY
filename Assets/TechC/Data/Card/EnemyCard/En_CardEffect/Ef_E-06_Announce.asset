@@ -9,9 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bdd8c7f57425b0545b10b5af47dbbb13, type: 3}
-  m_Name: New Black Noise Effect
-  m_EditorClassIdentifier: Assembly-CSharp::TechC.ODDESEY.Battle.BlackNoiseEffect
+  m_Script: {fileID: 11500000, guid: a21cf95de74c92e4285dd2dea92226cc, type: 3}
+  m_Name: Ef_E-06_Announce
+  m_EditorClassIdentifier: Assembly-CSharp::TechC.ODDESEY.Battle.AnnounceEffect
   ProbabilityMin: 1
   ProbabilityMax: 1
-  SelfDamage: 3
