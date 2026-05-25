@@ -74,5 +74,8 @@ namespace TechC.ODDESEY.Battle
         // ─── 予告 ─────────────────────────────────────────────────────────
         /// <summary>このカードが予告フラグを立てたか。BattleView の演出で参照する。</summary>
         public const string IsAnnounced = "IsAnnounced";
+        // ─── デッキ妨害 ───────────────────────────────────────────────────
+        /// <summary>このカードで注入したノイズ枚数。</summary>
+        public const string NoiseInjected = "NoiseInjected";
     }
 }
