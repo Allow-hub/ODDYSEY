@@ -19,3 +19,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 741c35d6ffe9d0546bed3df5cc5d087f, type: 2}
   AnimationType: 0
   LuckConversionRate: 20
+  RemoveFromBattleAfterUse: 1
+  RemoveFromBattleAfterScrap: 1

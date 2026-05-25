@@ -64,7 +64,6 @@ namespace TechC.ODDESEY.Battle
 
         // ─── ターン中の破砕カウント ────────────────────────────────────────
         private int currentTurnScrapCount = 0;
-        private readonly HashSet<int> brokenInstanceIds = new();
 
         /// <summary>このターンにプレイヤーが砕いたカードの枚数。ScrapCannonEffect が参照する。</summary>
         public int CurrentTurnScrapCount => currentTurnScrapCount;
@@ -173,9 +172,7 @@ namespace TechC.ODDESEY.Battle
                 IsHotMode,
                 discardCallback: instance =>
                 {
-                    bool isNoise = instance.OriginalData.Effects.Count > 0
-                        && instance.OriginalData.Effects[0] is NoiseEffect;
-                    if (!isNoise)
+                    if (!instance.OriginalData.RemoveFromBattleAfterUse)
                         discardPile.Add(instance.OriginalData);
                     hand.Remove(instance);
                 });
@@ -196,16 +193,7 @@ namespace TechC.ODDESEY.Battle
                 playZone[i]?.Clear();
             activeEffects.RemoveAll(e => e.IsExpired);
 
-            // 手札に残ったカードを捨て札へ（ノイズ系・砕いたカードは除外）
-            foreach (var instance in hand)
-            {
-                bool isNoise = instance.OriginalData.Effects.Count > 0
-                    && instance.OriginalData.Effects[0] is NoiseEffect;
-                if (!isNoise && !brokenInstanceIds.Contains(instance.InstanceId))
-                    discardPile.Add(instance.OriginalData);
-            }
             hand.Clear();
-            brokenInstanceIds.Clear();
         }
 
         public void TakeEnemyDamage(int damage, CardResolveResult result, bool isPiercing = false)
@@ -361,6 +349,14 @@ namespace TechC.ODDESEY.Battle
 
         public void SetEnemyProbabilityReduction(int rate)
             => currentTurnEnemyProbabilityReductionRate = Mathf.Clamp(rate, 0, 100);
+
+        public void BreakCard(CardInstance instance)
+        {
+            if (instance == null) return;
+            if (!instance.OriginalData.RemoveFromBattleAfterScrap)
+                discardPile.Add(instance.OriginalData);
+            hand.Remove(instance);
+        }
 
         /// <summary>
         /// 敵カードからプレイヤーの運ゲージを強制的に削る。
