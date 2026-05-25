@@ -32,6 +32,8 @@ namespace TechC.ODDESEY.Battle
 
         private int currentTurnEnemyProbabilityReductionRate = 0;
         private float currentTurnLuckGaugeMultiplier = 1f;
+        private int currentTurnLimitBreakCostLevelBonus = 0;
+        private int nextTurnLimitBreakCostLevelBonus = 0;
 
         // ─── 敵行動パターン ───────────────────────────────────────────────
         private EnemyActionPattern actionPattern;
@@ -134,6 +136,9 @@ namespace TechC.ODDESEY.Battle
         public TurnData BeginTurn()
         {
             turnCount++;
+
+            currentTurnLimitBreakCostLevelBonus = nextTurnLimitBreakCostLevelBonus;
+            nextTurnLimitBreakCostLevelBonus = 0;
 
             foreach (var effect in activeEffects)
                 effect.OnTurnStart(this);
@@ -249,6 +254,18 @@ namespace TechC.ODDESEY.Battle
 
         public void AddLuckGauge(float amount)
             => luckGauge.Add(amount * currentTurnLuckGaugeMultiplier);
+
+        /// <summary>
+        /// このターンに適用する限界突破コストの増分を登録する。
+        /// ITurnEffect の OnTurnStart から呼ばれて、BeginTurn 内の TurnData に含められる。
+        /// </summary>
+        public int CurrentTurnLimitBreakCostLevelBonus
+            => currentTurnLimitBreakCostLevelBonus;
+
+        public void AddNextTurnLimitBreakCostLevelBonus(int amount)
+        {
+            nextTurnLimitBreakCostLevelBonus += amount;
+        }
 
         public bool TrySpendLuckGauge(float cost) => luckGauge.TrySpend(cost);
 

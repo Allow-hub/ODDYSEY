@@ -15,7 +15,7 @@ MonoBehaviour:
   turns:
   - label: "\u901A\u5E38\u653B\u6483"
     cards:
-    - {fileID: 11400000, guid: 5532ae03b1043f845baaafd74f408efc, type: 2}
+    - {fileID: 11400000, guid: 89f4d779e8e508840aaabbe3c76fded2, type: 2}
     - {fileID: 11400000, guid: 2ddeb4f10d09dcd429582302c8f197f5, type: 2}
     conditions: []
   - label: "\u727D\u5236+\u653B\u6483"
