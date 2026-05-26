@@ -47,6 +47,11 @@ namespace TechC.ODDESEY.Battle
         private float counterProbability = 0f;
         private int counterDamage = 0;
 
+        // ─── 反撃バフ ─────────────────────────────────────────────────────
+        private List<ReflectBuff> playerReflectBuffs = new();
+        private List<ReflectBuff> enemyReflectBuffs = new();
+        private bool isProcessingReflect = false;
+
         // ─── ダメージ軽減バッファ ─────────────────────────────────────────
         private int currentTurnDamageReductionRate = 0;
 
@@ -128,6 +133,8 @@ namespace TechC.ODDESEY.Battle
 
             playerShield.Reset();
             enemyShield.Reset();
+            playerReflectBuffs = new List<ReflectBuff>();
+            enemyReflectBuffs = new List<ReflectBuff>();
             resolver = new CardResolver(this);
             isBattleActive = true;
             turnCount = 0;
@@ -198,7 +205,14 @@ namespace TechC.ODDESEY.Battle
                 playZone[i]?.Clear();
             activeEffects.RemoveAll(e => e.IsExpired);
 
-            hand.Clear();
+            // 反撃バフのカウントを進めて失効したものを除去
+            playerReflectBuffs.ForEach(b => b.TickTurnEnd());
+            playerReflectBuffs.RemoveAll(b => b.IsExpired);
+            enemyReflectBuffs.ForEach(b => b.TickTurnEnd());
+            enemyReflectBuffs.RemoveAll(b => b.IsExpired);
+
+            // 手札はクリアしない。使用・破砕されたカードは ConfirmTurn の discardCallback と
+            // BreakCard() で既に除去済み。残ったカードは次のターンに持ち越す。
         }
 
         public void TakeEnemyDamage(int damage, CardResolveResult result, bool isPiercing = false)
@@ -218,6 +232,23 @@ namespace TechC.ODDESEY.Battle
                 isBattleActive = false;
                 result.IsBattleEnd = true;
                 result.IsWon = true;
+            }
+
+            // 敵が反撃バフを保持している場合、攻撃してきたプレイヤーに反撃
+            if (!isProcessingReflect && enemyReflectBuffs.Count > 0)
+            {
+                isProcessingReflect = true;
+                foreach (var buff in enemyReflectBuffs)
+                {
+                    if (buff.TryTrigger(result, this))
+                    {
+                        result.SetExtra(ResultKeys.ReflectTriggered, true);
+                        result.SetExtra(ResultKeys.ReflectDamage, buff.Damage);
+                        CustomLogger.Info($"敵反撃バフ発動: プレイヤーに{buff.Damage}ダメージ", LogTagUtil.TagCard);
+                        break;
+                    }
+                }
+                isProcessingReflect = false;
             }
         }
 
@@ -240,6 +271,23 @@ namespace TechC.ODDESEY.Battle
                 isBattleActive = false;
                 result.IsBattleEnd = true;
                 result.IsWon = false;
+            }
+
+            // プレイヤーが反撃バフを保持している場合、攻撃してきた敵に反撃
+            if (!isProcessingReflect && playerReflectBuffs.Count > 0)
+            {
+                isProcessingReflect = true;
+                foreach (var buff in playerReflectBuffs)
+                {
+                    if (buff.TryTrigger(result, this))
+                    {
+                        result.SetExtra(ResultKeys.ReflectTriggered, true);
+                        result.SetExtra(ResultKeys.ReflectDamage, buff.Damage);
+                        CustomLogger.Info($"プレイヤー反撃バフ発動: 敵に{buff.Damage}ダメージ", LogTagUtil.TagCard);
+                        break;
+                    }
+                }
+                isProcessingReflect = false;
             }
         }
 
@@ -403,6 +451,19 @@ namespace TechC.ODDESEY.Battle
             counterProbability = probability;
             counterDamage = damage;
         }
+
+        /// <summary>反撃バフを登録する。ReflectBuffEffect から呼ぶ。</summary>
+        public void RegisterReflectBuff(int damage, bool isOnPlayer)
+        {
+            var buff = new ReflectBuff(damage, isOnPlayer);
+            if (isOnPlayer)
+                playerReflectBuffs.Add(buff);
+            else
+                enemyReflectBuffs.Add(buff);
+        }
+
+        public bool PlayerHasReflectBuff => playerReflectBuffs.Count > 0;
+        public bool EnemyHasReflectBuff => enemyReflectBuffs.Count > 0;
 
         // ─── 激アツハンドラ ───────────────────────────────────────────
 

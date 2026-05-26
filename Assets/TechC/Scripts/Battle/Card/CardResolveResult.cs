@@ -77,5 +77,11 @@ namespace TechC.ODDESEY.Battle
         // ─── デッキ妨害 ───────────────────────────────────────────────────
         /// <summary>このカードで注入したノイズ枚数。</summary>
         public const string NoiseInjected = "NoiseInjected";
+
+        // ─── 反撃バフ ─────────────────────────────────────────────────────
+        /// <summary>このカード解決中に反撃バフが発動したか。</summary>
+        public const string ReflectTriggered = "ReflectTriggered";
+        /// <summary>反撃バフが発動したときの反撃ダメージ量。</summary>
+        public const string ReflectDamage = "ReflectDamage";
     }
 }
