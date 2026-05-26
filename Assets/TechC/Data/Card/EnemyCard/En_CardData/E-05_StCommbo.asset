@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
   m_Name: E-05_StCommbo
   m_EditorClassIdentifier: Assembly-CSharp::TechC.ODDESEY.Battle.CardData
-  CardName: 
+  CardName: "\u30E9\u30D5\u30A1\u30FC\u30EB"
   CardSprite: {fileID: 0}
   Description: 
-  Effects: []
+  Effects:
+  - {fileID: 11400000, guid: d48cef94dbdc8694ebd7c27c144c60a1, type: 2}
   AnimationType: 0
   LuckConversionRate: 20
   RemoveFromBattleAfterUse: 0

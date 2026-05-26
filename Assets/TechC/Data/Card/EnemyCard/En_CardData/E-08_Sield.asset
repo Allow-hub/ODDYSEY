@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
   m_Name: E-08_Sield
   m_EditorClassIdentifier: Assembly-CSharp::TechC.ODDESEY.Battle.CardData
-  CardName: 
+  CardName: "\u30BB\u30E9\u30D5\u30A3\u30C3\u30AF\u30FB\u30B7\u30FC\u30EB\u30C9"
   CardSprite: {fileID: 0}
   Description: 
-  Effects: []
+  Effects:
+  - {fileID: 11400000, guid: a7e94e3bdb509fe45838732480bd1096, type: 2}
   AnimationType: 0
   LuckConversionRate: 20
   RemoveFromBattleAfterUse: 0

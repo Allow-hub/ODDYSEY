@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
   m_Name: E-02_LiAttack
   m_EditorClassIdentifier: Assembly-CSharp::TechC.ODDESEY.Battle.CardData
-  CardName: 
+  CardName: "\u30D8\u30A4\u30ED\u30FC\u30FB\u30B7\u30E7\u30C3\u30C8"
   CardSprite: {fileID: 0}
   Description: 
-  Effects: []
+  Effects:
+  - {fileID: 11400000, guid: d053188f65c07344faba3d7a8bdc94b5, type: 2}
   AnimationType: 0
   LuckConversionRate: 20
   RemoveFromBattleAfterUse: 0

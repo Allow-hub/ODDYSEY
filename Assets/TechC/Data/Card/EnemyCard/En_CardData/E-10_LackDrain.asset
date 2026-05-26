@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
   m_Name: E-10_LackDrain
   m_EditorClassIdentifier: Assembly-CSharp::TechC.ODDESEY.Battle.CardData
-  CardName: 
+  CardName: "\u30E9\u30C3\u30AF\u30A4\u30FC\u30BF\u30FC"
   CardSprite: {fileID: 0}
   Description: 
-  Effects: []
+  Effects:
+  - {fileID: 11400000, guid: f410e348b4b88344da840daf53fdd071, type: 2}
   AnimationType: 0
   LuckConversionRate: 20
   RemoveFromBattleAfterUse: 0
