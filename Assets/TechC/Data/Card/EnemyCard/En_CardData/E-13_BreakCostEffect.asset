@@ -17,7 +17,7 @@ MonoBehaviour:
   Description: 
   Effects:
   - {fileID: 11400000, guid: 3a42d14d9be489243ad03902bfbd0258, type: 2}
-  AnimationType: 0
+  AnimationType: 3
   LuckConversionRate: 20
   RemoveFromBattleAfterUse: 0
   RemoveFromBattleAfterScrap: 0
