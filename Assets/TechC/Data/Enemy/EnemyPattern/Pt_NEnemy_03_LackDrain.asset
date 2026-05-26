@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 23e603bd23b2e0a46968177a41981b6a, type: 3}
-  m_Name: NEnemy01_Pattern
+  m_Name: Pt_NEnemy_03_LackDrain
   m_EditorClassIdentifier: Assembly-CSharp::TechC.ODDESEY.Battle.EnemyActionPattern
   turns:
-  - label: "\u30BF\u30FC\u30F31\uFF1A\u727D\u5236+\u653B\u6483"
+  - label: "\u30BF\u30FC\u30F31\uFF1A\u653B\u6483+\u727D\u5236"
     cards:
-    - {fileID: 11400000, guid: 36e8a1a124dc7784eb541a2d12f596aa, type: 2}
     - {fileID: 11400000, guid: 92fd14ada95ee5e44be418d66e79cfe5, type: 2}
+    - {fileID: 11400000, guid: 36e8a1a124dc7784eb541a2d12f596aa, type: 2}
     conditions: []
-  - label: "\u30BF\u30FC\u30F32\uFF1A\u591A\u6BB5+\u727D\u5236"
+  - label: "\u30BF\u30FC\u30F32\uFF1A\u30B2\u30FC\u30B8\u5438\u53CE+\u727D\u5236"
     cards:
-    - {fileID: 11400000, guid: 4f4a48501ca2dc64597f0bcd5ada7d94, type: 2}
+    - {fileID: 11400000, guid: 95b168fafaee17a42be42895d077e111, type: 2}
     - {fileID: 11400000, guid: 92fd14ada95ee5e44be418d66e79cfe5, type: 2}
     conditions:
     - conditionType: 0
@@ -30,9 +30,9 @@ MonoBehaviour:
       - {fileID: 11400000, guid: d81946b5d8b4acf49a683882f7db982c, type: 2}
       - {fileID: 11400000, guid: 39fd9b79d05006244afe273766b9c94f, type: 2}
       label: 
-  - label: "\u30BF\u30FC\u30F33\uFF1A\u653B\u6483+\u653B\u6483"
+  - label: "\u30BF\u30FC\u30F33\uFF1A\u30CE\u30A4\u30BA+\u653B\u6483"
     cards:
-    - {fileID: 11400000, guid: 36e8a1a124dc7784eb541a2d12f596aa, type: 2}
+    - {fileID: 11400000, guid: 5532ae03b1043f845baaafd74f408efc, type: 2}
     - {fileID: 11400000, guid: 36e8a1a124dc7784eb541a2d12f596aa, type: 2}
     conditions:
     - conditionType: 1
@@ -40,10 +40,10 @@ MonoBehaviour:
       threshold: 0.5
       overrideCards: []
       label: 
-  - label: "\u30BF\u30FC\u30F34\uFF1A\u591A\u6BB5+\u727D\u5236"
+  - label: "\u30BF\u30FC\u30F34\uFF1A\u30B2\u30FC\u30B8\u5438\u53CE+\u591A\u6BB5"
     cards:
+    - {fileID: 11400000, guid: 95b168fafaee17a42be42895d077e111, type: 2}
     - {fileID: 11400000, guid: 4f4a48501ca2dc64597f0bcd5ada7d94, type: 2}
-    - {fileID: 11400000, guid: 92fd14ada95ee5e44be418d66e79cfe5, type: 2}
     conditions:
     - conditionType: 1
       priority: 1
