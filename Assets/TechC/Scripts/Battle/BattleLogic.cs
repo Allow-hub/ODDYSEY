@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using TechC.Core.Manager;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
@@ -47,10 +48,10 @@ namespace TechC.ODDESEY.Battle
         private float counterProbability = 0f;
         private int counterDamage = 0;
 
-        // ─── 反撃バフ ─────────────────────────────────────────────────────
-        private List<ReflectBuff> playerReflectBuffs = new();
-        private List<ReflectBuff> enemyReflectBuffs = new();
-        private bool isProcessingReflect = false;
+        // ─── バフ/デバフ ──────────────────────────────────────────────────
+        private List<IBattleBuff> playerBuffs = new();
+        private List<IBattleBuff> enemyBuffs = new();
+        private bool isProcessingOnTakeDamage = false;
 
         // ─── ダメージ軽減バッファ ─────────────────────────────────────────
         private int currentTurnDamageReductionRate = 0;
@@ -133,8 +134,8 @@ namespace TechC.ODDESEY.Battle
 
             playerShield.Reset();
             enemyShield.Reset();
-            playerReflectBuffs = new List<ReflectBuff>();
-            enemyReflectBuffs = new List<ReflectBuff>();
+            playerBuffs = new List<IBattleBuff>();
+            enemyBuffs = new List<IBattleBuff>();
             resolver = new CardResolver(this);
             isBattleActive = true;
             turnCount = 0;
@@ -205,11 +206,11 @@ namespace TechC.ODDESEY.Battle
                 playZone[i]?.Clear();
             activeEffects.RemoveAll(e => e.IsExpired);
 
-            // 反撃バフのカウントを進めて失効したものを除去
-            playerReflectBuffs.ForEach(b => b.TickTurnEnd());
-            playerReflectBuffs.RemoveAll(b => b.IsExpired);
-            enemyReflectBuffs.ForEach(b => b.TickTurnEnd());
-            enemyReflectBuffs.RemoveAll(b => b.IsExpired);
+            // バフのカウントを進めて失効したものを除去
+            playerBuffs.ForEach(b => b.TickTurnEnd());
+            playerBuffs.RemoveAll(b => b.IsExpired);
+            enemyBuffs.ForEach(b => b.TickTurnEnd());
+            enemyBuffs.RemoveAll(b => b.IsExpired);
 
             // 手札はクリアしない。使用・破砕されたカードは ConfirmTurn の discardCallback と
             // BreakCard() で既に除去済み。残ったカードは次のターンに持ち越す。
@@ -234,21 +235,13 @@ namespace TechC.ODDESEY.Battle
                 result.IsWon = true;
             }
 
-            // 敵が反撃バフを保持している場合、攻撃してきたプレイヤーに反撃
-            if (!isProcessingReflect && enemyReflectBuffs.Count > 0)
+            // 敵がバフを保持している場合、被弾反応を処理する
+            if (!isProcessingOnTakeDamage)
             {
-                isProcessingReflect = true;
-                foreach (var buff in enemyReflectBuffs)
-                {
-                    if (buff.TryTrigger(result, this))
-                    {
-                        result.SetExtra(ResultKeys.ReflectTriggered, true);
-                        result.SetExtra(ResultKeys.ReflectDamage, buff.Damage);
-                        CustomLogger.Info($"敵反撃バフ発動: プレイヤーに{buff.Damage}ダメージ", LogTagUtil.TagCard);
-                        break;
-                    }
-                }
-                isProcessingReflect = false;
+                isProcessingOnTakeDamage = true;
+                foreach (var buff in enemyBuffs.OfType<IOnTakeDamageBuff>())
+                    buff.OnTakeDamage(result, this);
+                isProcessingOnTakeDamage = false;
             }
         }
 
@@ -273,21 +266,13 @@ namespace TechC.ODDESEY.Battle
                 result.IsWon = false;
             }
 
-            // プレイヤーが反撃バフを保持している場合、攻撃してきた敵に反撃
-            if (!isProcessingReflect && playerReflectBuffs.Count > 0)
+            // プレイヤーがバフを保持している場合、被弾反応を処理する
+            if (!isProcessingOnTakeDamage)
             {
-                isProcessingReflect = true;
-                foreach (var buff in playerReflectBuffs)
-                {
-                    if (buff.TryTrigger(result, this))
-                    {
-                        result.SetExtra(ResultKeys.ReflectTriggered, true);
-                        result.SetExtra(ResultKeys.ReflectDamage, buff.Damage);
-                        CustomLogger.Info($"プレイヤー反撃バフ発動: 敵に{buff.Damage}ダメージ", LogTagUtil.TagCard);
-                        break;
-                    }
-                }
-                isProcessingReflect = false;
+                isProcessingOnTakeDamage = true;
+                foreach (var buff in playerBuffs.OfType<IOnTakeDamageBuff>())
+                    buff.OnTakeDamage(result, this);
+                isProcessingOnTakeDamage = false;
             }
         }
 
@@ -452,18 +437,15 @@ namespace TechC.ODDESEY.Battle
             counterDamage = damage;
         }
 
-        /// <summary>反撃バフを登録する。ReflectBuffEffect から呼ぶ。</summary>
-        public void RegisterReflectBuff(int damage, bool isOnPlayer)
+        /// <summary>バフを登録する。forPlayer=true でプレイヤー側、false で敵側に付与。</summary>
+        public void AddBuff(IBattleBuff buff, bool forPlayer)
         {
-            var buff = new ReflectBuff(damage, isOnPlayer);
-            if (isOnPlayer)
-                playerReflectBuffs.Add(buff);
-            else
-                enemyReflectBuffs.Add(buff);
+            if (forPlayer) playerBuffs.Add(buff);
+            else enemyBuffs.Add(buff);
         }
 
-        public bool PlayerHasReflectBuff => playerReflectBuffs.Count > 0;
-        public bool EnemyHasReflectBuff => enemyReflectBuffs.Count > 0;
+        public bool PlayerHasReflectBuff => playerBuffs.Count > 0;
+        public bool EnemyHasReflectBuff => enemyBuffs.Count > 0;
 
         // ─── 激アツハンドラ ───────────────────────────────────────────
 

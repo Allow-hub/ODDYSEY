@@ -37,7 +37,7 @@ namespace TechC.ODDESEY.Battle
             int damage = context.Source.GetEffectiveValue(effectIndex);
             bool isOnPlayer = !context.IsEnemy;
 
-            context.Logic.RegisterReflectBuff(damage, isOnPlayer);
+            context.Logic.AddBuff(new ReflectBuff(damage, isOnPlayer), isOnPlayer);
             context.Result.IsHit = true;
 
             CustomLogger.Info(

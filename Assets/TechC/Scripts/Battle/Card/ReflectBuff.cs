@@ -1,14 +1,17 @@
+using TechC.ODDESEY.Util;
+using TechC.VBattle.Core.Extensions;
+
 namespace TechC.ODDESEY.Battle
 {
     /// <summary>
-    /// 反撃バフ状態。保持者が攻撃を受けたとき、攻撃者に反撃ダメージを与える。
+    /// 反撃バフ。保持者が攻撃を受けたとき攻撃者に反撃ダメージを与える。
     ///
     /// ライフサイクル：
-    ///   付与されたターン → EndTurn で appliedThisTurn を落とすだけ（カウント維持）
+    ///   付与されたターンの EndTurn → appliedThisTurn を落とすだけ（カウント維持）
     ///   次のターン中に発動 → count=0 で即失効
     ///   発動しなかった場合 → 次のターン EndTurn で count-- → 失効
     /// </summary>
-    public class ReflectBuff
+    public class ReflectBuff : IOnTakeDamageBuff
     {
         public int Damage { get; }
 
@@ -26,26 +29,25 @@ namespace TechC.ODDESEY.Battle
             IsOnPlayer = isOnPlayer;
         }
 
-        /// <summary>
-        /// 保持者が攻撃を受けたとき呼ぶ。発動すれば攻撃者にダメージを与えカウントをゼロにする。
-        /// </summary>
-        /// <returns>発動したか</returns>
-        public bool TryTrigger(CardResolveResult result, BattleLogic logic)
+        public void OnTakeDamage(CardResolveResult result, BattleLogic logic)
         {
-            if (count <= 0) return false;
+            if (count <= 0) return;
 
             if (IsOnPlayer)
                 logic.TakeEnemyDamage(Damage, result);   // プレイヤー反撃 → 敵にダメージ
             else
                 logic.TakePlayerDamage(Damage, result);  // 敵反撃 → プレイヤーにダメージ
 
+            result.SetExtra(ResultKeys.ReflectTriggered, true);
+            result.SetExtra(ResultKeys.ReflectDamage, Damage);
+
             count = 0;
-            return true;
+
+            CustomLogger.Info(
+                $"{(IsOnPlayer ? "プレイヤー" : "敵")}反撃バフ発動: {(IsOnPlayer ? "敵" : "プレイヤー")}に{Damage}ダメージ",
+                LogTagUtil.TagCard);
         }
 
-        /// <summary>
-        /// ターン終了時に呼ぶ。付与されたターンは初回をスキップし、次回以降カウントを1減らす。
-        /// </summary>
         public void TickTurnEnd()
         {
             if (appliedThisTurn)
