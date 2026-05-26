@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3fdb6f8a95326e64d9c7d68529b05767, type: 3}
-  m_Name: BreakIncreaseCardData
+  m_Name: E-13_BreakCostEffect
   m_EditorClassIdentifier: Assembly-CSharp::TechC.ODDESEY.Battle.CardData
   CardName: "\u7834\u58CA\u30B3\u30B9\u30C8"
   CardSprite: {fileID: 21300000, guid: 2b7e771c9cc158649b0d493c86d505e3, type: 3}

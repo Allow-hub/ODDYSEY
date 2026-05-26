@@ -9,10 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e5a0b0541bdeb8544b875176ebe549cc, type: 3}
-  m_Name: New Break Cost Increase Effect
-  m_EditorClassIdentifier: Assembly-CSharp::TechC.ODDESEY.Battle.BreakCostIncreaseEffect
+  m_Script: {fileID: 11500000, guid: 83af22386c3270146b1edca616a964a2, type: 3}
+  m_Name: Ef_E-09_ReflectBuff
+  m_EditorClassIdentifier: Assembly-CSharp::TechC.ODDESEY.Battle.ReflectBuffEffect
   ProbabilityMin: 1
   ProbabilityMax: 1
-  StageMin: 1
-  StageMax: 1
+  ReflectDamageMin: 3
+  ReflectDamageMax: 8
