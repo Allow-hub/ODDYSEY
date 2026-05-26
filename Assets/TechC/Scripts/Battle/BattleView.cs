@@ -263,6 +263,25 @@ namespace TechC.ODDESEY.Battle
                 currentEnemyView.PlayDamageAnimationAsync(isHit: true).Forget();
                 await enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax);
             }
+
+            int reflectDamage = result.GetExtra<int>(ResultKeys.ReflectDamage);
+            if (reflectDamage > 0)
+            {
+                if (result.IsPlayer)
+                {
+                    // プレイヤーが敵を攻撃 → 敵の反撃バフ発動 → プレイヤーがダメージを受ける
+                    damagePopupManager.Show(reflectDamage, isHit: true, isPlayerDamage: true, isCritical: false,
+                        playerPopupAnchor != null ? playerPopupAnchor.position : playerView.transform.position);
+                    await playerHpView.UpdateHpAsync(result.PlayerHpAfter, playerHpMax);
+                }
+                else
+                {
+                    // 敵がプレイヤーを攻撃 → プレイヤーの反撃バフ発動 → 敵がダメージを受ける
+                    damagePopupManager.Show(reflectDamage, isHit: true, isPlayerDamage: false, isCritical: false,
+                        enemyPopupAnchor != null ? enemyPopupAnchor.position : currentEnemyView.transform.position);
+                    await enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax);
+                }
+            }
         }
 
         public async UniTask UpdatePlayerHpAsync(int current, int max)

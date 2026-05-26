@@ -21,20 +21,20 @@ namespace TechC.ODDESEY.Battle
     {
         // プレイしても何も起こらないので確率・値の強化は無効
         public override bool CanBoostProbability => false;
-        public override bool CanBoostValue       => false;
+        public override bool CanBoostValue => false;
 
         public override void RollValue(EffectSlot slot, bool isHotMode)
         {
             slot.RolledProbability = 1f; // 確定発動（でも何もしない）
-            slot.Value             = 0;
-            slot.ValueRange        = (0, 0);
+            slot.Value = 0;
+            slot.ValueRange = (0, 0);
         }
 
         public override void Execute(EffectContext context, EffectExecutionState state, int effectIndex)
         {
             // プレイしても何も起こらない
             state.PreviousEffectHadHitCheck = false;
-            context.Result.IsHit            = false;
+            context.Result.IsHit = false;
 
             OnNoiseResolved(context, state);
 

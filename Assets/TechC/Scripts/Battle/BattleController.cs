@@ -106,11 +106,23 @@ namespace TechC.ODDESEY.Battle
         {
             battleLogic.IncrementScrapCount();
             battleLogic.AddLuckGauge(ev.LuckGain);
+            battleLogic.BreakCard(ev.Card.CardInstance);
             PublishLuckGaugeChanged();
             battleView.UpdateLuckGaugeAsync(
                 battleLogic.LuckGauge,
                 battleLogic.LuckGaugeMax,
                 battleLogic.IsHotMode).Forget();
+            // 黒ノイズを砕いたとき HP を削って HpView を更新
+            if (ev.Card?.CardData?.Effects?.Count > 0
+                && ev.Card.CardData.Effects[0] is BlackNoiseEffect blackNoise
+                && blackNoise.BreakSelfDamage > 0)
+            {
+                var dummyResult = new CardResolveResult();
+                battleLogic.TakePlayerDamage(
+                    blackNoise.BreakSelfDamage, dummyResult, isPiercing: true);
+                battleView.UpdatePlayerHpAsync(
+                    battleLogic.PlayerHp, battleLogic.PlayerHpMax).Forget();
+            }
         }
 
         private void OnLuckGaugeSpendRequested(LuckGaugeSpendRequestEvent ev)

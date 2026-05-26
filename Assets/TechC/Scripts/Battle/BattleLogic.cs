@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using TechC.Core.Manager;
 using TechC.ODDESEY.Util;
 using TechC.VBattle.Core.Extensions;
@@ -32,6 +33,8 @@ namespace TechC.ODDESEY.Battle
 
         private int currentTurnEnemyProbabilityReductionRate = 0;
         private float currentTurnLuckGaugeMultiplier = 1f;
+        private int currentTurnLimitBreakCostLevelBonus = 0;
+        private int nextTurnLimitBreakCostLevelBonus = 0;
 
         // ─── 敵行動パターン ───────────────────────────────────────────────
         private EnemyActionPattern actionPattern;
@@ -44,6 +47,11 @@ namespace TechC.ODDESEY.Battle
         private bool hasCounter = false;
         private float counterProbability = 0f;
         private int counterDamage = 0;
+
+        // ─── バフ/デバフ ──────────────────────────────────────────────────
+        private List<IBattleBuff> playerBuffs = new();
+        private List<IBattleBuff> enemyBuffs = new();
+        private bool isProcessingOnTakeDamage = false;
 
         // ─── ダメージ軽減バッファ ─────────────────────────────────────────
         private int currentTurnDamageReductionRate = 0;
@@ -64,7 +72,6 @@ namespace TechC.ODDESEY.Battle
 
         // ─── ターン中の破砕カウント ────────────────────────────────────────
         private int currentTurnScrapCount = 0;
-        private readonly HashSet<int> brokenInstanceIds = new();
 
         /// <summary>このターンにプレイヤーが砕いたカードの枚数。ScrapCannonEffect が参照する。</summary>
         public int CurrentTurnScrapCount => currentTurnScrapCount;
@@ -127,6 +134,8 @@ namespace TechC.ODDESEY.Battle
 
             playerShield.Reset();
             enemyShield.Reset();
+            playerBuffs = new List<IBattleBuff>();
+            enemyBuffs = new List<IBattleBuff>();
             resolver = new CardResolver(this);
             isBattleActive = true;
             turnCount = 0;
@@ -135,6 +144,9 @@ namespace TechC.ODDESEY.Battle
         public TurnData BeginTurn()
         {
             turnCount++;
+
+            currentTurnLimitBreakCostLevelBonus = nextTurnLimitBreakCostLevelBonus;
+            nextTurnLimitBreakCostLevelBonus = 0;
 
             foreach (var effect in activeEffects)
                 effect.OnTurnStart(this);
@@ -173,9 +185,7 @@ namespace TechC.ODDESEY.Battle
                 IsHotMode,
                 discardCallback: instance =>
                 {
-                    bool isNoise = instance.OriginalData.Effects.Count > 0
-                        && instance.OriginalData.Effects[0] is NoiseEffect;
-                    if (!isNoise)
+                    if (!instance.OriginalData.RemoveFromBattleAfterUse)
                         discardPile.Add(instance.OriginalData);
                     hand.Remove(instance);
                 });
@@ -196,16 +206,14 @@ namespace TechC.ODDESEY.Battle
                 playZone[i]?.Clear();
             activeEffects.RemoveAll(e => e.IsExpired);
 
-            // 手札に残ったカードを捨て札へ（ノイズ系・砕いたカードは除外）
-            foreach (var instance in hand)
-            {
-                bool isNoise = instance.OriginalData.Effects.Count > 0
-                    && instance.OriginalData.Effects[0] is NoiseEffect;
-                if (!isNoise && !brokenInstanceIds.Contains(instance.InstanceId))
-                    discardPile.Add(instance.OriginalData);
-            }
-            hand.Clear();
-            brokenInstanceIds.Clear();
+            // バフのカウントを進めて失効したものを除去
+            playerBuffs.ForEach(b => b.TickTurnEnd());
+            playerBuffs.RemoveAll(b => b.IsExpired);
+            enemyBuffs.ForEach(b => b.TickTurnEnd());
+            enemyBuffs.RemoveAll(b => b.IsExpired);
+
+            // 手札はクリアしない。使用・破砕されたカードは ConfirmTurn の discardCallback と
+            // BreakCard() で既に除去済み。残ったカードは次のターンに持ち越す。
         }
 
         public void TakeEnemyDamage(int damage, CardResolveResult result, bool isPiercing = false)
@@ -225,6 +233,15 @@ namespace TechC.ODDESEY.Battle
                 isBattleActive = false;
                 result.IsBattleEnd = true;
                 result.IsWon = true;
+            }
+
+            // 敵がバフを保持している場合、被弾反応を処理する
+            if (!isProcessingOnTakeDamage)
+            {
+                isProcessingOnTakeDamage = true;
+                foreach (var buff in enemyBuffs.OfType<IOnTakeDamageBuff>())
+                    buff.OnTakeDamage(result, this);
+                isProcessingOnTakeDamage = false;
             }
         }
 
@@ -248,6 +265,15 @@ namespace TechC.ODDESEY.Battle
                 result.IsBattleEnd = true;
                 result.IsWon = false;
             }
+
+            // プレイヤーがバフを保持している場合、被弾反応を処理する
+            if (!isProcessingOnTakeDamage)
+            {
+                isProcessingOnTakeDamage = true;
+                foreach (var buff in playerBuffs.OfType<IOnTakeDamageBuff>())
+                    buff.OnTakeDamage(result, this);
+                isProcessingOnTakeDamage = false;
+            }
         }
 
         public void ApplyStatusToEnemy(StatusType type, int duration, int stackCount) { }
@@ -261,6 +287,18 @@ namespace TechC.ODDESEY.Battle
 
         public void AddLuckGauge(float amount)
             => luckGauge.Add(amount * currentTurnLuckGaugeMultiplier);
+
+        /// <summary>
+        /// このターンに適用する限界突破コストの増分を登録する。
+        /// ITurnEffect の OnTurnStart から呼ばれて、BeginTurn 内の TurnData に含められる。
+        /// </summary>
+        public int CurrentTurnLimitBreakCostLevelBonus
+            => currentTurnLimitBreakCostLevelBonus;
+
+        public void AddNextTurnLimitBreakCostLevelBonus(int amount)
+        {
+            nextTurnLimitBreakCostLevelBonus += amount;
+        }
 
         public bool TrySpendLuckGauge(float cost) => luckGauge.TrySpend(cost);
 
@@ -362,6 +400,14 @@ namespace TechC.ODDESEY.Battle
         public void SetEnemyProbabilityReduction(int rate)
             => currentTurnEnemyProbabilityReductionRate = Mathf.Clamp(rate, 0, 100);
 
+        public void BreakCard(CardInstance instance)
+        {
+            if (instance == null) return;
+            if (!instance.OriginalData.RemoveFromBattleAfterScrap)
+                discardPile.Add(instance.OriginalData);
+            hand.Remove(instance);
+        }
+
         /// <summary>
         /// 敵カードからプレイヤーの運ゲージを強制的に削る。
         /// GaugeDrainEffect から呼ぶ。
@@ -390,6 +436,16 @@ namespace TechC.ODDESEY.Battle
             counterProbability = probability;
             counterDamage = damage;
         }
+
+        /// <summary>バフを登録する。forPlayer=true でプレイヤー側、false で敵側に付与。</summary>
+        public void AddBuff(IBattleBuff buff, bool forPlayer)
+        {
+            if (forPlayer) playerBuffs.Add(buff);
+            else enemyBuffs.Add(buff);
+        }
+
+        public bool PlayerHasReflectBuff => playerBuffs.Count > 0;
+        public bool EnemyHasReflectBuff => enemyBuffs.Count > 0;
 
         // ─── 激アツハンドラ ───────────────────────────────────────────
 

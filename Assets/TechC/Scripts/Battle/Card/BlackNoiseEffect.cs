@@ -1,5 +1,3 @@
-using TechC.ODDESEY.Util;
-using TechC.VBattle.Core.Extensions;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Battle
