@@ -9,10 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6114e2c26a0c4b0419bd8d50235c5752, type: 3}
-  m_Name: CounterEffect
+  m_Script: {fileID: 11500000, guid: dbbddc5363438a34ea5a981991bb674b, type: 3}
+  m_Name: Ef_A-04_Critical
   m_EditorClassIdentifier: 
-  ProbabilityMin: 0.75
-  ProbabilityMax: 0.9
-  CounterDamageMin: 3
-  CounterDamageMax: 8
+  ProbabilityMin: 0.3
+  ProbabilityMax: 0.5
+  BaseDamageMin: 2
+  BaseDamageMax: 3
+  CriticalMultiplier: 3

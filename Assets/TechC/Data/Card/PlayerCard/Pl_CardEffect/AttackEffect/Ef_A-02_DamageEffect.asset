@@ -9,11 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b70b7c1f0ec195a4a9446e6a3e6a3397, type: 3}
-  m_Name: ScrapCannon
+  m_Script: {fileID: 11500000, guid: 6708bc7d66b2a3242938440f443d44a7, type: 3}
+  m_Name: Ef_A-02_DamageEffect
   m_EditorClassIdentifier: 
-  ProbabilityMin: 0.5
-  ProbabilityMax: 0.7
-  DamagePerScrap: 3
+  ProbabilityMin: 0.7
+  ProbabilityMax: 1
   DamageMin: 3
-  DamageMax: 3
+  DamageMax: 6
+  UsePositionBonus: 0
+  RequiredSlotIndex: 0
+  PositionBonusDamage: 5

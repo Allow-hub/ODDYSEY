@@ -9,12 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 31d0b04ceb9b5b444a2cc0758e9ac9f3, type: 3}
-  m_Name: AdversityStrikeEffect
+  m_Script: {fileID: 11500000, guid: 80af863e241da914ab0ec3356ecd8313, type: 3}
+  m_Name: Ef_S-04_ProMaxEffect
   m_EditorClassIdentifier: 
-  ProbabilityMin: 0.1
-  ProbabilityMax: 0.3
-  DamageMin: 5
-  DamageMax: 5
-  GaugeThreshold: 15
-  DamageMultiplier: 4
+  ProbabilityMin: 1
+  ProbabilityMax: 1
