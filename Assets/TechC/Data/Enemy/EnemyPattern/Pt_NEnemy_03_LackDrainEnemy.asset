@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 23e603bd23b2e0a46968177a41981b6a, type: 3}
-  m_Name: Pt_NEnemy_03_LackDrain
+  m_Name: Pt_NEnemy_03_LackDrainEnemy
   m_EditorClassIdentifier: Assembly-CSharp::TechC.ODDESEY.Battle.EnemyActionPattern
   turns:
   - label: "\u30BF\u30FC\u30F31\uFF1A\u653B\u6483+\u727D\u5236"

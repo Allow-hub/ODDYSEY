@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4328699e7337bcf43b5a90fae4da249e, type: 3}
-  m_Name: NEnemy01
+  m_Name: NEnemy04
   m_EditorClassIdentifier: 
   EnemyName: NormalEnemy
   Hp: 25
   EnemyPrefab: {fileID: 4010116763971566608, guid: adc13e9e96de69b4fbebbf57c7f6a711,
     type: 3}
   EnemySprite: {fileID: 21300000, guid: 1aeecc9941f8629429dbeef0db3b4da8, type: 3}
-  ActionPattern: {fileID: 11400000, guid: c03cd11709babac4cb2ba7abbd203cc0, type: 2}
+  ActionPattern: {fileID: 11400000, guid: 7ee538a30508d2d459ab54042978327b, type: 2}
   AudioData: {fileID: 11400000, guid: d2368eb406dd706449df9ad6a1b2974b, type: 2}

@@ -1,0 +1,105 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23e603bd23b2e0a46968177a41981b6a, type: 3}
+  m_Name: Pt_BEnemy_01_BossEnemy01
+  m_EditorClassIdentifier: Assembly-CSharp::TechC.ODDESEY.Battle.EnemyActionPattern
+  turns:
+  - label: "\u30BF\u30FC\u30F31"
+    cards:
+    - {fileID: 11400000, guid: 92fd14ada95ee5e44be418d66e79cfe5, type: 2}
+    - {fileID: 11400000, guid: 36e8a1a124dc7784eb541a2d12f596aa, type: 2}
+    conditions:
+    - conditionType: 1
+      priority: 1
+      threshold: 0.7
+      overrideCards:
+      - {fileID: 11400000, guid: 075b3ae37cf16e044bbe3d802d1bcaaa, type: 2}
+      - {fileID: 11400000, guid: 92fd14ada95ee5e44be418d66e79cfe5, type: 2}
+      label: "\u30BF\u30FC\u30F31\uFF1APhase2"
+    - conditionType: 1
+      priority: 1
+      threshold: 0.4
+      overrideCards:
+      - {fileID: 11400000, guid: 8c7bde8903e23d6448fb3ac46961843d, type: 2}
+      - {fileID: 11400000, guid: 92fd14ada95ee5e44be418d66e79cfe5, type: 2}
+      label: "\u30BF\u30FC\u30F31\uFF1APhase3"
+  - label: "\u30BF\u30FC\u30F32"
+    cards:
+    - {fileID: 11400000, guid: 5532ae03b1043f845baaafd74f408efc, type: 2}
+    - {fileID: 11400000, guid: 92fd14ada95ee5e44be418d66e79cfe5, type: 2}
+    conditions:
+    - conditionType: 0
+      priority: 0
+      threshold: 1
+      overrideCards:
+      - {fileID: 11400000, guid: fcba6fd3cc894f448affd225bccc3f6d, type: 2}
+      - {fileID: 11400000, guid: 68baab97d208a2d4c862377ebbbce589, type: 2}
+      label: "\u4E88\u544A\u30A2\u30EA"
+    - conditionType: 1
+      priority: 1
+      threshold: 0.7
+      overrideCards:
+      - {fileID: 11400000, guid: 4f4a48501ca2dc64597f0bcd5ada7d94, type: 2}
+      - {fileID: 11400000, guid: ab836efb1d90c2942a2b6b46dd6557dc, type: 2}
+      label: "\u30BF\u30FC\u30F32\uFF1APhase2"
+    - conditionType: 1
+      priority: 1
+      threshold: 0.4
+      overrideCards:
+      - {fileID: 11400000, guid: ab836efb1d90c2942a2b6b46dd6557dc, type: 2}
+      - {fileID: 11400000, guid: 36e8a1a124dc7784eb541a2d12f596aa, type: 2}
+      label: "\u30BF\u30FC\u30F32\uFF1APhase3"
+  - label: "\u30BF\u30FC\u30F33"
+    cards:
+    - {fileID: 11400000, guid: 21a12994829c19c4db63cdfba60dde2a, type: 2}
+    - {fileID: 11400000, guid: 36e8a1a124dc7784eb541a2d12f596aa, type: 2}
+    conditions:
+    - conditionType: 1
+      priority: 1
+      threshold: 0.7
+      overrideCards:
+      - {fileID: 11400000, guid: 95b168fafaee17a42be42895d077e111, type: 2}
+      - {fileID: 11400000, guid: 92fd14ada95ee5e44be418d66e79cfe5, type: 2}
+      label: "\u30BF\u30FC\u30F33\uFF1APhase2"
+    - conditionType: 1
+      priority: 1
+      threshold: 0.4
+      overrideCards:
+      - {fileID: 11400000, guid: 075b3ae37cf16e044bbe3d802d1bcaaa, type: 2}
+      - {fileID: 11400000, guid: 2ddeb4f10d09dcd429582302c8f197f5, type: 2}
+      label: "\u30BF\u30FC\u30F33\uFF1APhase3"
+  - label: "\u30BF\u30FC\u30F34"
+    cards:
+    - {fileID: 11400000, guid: 4f4a48501ca2dc64597f0bcd5ada7d94, type: 2}
+    - {fileID: 11400000, guid: 92fd14ada95ee5e44be418d66e79cfe5, type: 2}
+    conditions:
+    - conditionType: 1
+      priority: 1
+      threshold: 0.7
+      overrideCards:
+      - {fileID: 11400000, guid: ab836efb1d90c2942a2b6b46dd6557dc, type: 2}
+      - {fileID: 11400000, guid: 36e8a1a124dc7784eb541a2d12f596aa, type: 2}
+      label: "\u30BF\u30FC\u30F34\uFF1APhase2"
+    - conditionType: 1
+      priority: 1
+      threshold: 0.4
+      overrideCards:
+      - {fileID: 11400000, guid: 5532ae03b1043f845baaafd74f408efc, type: 2}
+      - {fileID: 11400000, guid: 5532ae03b1043f845baaafd74f408efc, type: 2}
+      label: "\u30BF\u30FC\u30F34\uFF1APhase3"
+    - conditionType: 0
+      priority: 0
+      threshold: 1
+      overrideCards:
+      - {fileID: 11400000, guid: fcba6fd3cc894f448affd225bccc3f6d, type: 2}
+      - {fileID: 11400000, guid: ab836efb1d90c2942a2b6b46dd6557dc, type: 2}
+      label: "\u4E88\u544A\u3042\u308A"
