@@ -182,6 +182,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: StageSelectScene
       objectReference: {fileID: 0}
+    - target: {fileID: 8732167439502823693, guid: 27dfbbbe8642bfc4492f2fad78fab9c8,
+        type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 1080
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
