@@ -17,5 +17,5 @@ MonoBehaviour:
   EnemyPrefab: {fileID: 4010116763971566608, guid: d26b4404bad879c4dbae925ae8618ffe,
     type: 3}
   EnemySprite: {fileID: 21300000, guid: e858786047620824282c4ea64f0105b5, type: 3}
-  ActionPattern: {fileID: 11400000, guid: 7b728c85def3c424f9de710ee2ca8819, type: 2}
+  ActionPattern: {fileID: 11400000, guid: 20a08acb9e5b2274592b4338ca2dc759, type: 2}
   AudioData: {fileID: 11400000, guid: d7fcc2b55c51d6049906072a4e5dcbfa, type: 2}
