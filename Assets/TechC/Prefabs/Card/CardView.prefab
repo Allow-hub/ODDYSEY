@@ -56,7 +56,7 @@ MonoBehaviour:
   probabilityText: {fileID: 909612100961150638}
   damageText: {fileID: 8368261969385386141}
   cardImage: {fileID: 1628214694697326076}
-  defaultSprite: {fileID: 21300000, guid: 6dc3d3dba7ee53c48a0d09205fcf0dc7, type: 3}
+  defaultSprite: {fileID: 21300000, guid: 2b7e771c9cc158649b0d493c86d505e3, type: 3}
   outline: {fileID: 936390531548715908}
   dragRotation: {x: 0, y: 0, z: 13}
   moveDuration: 1

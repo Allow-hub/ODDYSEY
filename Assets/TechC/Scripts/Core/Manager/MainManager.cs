@@ -26,7 +26,7 @@ namespace TechC.Core.Manager
 
         [Header("デバッグ用設定")]
         [SerializeField] private StartPhase debugStartPhase = StartPhase.Map;
-        [SerializeField] private EventData debugEventData;
+        [SerializeField] private EventData  debugEventData;
 
         private GameObject currentPrefab;
         private MapController mapController;
@@ -137,10 +137,16 @@ namespace TechC.Core.Manager
 
         // ─── ハンドラ ─────────────────────────────────────────────────────
 
-        private void HandleBattleRequested(BattleRewardData rewardData, bool isBoss)
+        private void HandleBattleRequested(
+            BattleRewardData rewardData, bool isBoss,
+            EnemyData enemyData)
         {
             pendingRewardData = rewardData;
-            pendingIsBoss = isBoss;
+            pendingIsBoss     = isBoss;
+            // EnemyData をセット（null のとき debugEnemyData を使う）
+            var resolved = enemyData ?? gameContext?.CurrentEnemy;
+            if (resolved != null && gameContext != null)
+                gameContext.CurrentEnemy = resolved;
             EnterPhase(StartPhase.Battle);
         }
 
@@ -166,7 +172,7 @@ namespace TechC.Core.Manager
             if (pendingIsBoss)
                 EnterPhase(StartPhase.Result);
             else
-                EnterPhase(StartPhase.CardReward);
+                EnterPhase(StartPhase.Map);
         }
 
         private void HandleBattleLost()

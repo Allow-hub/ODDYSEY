@@ -28,7 +28,7 @@ namespace TechC.ODDESEY.Map
 
         // ─── Events ───────────────────────────────────────────────────────
         /// <summary>RewardData・ボスフラグを含むバトル開始通知</summary>
-        public event Action<BattleRewardData, bool> OnBattleRequested;
+        public event Action<BattleRewardData, bool, TechC.ODDESEY.Battle.EnemyData> OnBattleRequested;
         public event Action<EventData> OnEventRequested;
         public event Action OnStageCompleted;
 
@@ -92,8 +92,7 @@ namespace TechC.ODDESEY.Map
             switch (chosenType)
             {
                 case NodeType.Battle:
-                    // RewardData と IsBossNode を渡す
-                    OnBattleRequested?.Invoke(node.RewardData, node.IsBossNode);
+                    OnBattleRequested?.Invoke(node.RewardData, node.IsBossNode, node.EnemyData);
                     break;
 
                 case NodeType.Event:
@@ -103,7 +102,7 @@ namespace TechC.ODDESEY.Map
                     break;
 
                 case NodeType.Rest:
-                    OnBattleRequested?.Invoke(null, false);
+                    OnBattleRequested?.Invoke(null, false, null);
                     break;
             }
         }
