@@ -164,6 +164,7 @@ namespace TechC.ODDESEY.Battle
             CardResolveResult result, int playerHpMax, int enemyHpMax)
         {
             var animType = result.AnimationType;
+            CustomLogger.Info($"カード解決開始: IsPlayer={result.IsPlayer}, CardId={result.CardInstanceId}, AnimType={animType}", LogTagUtil.TagBattle);
 
             if (result.IsPlayer)
             {
@@ -282,6 +283,14 @@ namespace TechC.ODDESEY.Battle
                     await enemyHpView.UpdateHpAsync(result.EnemyHpAfter, enemyHpMax);
                 }
             }
+
+            // ■ 敵撃破時に敵の死亡アニメーション完了を待つ
+            if (result.IsBattleEnd && result.IsWon)
+            {
+                await currentEnemyView.PlayDefeatedAnimationAsync();
+            }
+            
+            CustomLogger.Info($"カード解決完了: IsPlayer={result.IsPlayer}, CardId={result.CardInstanceId}", LogTagUtil.TagBattle);
         }
 
         public async UniTask UpdatePlayerHpAsync(int current, int max)
@@ -371,8 +380,8 @@ namespace TechC.ODDESEY.Battle
         /// 流れ：
         ///   ① スローモーション（HitStop 的なタイムスケール操作）
         ///   ② 通常速度に戻す
-        ///   ③ Animator で BattleEnd トリガー + 敵死亡アニメを並列再生
-        ///   ④ 敵死亡アニメ完了を待つ
+        ///   ③ 敵死亡アニメ完了を待つ
+        ///   ④ 数秒待機後に WinEffect 表示完了
         /// </summary>
         public async UniTask ShowWinEffectAsync()
         {
@@ -382,6 +391,9 @@ namespace TechC.ODDESEY.Battle
 
             if (currentEnemyView != null)
                 await currentEnemyView.PlayDefeatedAnimationAsync();
+
+            // 敵死亡アニメーション完了後、数秒待機
+            await UniTask.Delay(TimeSpan.FromSeconds(3f), ignoreTimeScale: true);
         }
 
         /// <summary>

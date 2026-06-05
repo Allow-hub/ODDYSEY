@@ -32,5 +32,8 @@ namespace TechC.ODDESEY.Map
 
         [Tooltip("ボスノード。trueの場合はバトル勝利後にリザルトへ進みます。")]
         public bool IsBossNode = false;
+
+        [Tooltip("このバトルで戦う敵SO。null のとき MainManager の debugEnemyData を使う")]
+        public Battle.EnemyData EnemyData;
     }
 }

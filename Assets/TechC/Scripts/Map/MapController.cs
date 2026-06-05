@@ -41,7 +41,12 @@ namespace TechC.ODDESEY.Map
         [Header("Luck Gauge")]
         [SerializeField] private LuckGaugeView luckGaugeView;
 
-        public event Action<BattleRewardData, bool> OnBattleRequested;
+        [Header("デバッグ")]
+        [SerializeField] private int debugStartNodeIndex = 0;
+
+        // ─── Events ───────────────────────────────────────────────────────
+        /// <summary>RewardData・ボスフラグを含むバトル開始通知</summary>
+        public event Action<BattleRewardData, bool, TechC.ODDESEY.Battle.EnemyData> OnBattleRequested;
         public event Action<EventData> OnEventRequested;
         public event Action OnStageCompleted;
 
@@ -74,12 +79,32 @@ namespace TechC.ODDESEY.Map
 
             if (progressState == null)
             {
-                Debug.LogError("[MapController] progressState is null.");
-                return;
-            }
+                if (i >= mapData.nodes.Count)
+                {
+                    nodeViews[i].gameObject.SetActive(false);
+                    continue;
+                }
 
-            int current = progressState.currentNodeIndex;
-            List<int> selectableNodeIndices = GetSelectableNodeIndices(current);
+                nodeViews[i].gameObject.SetActive(true);
+
+                MapNodeView.NodeState state;
+                if (i < current) state = MapNodeView.NodeState.Cleared;
+                else if (i == current) state = MapNodeView.NodeState.Active;
+                else state = MapNodeView.NodeState.Locked;
+
+                nodeViews[i].Setup(mapData.nodes[i], state, choiceButtonPrefab, OnNodeChoiceSelected);
+            }
+        }
+
+        // ─── 選択処理 ────────────────────────────────────────────────────
+
+        private void OnNodeChoiceSelected(NodeType chosenType)
+        {
+            int selectedIndex = progressState.currentNodeIndex;
+            progressState.Advance();
+
+            bool isLastNode = progressState.IsCompleted(mapData.nodes.Count);
+            var node = mapData.nodes[selectedIndex];
 
             // Visible nodes are generated from a single hidden template, so designers
             // do not need to keep prefab children in sync with StageMapData.
@@ -616,7 +641,9 @@ namespace TechC.ODDESEY.Map
             switch (node.nodeType)
             {
                 case NodeType.Battle:
-                    OnBattleRequested?.Invoke(node.RewardData, node.IsBossNode);
+                    // 最後のノードは強制的にボスフラグを立てる → 勝利後 Result へ
+                    bool isBoss = node.IsBossNode || isLastNode;
+                    OnBattleRequested?.Invoke(node.RewardData, isBoss, node.EnemyData);
                     break;
 
                 case NodeType.Event:
@@ -625,10 +652,12 @@ namespace TechC.ODDESEY.Map
                         Debug.LogWarning($"[MapController] nodes[{selectedIndex}] has no EventData.");
                     }
                     OnEventRequested?.Invoke(node.EventData);
+                    if (isLastNode) OnStageCompleted?.Invoke();
                     break;
 
                 case NodeType.Rest:
-                    OnBattleRequested?.Invoke(null, false);
+                    OnBattleRequested?.Invoke(null, false, null);
+                    if (isLastNode) OnStageCompleted?.Invoke();
                     break;
             }
         }

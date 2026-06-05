@@ -17,6 +17,8 @@ namespace TechC.ODDESEY.Event
         [Header("HP表示")]
         [SerializeField] private HpView playerHpView;
 
+        [SerializeField] private Vector3 eventPrefabPositionOffset = new Vector3(0, -100, 0);
+
         private GameObject currentEventPrefab;
         private EventLogic logic = new();
 
@@ -66,6 +68,7 @@ namespace TechC.ODDESEY.Event
                 onRemoveGauge: OnRemoveGaugePressed
             );
             currentEventPrefab = Instantiate(data.EventPrefab, canvasObj.transform);
+            currentEventPrefab.transform.localPosition += eventPrefabPositionOffset;
             RefreshView();
         }
 

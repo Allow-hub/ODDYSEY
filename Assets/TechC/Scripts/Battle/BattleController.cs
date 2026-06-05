@@ -60,8 +60,20 @@ namespace TechC.ODDESEY.Battle
                 bool battleEnded = false;
                 foreach (var result in resolveResults)
                 {
-                    await battleView.PlayCardResolveAsync(
+                    // 各カード解決にタイムアウト処理を追加（両方のアニメ + カメラ完了を確実に待つ）
+                    var resolveTimeout = UniTask.Delay(
+                        System.TimeSpan.FromSeconds(15f), // 15秒でタイムアウト
+                        ignoreTimeScale: true);
+                    var resolveTask = battleView.PlayCardResolveAsync(
                         result, battleLogic.PlayerHpMax, battleLogic.EnemyHpMax);
+
+                    var completedIndex = await UniTask.WhenAny(resolveTask, resolveTimeout);
+                    if (completedIndex == 1)
+                    {
+                        CustomLogger.Warning(
+                            $"カード解決がタイムアウト (IsPlayer={result.IsPlayer}, CardId={result.CardInstanceId})",
+                            LogTagUtil.TagBattle);
+                    }
 
                     if (result.IsBattleEnd)
                     {

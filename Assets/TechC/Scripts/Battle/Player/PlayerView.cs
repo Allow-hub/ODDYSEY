@@ -88,9 +88,29 @@ namespace TechC.ODDESEY.Battle
             CardAnimationType animType = CardAnimationType.Attack,
             bool skipCameraReturn = false)
         {
-            await UniTask.WhenAll(attackFinishedTcs.Task, cameraTask);
+            // ① 攻撃アニメ完了とカメラアニメ完了を待つ（タイムアウト付き）
+            var timeout = UniTask.Delay(System.TimeSpan.FromSeconds(8f), ignoreTimeScale: true);
+            var allTasks = UniTask.WhenAll(attackFinishedTcs.Task, cameraTask);
+            var completedTask = await UniTask.WhenAny(allTasks, timeout);
+
+            if (completedTask == 1) // timeout が完了した場合
+            {
+                CustomLogger.Warning(
+                    $"プレイヤー攻撃完了がタイムアウト",
+                    LogTagUtil.TagBattle);
+            }
+            else
+            {
+                CustomLogger.Info(
+                    $"プレイヤー攻撃完了（アニメ+カメラ） animType={animType}",
+                    LogTagUtil.TagBattle);
+            }
+
+            // ② アニメハッシュをリセット
             var (animHash, _) = ResolveParams(animType);
             animator?.SetBool(animHash, false);
+
+            // ③ カメラ復帰
             if (!skipCameraReturn)
                 await CameraManager.I.ReturnToDefaultAsync();
         }
