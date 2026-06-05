@@ -1,5 +1,6 @@
 using TechC.ODDESEY.Event;
 using TechC.ODDESEY.Reward;
+using TechC.ODDESEY.Battle;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Map
@@ -109,7 +110,7 @@ namespace TechC.ODDESEY.Map
             isSubscribed = false;
         }
 
-        private void HandleBattleRequested(BattleRewardData rewardData, bool isBossNode)
+        private void HandleBattleRequested(BattleRewardData rewardData, bool isBossNode, EnemyData enemyData)
         {
             Debug.Log($"[MapPreviewBootstrap] Battle selected. IsBossNode: {isBossNode}");
             RefreshAfterSelection();

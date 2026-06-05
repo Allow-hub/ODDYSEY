@@ -42,16 +42,13 @@ namespace TechC.ODDESEY.Map
         [Header("Luck Gauge")]
         [SerializeField] private LuckGaugeView luckGaugeView;
 
-        [Header("デバッグ")]
-        [SerializeField] private int debugStartNodeIndex = 0;
-
-        // ─── Events ───────────────────────────────────────────────────────
-        /// <summary>RewardData・ボスフラグを含むバトル開始通知</summary>
-        public event Action<BattleRewardData, bool, TechC.ODDESEY.Battle.EnemyData> OnBattleRequested;
         [Header("Player Status")]
         [SerializeField] private HpView playerHpView;
 
-        public event Action<BattleRewardData, bool> OnBattleRequested;
+        [Header("Debug")]
+        [SerializeField, Min(0)] private int debugStartNodeIndex;
+
+        public event Action<BattleRewardData, bool, EnemyData> OnBattleRequested;
         public event Action<EventData> OnEventRequested;
         public event Action OnStageCompleted;
 
@@ -65,6 +62,11 @@ namespace TechC.ODDESEY.Map
         {
             mapData = data;
             progressState = progress;
+
+            if (debugStartNodeIndex > 0 && mapData != null && progressState != null)
+            {
+                progressState.currentNodeIndex = Mathf.Clamp(debugStartNodeIndex, 0, Mathf.Max(0, mapData.nodes.Count - 1));
+            }
 
             if (luckGaugeView != null)
             {
@@ -94,38 +96,21 @@ namespace TechC.ODDESEY.Map
 
         private void RefreshView()
         {
-            if (mapData == null) return;
+            if (mapData == null)
+            {
+                return;
+            }
 
             ClearChoiceButtons();
 
             if (progressState == null)
             {
-                if (i >= mapData.nodes.Count)
-                {
-                    nodeViews[i].gameObject.SetActive(false);
-                    continue;
-                }
-
-                nodeViews[i].gameObject.SetActive(true);
-
-                MapNodeView.NodeState state;
-                if (i < current) state = MapNodeView.NodeState.Cleared;
-                else if (i == current) state = MapNodeView.NodeState.Active;
-                else state = MapNodeView.NodeState.Locked;
-
-                nodeViews[i].Setup(mapData.nodes[i], state, choiceButtonPrefab, OnNodeChoiceSelected);
+                Debug.LogError("[MapController] progressState is null.");
+                return;
             }
-        }
 
-        // ─── 選択処理 ────────────────────────────────────────────────────
-
-        private void OnNodeChoiceSelected(NodeType chosenType)
-        {
-            int selectedIndex = progressState.currentNodeIndex;
-            progressState.Advance();
-
-            bool isLastNode = progressState.IsCompleted(mapData.nodes.Count);
-            var node = mapData.nodes[selectedIndex];
+            int current = progressState.currentNodeIndex;
+            List<int> selectableNodeIndices = GetSelectableNodeIndices(current);
 
             // Visible nodes are generated from a single hidden template, so designers
             // do not need to keep prefab children in sync with StageMapData.
@@ -172,7 +157,7 @@ namespace TechC.ODDESEY.Map
         {
             List<int> result = new();
 
-            if (current < 0 || current >= mapData.nodes.Count)
+            if (mapData == null || current < 0 || current >= mapData.nodes.Count)
             {
                 return result;
             }
@@ -189,6 +174,7 @@ namespace TechC.ODDESEY.Map
                         result.Add(nodeIndex);
                     }
                 }
+
                 return result;
             }
 
@@ -650,20 +636,32 @@ namespace TechC.ODDESEY.Map
 
         private void OnNodeChoiceSelected(int selectedIndex)
         {
+            if (mapData == null || progressState == null)
+            {
+                return;
+            }
+
             if (selectedIndex < 0 || selectedIndex >= mapData.nodes.Count)
             {
                 Debug.LogWarning($"[MapController] selectedIndex is out of range: {selectedIndex}");
                 return;
             }
 
+            List<int> selectableNodeIndices = GetSelectableNodeIndices(progressState.currentNodeIndex);
+            if (!selectableNodeIndices.Contains(selectedIndex))
+            {
+                Debug.LogWarning($"[MapController] selectedIndex is not selectable: {selectedIndex}");
+                return;
+            }
+
             progressState.MoveTo(selectedIndex);
             StageNodeData node = mapData.nodes[selectedIndex];
+            bool isTerminalNode = GetNextNodeIndices(selectedIndex).Count == 0;
 
             switch (node.nodeType)
             {
                 case NodeType.Battle:
-                    // 最後のノードは強制的にボスフラグを立てる → 勝利後 Result へ
-                    bool isBoss = node.IsBossNode || isLastNode;
+                    bool isBoss = node.IsBossNode || isTerminalNode;
                     OnBattleRequested?.Invoke(node.RewardData, isBoss, node.EnemyData);
                     break;
 
@@ -672,13 +670,20 @@ namespace TechC.ODDESEY.Map
                     {
                         Debug.LogWarning($"[MapController] nodes[{selectedIndex}] has no EventData.");
                     }
+
                     OnEventRequested?.Invoke(node.EventData);
-                    if (isLastNode) OnStageCompleted?.Invoke();
+                    if (isTerminalNode) OnStageCompleted?.Invoke();
                     break;
 
                 case NodeType.Rest:
-                    OnBattleRequested?.Invoke(null, false, null);
-                    if (isLastNode) OnStageCompleted?.Invoke();
+                    if (isTerminalNode)
+                    {
+                        OnStageCompleted?.Invoke();
+                    }
+                    else
+                    {
+                        RefreshView();
+                    }
                     break;
             }
         }
@@ -687,8 +692,12 @@ namespace TechC.ODDESEY.Map
         {
             foreach (NodeChoiceButton btn in spawnedChoiceButtons)
             {
-                if (btn != null) Destroy(btn.gameObject);
+                if (btn != null)
+                {
+                    Destroy(btn.gameObject);
+                }
             }
+
             spawnedChoiceButtons.Clear();
         }
 
