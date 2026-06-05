@@ -26,6 +26,9 @@ namespace TechC.ODDESEY.Map
         [Header("ラッキーゲージ")]
         [SerializeField] private LuckGaugeView luckGaugeView;
 
+        [Header("デバッグ")]
+        [SerializeField] private int debugStartNodeIndex = 0;
+
         // ─── Events ───────────────────────────────────────────────────────
         /// <summary>RewardData・ボスフラグを含むバトル開始通知</summary>
         public event Action<BattleRewardData, bool, TechC.ODDESEY.Battle.EnemyData> OnBattleRequested;
@@ -42,6 +45,9 @@ namespace TechC.ODDESEY.Map
         {
             mapData = data;
             progressState = progress;
+
+            if (debugStartNodeIndex > 0)
+                progressState.currentNodeIndex = Mathf.Clamp(debugStartNodeIndex, 0, data.nodes.Count - 1);
 
             luckGaugeView.Setup(100f);
             luckGaugeView.UpdateGaugeImmediate(MainManager.I?.LuckGaugeValue ?? 0f, 100f, false);
@@ -81,28 +87,27 @@ namespace TechC.ODDESEY.Map
             int selectedIndex = progressState.currentNodeIndex;
             progressState.Advance();
 
-            if (progressState.IsCompleted(mapData.nodes.Count))
-            {
-                OnStageCompleted?.Invoke();
-                return;
-            }
-
+            bool isLastNode = progressState.IsCompleted(mapData.nodes.Count);
             var node = mapData.nodes[selectedIndex];
 
             switch (chosenType)
             {
                 case NodeType.Battle:
-                    OnBattleRequested?.Invoke(node.RewardData, node.IsBossNode, node.EnemyData);
+                    // 最後のノードは強制的にボスフラグを立てる → 勝利後 Result へ
+                    bool isBoss = node.IsBossNode || isLastNode;
+                    OnBattleRequested?.Invoke(node.RewardData, isBoss, node.EnemyData);
                     break;
 
                 case NodeType.Event:
                     if (node.EventData == null)
                         Debug.LogWarning($"[MapController] nodes[{selectedIndex}] に EventData がアサインされていません。");
                     OnEventRequested?.Invoke(node.EventData);
+                    if (isLastNode) OnStageCompleted?.Invoke();
                     break;
 
                 case NodeType.Rest:
                     OnBattleRequested?.Invoke(null, false, null);
+                    if (isLastNode) OnStageCompleted?.Invoke();
                     break;
             }
         }
