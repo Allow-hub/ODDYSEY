@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TechC.Core.Manager;
+using TechC.ODDESEY;
 using TechC.ODDESEY.Battle;
 using TechC.ODDESEY.Event;
 using TechC.ODDESEY.Reward;
@@ -47,6 +48,10 @@ namespace TechC.ODDESEY.Map
         // ─── Events ───────────────────────────────────────────────────────
         /// <summary>RewardData・ボスフラグを含むバトル開始通知</summary>
         public event Action<BattleRewardData, bool, TechC.ODDESEY.Battle.EnemyData> OnBattleRequested;
+        [Header("Player Status")]
+        [SerializeField] private HpView playerHpView;
+
+        public event Action<BattleRewardData, bool> OnBattleRequested;
         public event Action<EventData> OnEventRequested;
         public event Action OnStageCompleted;
 
@@ -67,8 +72,24 @@ namespace TechC.ODDESEY.Map
                 luckGaugeView.UpdateGaugeImmediate(MainManager.I?.LuckGaugeValue ?? 0f, 100f, false);
             }
 
+            RefreshPlayerHpView();
             RebuildNodeViews();
             RefreshView();
+        }
+
+        private void RefreshPlayerHpView()
+        {
+            if (playerHpView == null)
+            {
+                return;
+            }
+
+            GameContext context = MainManager.I?.GameContext;
+            int maxHp = context != null ? context.PlayerHpMax : 100;
+            int currentHp = context != null ? context.PlayerHp : maxHp;
+
+            playerHpView.Setup(maxHp);
+            playerHpView.UpdateImmediate(currentHp, maxHp);
         }
 
         private void RefreshView()

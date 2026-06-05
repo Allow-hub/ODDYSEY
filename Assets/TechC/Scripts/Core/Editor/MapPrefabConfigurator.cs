@@ -1,3 +1,4 @@
+using TechC.ODDESEY.Battle;
 using TechC.ODDESEY.Map;
 using UnityEditor;
 using UnityEngine;
@@ -9,6 +10,7 @@ namespace TechC.Core.Editor
     {
         private const string MapPrefabPath = "Assets/TechC/Prefabs/Map/Map.prefab";
         private const string NodeViewPrefabPath = "Assets/TechC/Prefabs/Map/NodeView.prefab";
+        private const string PlayerHpPrefabPath = "Assets/TechC/Prefabs/UI/PlayerHpSlider.prefab";
         private static readonly Vector2 ViewportSize = new(1180f, 440f);
         private static readonly Vector2 ViewportPosition = new(0f, 70f);
         private static readonly Vector2 NodeContentSize = new(1240f, 440f);
@@ -42,8 +44,9 @@ namespace TechC.Core.Editor
                 ConfigureNodeContent(scrollView, nodeContent);
                 ScrollRect scrollRect = ConfigureScrollRect(scrollView, nodeContent);
                 MapNodeView nodeTemplate = ConfigureNodeTemplate(nodeContent);
+                HpView playerHpView = ConfigurePlayerHpView(canvas.transform);
 
-                ConfigureController(controller, nodeContent, scrollRect, nodeTemplate);
+                ConfigureController(controller, nodeContent, scrollRect, nodeTemplate, playerHpView);
                 ConfigureCurrentMarkers(prefabRoot);
 
                 PrefabUtility.SaveAsPrefabAsset(prefabRoot, MapPrefabPath);
@@ -160,7 +163,56 @@ namespace TechC.Core.Editor
             return templateObject.GetComponent<MapNodeView>();
         }
 
-        private static void ConfigureController(MapController controller, RectTransform nodeContent, ScrollRect scrollRect, MapNodeView nodeTemplate)
+        private static HpView ConfigurePlayerHpView(Transform canvasTransform)
+        {
+            HpView existing = FindHpView(canvasTransform);
+            if (existing == null)
+            {
+                GameObject playerHpPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerHpPrefabPath);
+                if (playerHpPrefab == null)
+                {
+                    Debug.LogError($"Player HP prefab not found: {PlayerHpPrefabPath}");
+                    return null;
+                }
+
+                GameObject playerHpObject = (GameObject)PrefabUtility.InstantiatePrefab(playerHpPrefab, canvasTransform);
+                existing = playerHpObject.GetComponent<HpView>();
+            }
+
+            if (existing == null)
+            {
+                return null;
+            }
+
+            existing.name = "PlayerHpSlider";
+
+            if (existing.transform is RectTransform hpRect)
+            {
+                hpRect.SetParent(canvasTransform, false);
+                hpRect.anchorMin = new Vector2(0f, 1f);
+                hpRect.anchorMax = new Vector2(0f, 1f);
+                hpRect.pivot = new Vector2(0f, 1f);
+                hpRect.anchoredPosition = new Vector2(48f, -48f);
+                hpRect.sizeDelta = new Vector2(360f, 56f);
+            }
+
+            return existing;
+        }
+
+        private static HpView FindHpView(Transform parent)
+        {
+            foreach (HpView hpView in parent.GetComponentsInChildren<HpView>(includeInactive: true))
+            {
+                if (hpView.name == "PlayerHpSlider")
+                {
+                    return hpView;
+                }
+            }
+
+            return null;
+        }
+
+        private static void ConfigureController(MapController controller, RectTransform nodeContent, ScrollRect scrollRect, MapNodeView nodeTemplate, HpView playerHpView)
         {
             SerializedObject serializedController = new(controller);
             serializedController.FindProperty("nodeViewPrefab").objectReferenceValue = nodeTemplate;
@@ -173,6 +225,7 @@ namespace TechC.Core.Editor
             serializedController.FindProperty("centerCurrentNodeOnRefresh").boolValue = true;
             serializedController.FindProperty("animateCurrentNodeScroll").boolValue = true;
             serializedController.FindProperty("currentNodeScrollDuration").floatValue = 0.35f;
+            serializedController.FindProperty("playerHpView").objectReferenceValue = playerHpView;
             serializedController.ApplyModifiedPropertiesWithoutUndo();
         }
 

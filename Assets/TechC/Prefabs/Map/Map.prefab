@@ -132,8 +132,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f74c78676c30ccb4bb23d80cde2888ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   nodeViewPrefab: {fileID: 1305339187943306247}
   nodeContainer: {fileID: 5259026263147870452}
   nodeViews: []
@@ -151,6 +151,7 @@ MonoBehaviour:
     type: 3}
   choiceButtonContainer: {fileID: 910000000000000002}
   luckGaugeView: {fileID: 4579587505512673656}
+  playerHpView: {fileID: 930000000000000003}
 --- !u!1 &4293165259662376453
 GameObject:
   m_ObjectHideFlags: 0
@@ -252,6 +253,7 @@ RectTransform:
   m_Children:
   - {fileID: 3351247908966598835}
   - {fileID: 4750400757400874298}
+  - {fileID: 930000000000000002}
   - {fileID: 920000000000000002}
   - {fileID: 910000000000000002}
   m_Father: {fileID: 2772306547981742157}
@@ -324,6 +326,92 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!1001 &930000000000000001
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 6033474213475272405}
+    m_Modifications:
+    - target: {fileID: 6373273496423627847, guid: f98ba3dd0b03dce408033560f276b5eb,
+        type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6373273496423627847, guid: f98ba3dd0b03dce408033560f276b5eb,
+        type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6373273496423627847, guid: f98ba3dd0b03dce408033560f276b5eb,
+        type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6373273496423627847, guid: f98ba3dd0b03dce408033560f276b5eb,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6373273496423627847, guid: f98ba3dd0b03dce408033560f276b5eb,
+        type: 3}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6373273496423627847, guid: f98ba3dd0b03dce408033560f276b5eb,
+        type: 3}
+      propertyPath: m_Pivot.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6373273496423627847, guid: f98ba3dd0b03dce408033560f276b5eb,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 48
+      objectReference: {fileID: 0}
+    - target: {fileID: 6373273496423627847, guid: f98ba3dd0b03dce408033560f276b5eb,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -48
+      objectReference: {fileID: 0}
+    - target: {fileID: 6373273496423627847, guid: f98ba3dd0b03dce408033560f276b5eb,
+        type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 360
+      objectReference: {fileID: 0}
+    - target: {fileID: 6373273496423627847, guid: f98ba3dd0b03dce408033560f276b5eb,
+        type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 56
+      objectReference: {fileID: 0}
+    - target: {fileID: 7784169747819734054, guid: f98ba3dd0b03dce408033560f276b5eb,
+        type: 3}
+      propertyPath: m_Name
+      value: PlayerHpSlider
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f98ba3dd0b03dce408033560f276b5eb, type: 3}
+--- !u!224 &930000000000000002 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 6373273496423627847, guid: f98ba3dd0b03dce408033560f276b5eb,
+    type: 3}
+  m_PrefabInstance: {fileID: 930000000000000001}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &930000000000000003 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3215468227645324831, guid: f98ba3dd0b03dce408033560f276b5eb,
+    type: 3}
+  m_PrefabInstance: {fileID: 930000000000000001}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00fd474f877840c42ae749de795febbd, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &920000000000000001
 GameObject:
   m_ObjectHideFlags: 0
