@@ -12,26 +12,25 @@ namespace TechC.ODDESEY.Map
         Rest,
     }
 
-    /// <summary>
-    /// マップ上の1ノードの定義。
-    ///
-    /// 変更点：
-    ///   - RewardData を追加。Battle ノードのバトル勝利後に使う報酬候補。
-    ///   - IsBossNode を追加。true のとき勝利後はリザルト画面へ遷移する。
-    /// </summary>
     [System.Serializable]
     public class StageNodeData
     {
-        [Tooltip("この列で選べる選択肢リスト（1つなら強制進行）")]
+        [Tooltip("このノード自体の種類。マップ上の見た目と下部ボタンの見た目に使います。")]
+        public NodeType nodeType = NodeType.Battle;
+
+        [Tooltip("このノードから次に進めるノードのindex。未設定なら次のindexへ進む線形マップとして扱います。")]
+        public List<int> nextNodeIndices = new();
+
+        [Tooltip("旧仕様の選択肢リスト。移行用に残しています。")]
         public List<NodeType> choices = new() { NodeType.Battle };
 
-        [Tooltip("choices に Event が含まれる場合にアサインする EventData")]
+        [Tooltip("Eventノードの場合に使うEventData。MapIconTypeもここから参照します。")]
         public EventData EventData;
 
-        [Tooltip("choices に Battle が含まれる場合の報酬カード候補")]
+        [Tooltip("Battleノードの場合に使う報酬データ。")]
         public BattleRewardData RewardData;
 
-        [Tooltip("ボスバトル。true のとき勝利後はカード選択をスキップしてリザルトへ遷移する")]
+        [Tooltip("ボスノード。trueの場合はバトル勝利後にリザルトへ進みます。")]
         public bool IsBossNode = false;
     }
 }

@@ -1,70 +1,159 @@
 using System;
-using System.Collections.Generic;
+using TechC.ODDESEY.Event;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace TechC.ODDESEY.Map
 {
+    /// <summary>
+    /// Visual-only node view for the map graph.
+    /// Interaction is intentionally handled by NodeChoiceButton, not by this object.
+    /// </summary>
     public class MapNodeView : MonoBehaviour
     {
-        [SerializeField] private Transform buttonContainer;
-        private readonly List<NodeChoiceButton> spawnedButtons = new();
+        [Header("Visual References")]
+        [SerializeField] private Image tileImage;
+        [SerializeField] private Image iconImage;
+        [SerializeField] private GameObject currentMarker;
+        [SerializeField] private bool alignCurrentMarkerBottomToNodeCenter = true;
+        [SerializeField] private Vector2 currentMarkerSize = new(100f, 100f);
+        [SerializeField] private Vector2 currentMarkerOffset = new(0f, -12f);
 
-        public enum NodeState { Locked, Active, Cleared }
+        [Header("Tile Sprites")]
+        [SerializeField] private Sprite tileNoneSprite;
+        [SerializeField] private Sprite tileOffSprite;
+        [SerializeField] private Sprite tileBattleSprite;
+        [SerializeField] private Sprite tileHealSprite;
+        [SerializeField] private Sprite tileCardSprite;
+        [SerializeField] private Sprite tileRiskSprite;
 
-        public void Setup(
-            StageNodeData data,
-            NodeState state,
-            GameObject buttonPrefab,
-            Action<NodeType> onChoiceSelected)
+        [Header("Icon Sprites")]
+        [SerializeField] private Sprite iconBattleSprite;
+        [SerializeField] private Sprite iconHealSprite;
+        [SerializeField] private Sprite iconCardSprite;
+        [SerializeField] private Sprite iconRiskSprite;
+
+        public enum NodeState { Locked, Active, Cleared, Current }
+
+        private void Awake()
         {
-            ClearButtons();
+            ApplyCurrentMarkerLayout();
+        }
 
-            // --- ガード ---
-            if (buttonPrefab == null)
-            {
-                Debug.LogError($"[MapNodeView] {gameObject.name}: choiceButtonPrefab が null です。MapController の Inspector をご確認ください。");
-                return;
-            }
+        private void OnValidate()
+        {
+            ApplyCurrentMarkerLayout();
+        }
+
+        public void Setup(StageNodeData data, NodeState state)
+        {
             if (data == null)
             {
-                Debug.LogError($"[MapNodeView] {gameObject.name}: StageNodeData が null です。");
+                Debug.LogError($"[MapNodeView] {gameObject.name}: StageNodeData is null.");
                 return;
             }
 
-            foreach (NodeType type in data.choices)
-            {
-                // buttonContainer が未設定なら自分自身の下に生成
-                Transform parent = buttonContainer != null ? buttonContainer : transform;
-
-                GameObject go = Instantiate(buttonPrefab, parent);
-
-                // Prefab のルートになければ子を含めて探す
-                NodeChoiceButton btn = go.GetComponentInChildren<NodeChoiceButton>(includeInactive: true);
-
-                if (btn == null)
-                {
-                    Debug.LogError(
-                        $"[MapNodeView] {gameObject.name}: Instantiate した '{go.name}' に " +
-                        $"NodeChoiceButton が見つかりません。Prefab にコンポーネントをアタッチしてください。");
-                    Destroy(go);
-                    continue;
-                }
-
-                btn.Setup(type, onChoiceSelected);
-                btn.SetInteractable(state == NodeState.Active);
-                spawnedButtons.Add(btn);
-            }
+            EventMapIconType eventIconType = GetEventIconType(data);
+            ApplyVisualState(data, state, eventIconType);
         }
 
-        private void ClearButtons()
+        private void ApplyVisualState(StageNodeData data, NodeState state, EventMapIconType eventIconType)
         {
-            foreach (NodeChoiceButton btn in spawnedButtons)
+            NodeType displayType = data.nodeType;
+
+            if (tileImage != null)
             {
-                if (btn != null) Destroy(btn.gameObject);
+                tileImage.sprite = state switch
+                {
+                    NodeState.Cleared => tileOffSprite,
+                    NodeState.Current => tileOffSprite,
+                    NodeState.Active => GetActiveTileSprite(displayType, eventIconType),
+                    _ => tileNoneSprite,
+                };
+                tileImage.enabled = tileImage.sprite != null;
             }
-            spawnedButtons.Clear();
+
+            if (iconImage != null)
+            {
+                iconImage.sprite = GetIconSprite(displayType, eventIconType);
+                iconImage.enabled = (state == NodeState.Active || state == NodeState.Locked) && iconImage.sprite != null;
+            }
+
+            if (currentMarker != null)
+            {
+                ApplyCurrentMarkerLayout();
+                currentMarker.SetActive(state == NodeState.Current);
+            }
         }
 
-        private void OnDestroy() => ClearButtons();
+        private void ApplyCurrentMarkerLayout()
+        {
+            if (currentMarker == null)
+            {
+                return;
+            }
+
+            // The player marker is a location marker, not a node decoration.
+            // Its bottom edge marks the node center, so the standing art sits on the node.
+            currentMarker.transform.SetAsLastSibling();
+
+            if (!alignCurrentMarkerBottomToNodeCenter)
+            {
+                return;
+            }
+
+            if (currentMarker.transform is not RectTransform markerRect)
+            {
+                return;
+            }
+
+            markerRect.anchorMin = new Vector2(0.5f, 0.5f);
+            markerRect.anchorMax = new Vector2(0.5f, 0.5f);
+            markerRect.pivot = new Vector2(0.5f, 0f);
+            markerRect.anchoredPosition = currentMarkerOffset;
+            markerRect.sizeDelta = currentMarkerSize;
+            markerRect.localScale = Vector3.one;
+        }
+
+        private static EventMapIconType GetEventIconType(StageNodeData data)
+        {
+            return data.EventData != null
+                ? data.EventData.MapIconType
+                : EventMapIconType.Risk;
+        }
+
+        private Sprite GetActiveTileSprite(NodeType nodeType, EventMapIconType eventIconType)
+        {
+            return nodeType switch
+            {
+                NodeType.Battle => tileBattleSprite,
+                NodeType.Rest => tileHealSprite,
+                NodeType.Event => eventIconType switch
+                {
+                    EventMapIconType.Card => tileCardSprite,
+                    EventMapIconType.Heal => tileHealSprite,
+                    EventMapIconType.Risk => tileRiskSprite,
+                    _ => tileRiskSprite,
+                },
+                _ => tileNoneSprite,
+            };
+        }
+
+        private Sprite GetIconSprite(NodeType nodeType, EventMapIconType eventIconType)
+        {
+            return nodeType switch
+            {
+                NodeType.Battle => iconBattleSprite,
+                NodeType.Rest => iconHealSprite,
+                NodeType.Event => eventIconType switch
+                {
+                    EventMapIconType.Card => iconCardSprite,
+                    EventMapIconType.Heal => iconHealSprite,
+                    EventMapIconType.Risk => iconRiskSprite,
+                    _ => iconRiskSprite,
+                },
+                _ => null,
+            };
+        }
     }
 }

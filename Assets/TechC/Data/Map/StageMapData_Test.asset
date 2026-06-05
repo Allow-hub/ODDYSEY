@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: baa26e38cf2ac3746ba09809ad142c0e, type: 3}
-  m_Name: StageMapData
+  m_Name: StageMapData_Test
   m_EditorClassIdentifier: 
   nodes:
   - nodeType: 2

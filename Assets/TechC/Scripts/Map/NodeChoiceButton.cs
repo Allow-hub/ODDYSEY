@@ -1,61 +1,78 @@
 using System;
 using TMPro;
+using TechC.ODDESEY.Event;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace TechC.ODDESEY.Map
 {
-    /// <summary>
-    /// マップ上の選択肢ボタン1つ。
-    /// NodeType に応じたラベル表示とコールバック通知を担当する。
-    /// </summary>
     public class NodeChoiceButton : MonoBehaviour
     {
         [SerializeField] private Button button;
+        [FormerlySerializedAs("tileImage")]
+        [SerializeField] private Image backgroundImage;
         [SerializeField] private TextMeshProUGUI label;
-        // [SerializeField] private Image iconImage;
 
-        // NodeType ごとのアイコンは Inspector で差し替え可能にする
-        [Header("アイコン設定")]
-        [SerializeField] private Sprite battleIcon;
-        [SerializeField] private Sprite eventIcon;
-        [SerializeField] private Sprite restIcon;
+        [Header("Labels")]
+        [SerializeField] private string battleLabel = "戦闘";
+        [SerializeField] private string healLabel = "回復";
+        [SerializeField] private string cardLabel = "カード";
+        [SerializeField] private string riskLabel = "危険";
+        [SerializeField] private string restLabel = "休憩";
 
-        private Action<NodeType> onSelected;
+        private Action onSelected;
 
-        /// <summary>
-        /// ボタンをセットアップする。
-        /// </summary>
-        /// <param name="nodeType">この選択肢の種類</param>
-        /// <param name="callback">選択時に呼ぶコールバック</param>
         public void Setup(NodeType nodeType, Action<NodeType> callback)
+        {
+            Setup(nodeType, EventMapIconType.Risk, () => callback?.Invoke(nodeType));
+        }
+
+        public void Setup(NodeType nodeType, EventMapIconType eventIconType, Action callback)
         {
             onSelected = callback;
 
-            label.text = GetLabel(nodeType);
-            // if (iconImage != null)
-            //     iconImage.sprite = GetIcon(nodeType);
+            if (backgroundImage != null)
+            {
+                backgroundImage.enabled = true;
+            }
+
+            if (label != null)
+            {
+                label.text = GetLabel(nodeType, eventIconType);
+                label.gameObject.SetActive(true);
+            }
+
+            if (button == null)
+            {
+                Debug.LogError($"[NodeChoiceButton] {gameObject.name}: Button is not assigned.");
+                return;
+            }
 
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => onSelected?.Invoke(nodeType));
+            button.onClick.AddListener(() => onSelected?.Invoke());
         }
 
-        public void SetInteractable(bool interactable) => button.interactable = interactable;
-
-        private string GetLabel(NodeType type) => type switch
+        public void SetInteractable(bool interactable)
         {
-            NodeType.Battle => "X",
-            NodeType.Event  => "?",
-            NodeType.Rest   => "R",
-            _               => type.ToString(),
-        };
+            if (button != null)
+            {
+                button.interactable = interactable;
+            }
+        }
 
-        private Sprite GetIcon(NodeType type) => type switch
+        private string GetLabel(NodeType type, EventMapIconType eventIconType) => type switch
         {
-            NodeType.Battle => battleIcon,
-            NodeType.Event  => eventIcon,
-            NodeType.Rest   => restIcon,
-            _               => null,
+            NodeType.Battle => battleLabel,
+            NodeType.Event => eventIconType switch
+            {
+                EventMapIconType.Card => cardLabel,
+                EventMapIconType.Heal => healLabel,
+                EventMapIconType.Risk => riskLabel,
+                _ => riskLabel,
+            },
+            NodeType.Rest => restLabel,
+            _ => type.ToString(),
         };
     }
 }
