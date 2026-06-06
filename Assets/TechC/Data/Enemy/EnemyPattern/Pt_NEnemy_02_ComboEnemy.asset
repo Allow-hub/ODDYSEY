@@ -22,31 +22,14 @@ MonoBehaviour:
     cards:
     - {fileID: 11400000, guid: 36e8a1a124dc7784eb541a2d12f596aa, type: 2}
     - {fileID: 11400000, guid: 4f4a48501ca2dc64597f0bcd5ada7d94, type: 2}
-    conditions:
-    - conditionType: 0
-      priority: 0
-      threshold: 1
-      overrideCards:
-      - {fileID: 11400000, guid: d81946b5d8b4acf49a683882f7db982c, type: 2}
-      - {fileID: 11400000, guid: 39fd9b79d05006244afe273766b9c94f, type: 2}
-      label: 
+    conditions: []
   - label: "\u30BF\u30FC\u30F33\uFF1A\u5F37\u591A\u6BB5+\u727D\u5236"
     cards:
     - {fileID: 11400000, guid: ab836efb1d90c2942a2b6b46dd6557dc, type: 2}
     - {fileID: 11400000, guid: 92fd14ada95ee5e44be418d66e79cfe5, type: 2}
-    conditions:
-    - conditionType: 1
-      priority: 1
-      threshold: 0.5
-      overrideCards: []
-      label: 
+    conditions: []
   - label: "\u30BF\u30FC\u30F34\uFF1A\u591A\u6BB5+\u591A\u6BB5"
     cards:
     - {fileID: 11400000, guid: 4f4a48501ca2dc64597f0bcd5ada7d94, type: 2}
     - {fileID: 11400000, guid: 4f4a48501ca2dc64597f0bcd5ada7d94, type: 2}
-    conditions:
-    - conditionType: 1
-      priority: 1
-      threshold: 0.5
-      overrideCards: []
-      label: 
+    conditions: []

@@ -17,5 +17,7 @@ MonoBehaviour:
   Description: "50\uFF5E100%\u306E\u78BA\u7ACB\u3067\u30B7\u30FC\u30EB\u30C9\u30925\uFF5E10\u6BCE\u4F5C\u6210"
   Effects:
   - {fileID: 11400000, guid: 0739fa9a8fce14a4f8792a1e7e131e69, type: 2}
-  AnimationType: 0
+  AnimationType: 2
   LuckConversionRate: 20
+  RemoveFromBattleAfterUse: 0
+  RemoveFromBattleAfterScrap: 0

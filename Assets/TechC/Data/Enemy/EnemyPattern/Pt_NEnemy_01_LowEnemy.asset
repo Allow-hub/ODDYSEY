@@ -34,19 +34,9 @@ MonoBehaviour:
     cards:
     - {fileID: 11400000, guid: 36e8a1a124dc7784eb541a2d12f596aa, type: 2}
     - {fileID: 11400000, guid: 36e8a1a124dc7784eb541a2d12f596aa, type: 2}
-    conditions:
-    - conditionType: 1
-      priority: 1
-      threshold: 0.5
-      overrideCards: []
-      label: 
+    conditions: []
   - label: "\u30BF\u30FC\u30F34\uFF1A\u591A\u6BB5+\u727D\u5236"
     cards:
     - {fileID: 11400000, guid: 4f4a48501ca2dc64597f0bcd5ada7d94, type: 2}
     - {fileID: 11400000, guid: 92fd14ada95ee5e44be418d66e79cfe5, type: 2}
-    conditions:
-    - conditionType: 1
-      priority: 1
-      threshold: 0.5
-      overrideCards: []
-      label: 
+    conditions: []
