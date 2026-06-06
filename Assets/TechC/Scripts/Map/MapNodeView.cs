@@ -18,6 +18,7 @@ namespace TechC.ODDESEY.Map
         [SerializeField] private bool alignCurrentMarkerBottomToNodeCenter = true;
         [SerializeField] private Vector2 currentMarkerSize = new(100f, 100f);
         [SerializeField] private Vector2 currentMarkerOffset = new(0f, -12f);
+        [SerializeField] private Color inactiveTint = new(0.45f, 0.45f, 0.45f, 1f);
 
         [Header("Tile Sprites")]
         [SerializeField] private Sprite tileNoneSprite;
@@ -60,6 +61,8 @@ namespace TechC.ODDESEY.Map
         private void ApplyVisualState(StageNodeData data, NodeState state, EventMapIconType eventIconType)
         {
             NodeType displayType = data.nodeType;
+            bool isDimmed = state == NodeState.Locked || state == NodeState.Cleared;
+            Color visualTint = isDimmed ? inactiveTint : Color.white;
 
             if (tileImage != null)
             {
@@ -71,12 +74,14 @@ namespace TechC.ODDESEY.Map
                     _ => tileNoneSprite,
                 };
                 tileImage.enabled = tileImage.sprite != null;
+                tileImage.color = visualTint;
             }
 
             if (iconImage != null)
             {
                 iconImage.sprite = GetIconSprite(displayType, eventIconType);
                 iconImage.enabled = (state == NodeState.Active || state == NodeState.Locked) && iconImage.sprite != null;
+                iconImage.color = visualTint;
             }
 
             if (currentMarker != null)
