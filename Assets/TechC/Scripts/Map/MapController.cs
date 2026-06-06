@@ -22,7 +22,7 @@ namespace TechC.ODDESEY.Map
         [SerializeField] private MapNodeView nodeViewPrefab;
         [SerializeField] private RectTransform nodeContainer;
         [SerializeField] private List<MapNodeView> nodeViews;
-        [SerializeField] private Vector2 nodeGap = new(180f, 160f);
+        [SerializeField] private Vector2 nodeGap = new(220f, 160f);
         [SerializeField] private Vector2 nodeSize = new(100f, 100f);
         [SerializeField] private Vector2 nodeContainerPadding = new(240f, 120f);
 
