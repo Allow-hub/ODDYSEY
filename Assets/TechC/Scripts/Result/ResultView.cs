@@ -77,7 +77,7 @@ namespace TechC.ODDESEY.Reward
 
             // スコア
             if (scoreText != null)
-                scoreText.text = $"スコア：{data.TotalScore:D7}";
+                scoreText.text = $"TOTAL SCORE  {data.TotalScore:D7}";
 
             // ミッション行を生成
             foreach (var row in spawnedRows) Destroy(row);
@@ -87,6 +87,16 @@ namespace TechC.ODDESEY.Reward
             {
                 var obj = Instantiate(missionRowPrefab, missionContainer);
                 obj.GetComponent<MissionRow>()?.Setup(mission);
+
+                if (obj.transform is RectTransform rowTransform)
+                {
+                    int rowIndex = spawnedRows.Count;
+                    rowTransform.anchorMin = new Vector2(0.5f, 1f);
+                    rowTransform.anchorMax = new Vector2(0.5f, 1f);
+                    rowTransform.pivot = new Vector2(0.5f, 1f);
+                    rowTransform.anchoredPosition = new Vector2(0f, -rowIndex * 58f);
+                }
+
                 spawnedRows.Add(obj);
             }
 
