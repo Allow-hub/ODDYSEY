@@ -49,8 +49,9 @@ namespace TechC.ODDESEY.Battle
                 return;
             }
             if (!waiters.TryGetValue(type, out var list)) return;
-            foreach (var tcs in list) tcs.TrySetResult();
+            var snapshot = list.ToArray();
             list.Clear();
+            foreach (var tcs in snapshot) tcs.TrySetResult();
         }
 
         private UniTask WaitStateAsync(EnemyStateNotifier.StateType type)

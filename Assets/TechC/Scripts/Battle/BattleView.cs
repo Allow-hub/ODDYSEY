@@ -389,10 +389,7 @@ namespace TechC.ODDESEY.Battle
             winEffectObj.SetActive(true);
             // anim?.SetTrigger("BattleEnd");
 
-            if (currentEnemyView != null)
-                await currentEnemyView.PlayDefeatedAnimationAsync();
-
-            // 敵死亡アニメーション完了後、数秒待機
+            // 数秒待機（敵死亡アニメは PlayCardResolveAsync で完了済み）
             await UniTask.Delay(TimeSpan.FromSeconds(3f), ignoreTimeScale: true);
         }
 
