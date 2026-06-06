@@ -286,7 +286,7 @@ PrefabInstance:
     - target: {fileID: -7023583498812918162, guid: be6b8ca34b5bfd54bbc5e333611be71c,
         type: 3}
       propertyPath: debugStartPhase
-      value: 1
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: -7023583498812918162, guid: be6b8ca34b5bfd54bbc5e333611be71c,
         type: 3}
