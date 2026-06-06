@@ -619,8 +619,9 @@ namespace TechC.ODDESEY.Map
             rectTransform.anchorMin = new Vector2(0.5f, 0f);
             rectTransform.anchorMax = new Vector2(0.5f, 0f);
             rectTransform.pivot = new Vector2(0.5f, 0f);
-            rectTransform.anchoredPosition = new Vector2(0f, 64f);
-            rectTransform.sizeDelta = new Vector2(520f, 90f);
+            rectTransform.anchoredPosition = new Vector2(0f, 137f);
+            // 最大2択を横並びにしても、大きな操作ボタン同士が重ならない領域を確保する。
+            rectTransform.sizeDelta = new Vector2(720f, 120f);
 
             HorizontalLayoutGroup layoutGroup = container.AddComponent<HorizontalLayoutGroup>();
             layoutGroup.childAlignment = TextAnchor.MiddleCenter;
@@ -628,7 +629,7 @@ namespace TechC.ODDESEY.Map
             layoutGroup.childControlHeight = false;
             layoutGroup.childForceExpandWidth = false;
             layoutGroup.childForceExpandHeight = false;
-            layoutGroup.spacing = 12f;
+            layoutGroup.spacing = 40f;
 
             choiceButtonContainer = rectTransform;
             return choiceButtonContainer;

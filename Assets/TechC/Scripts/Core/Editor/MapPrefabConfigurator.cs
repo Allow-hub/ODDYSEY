@@ -10,7 +10,10 @@ namespace TechC.Core.Editor
     {
         private const string MapPrefabPath = "Assets/TechC/Prefabs/Map/Map.prefab";
         private const string NodeViewPrefabPath = "Assets/TechC/Prefabs/Map/NodeView.prefab";
+        private const string LuckGaugePrefabPath = "Assets/TechC/Prefabs/LuckGuage.prefab";
         private const string PlayerHpPrefabPath = "Assets/TechC/Prefabs/UI/PlayerHpSlider.prefab";
+        private const string SettingIconPath = "Assets/TechC/Images/UI/Ingame_Config.png";
+        private const string PauseIconPath = "Assets/TechC/Images/UI/Ingame_stop.png";
         private static readonly Vector2 ViewportSize = new(1180f, 440f);
         private static readonly Vector2 ViewportPosition = new(0f, 70f);
         private static readonly Vector2 NodeContentSize = new(1240f, 440f);
@@ -44,9 +47,11 @@ namespace TechC.Core.Editor
                 ConfigureNodeContent(scrollView, nodeContent);
                 ScrollRect scrollRect = ConfigureScrollRect(scrollView, nodeContent);
                 MapNodeView nodeTemplate = ConfigureNodeTemplate(nodeContent);
+                LuckGaugeView luckGaugeView = ConfigureLuckGaugeView(canvas.transform);
                 HpView playerHpView = ConfigurePlayerHpView(canvas.transform);
+                ConfigureSystemButtons(controller, canvas.transform);
 
-                ConfigureController(controller, nodeContent, scrollRect, nodeTemplate, playerHpView);
+                ConfigureController(controller, nodeContent, scrollRect, nodeTemplate, luckGaugeView, playerHpView);
                 ConfigureCurrentMarkers(prefabRoot);
 
                 PrefabUtility.SaveAsPrefabAsset(prefabRoot, MapPrefabPath);
@@ -163,6 +168,55 @@ namespace TechC.Core.Editor
             return templateObject.GetComponent<MapNodeView>();
         }
 
+        private static LuckGaugeView ConfigureLuckGaugeView(Transform canvasTransform)
+        {
+            LuckGaugeView existing = FindLuckGaugeView(canvasTransform);
+            if (existing == null)
+            {
+                GameObject luckGaugePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(LuckGaugePrefabPath);
+                if (luckGaugePrefab == null)
+                {
+                    Debug.LogError($"Luck gauge prefab not found: {LuckGaugePrefabPath}");
+                    return null;
+                }
+
+                GameObject luckGaugeObject = (GameObject)PrefabUtility.InstantiatePrefab(luckGaugePrefab, canvasTransform);
+                existing = luckGaugeObject.GetComponentInChildren<LuckGaugeView>(includeInactive: true);
+            }
+
+            if (existing == null)
+            {
+                return null;
+            }
+
+            Transform gaugeRoot = existing.transform.parent != null
+                ? existing.transform.parent
+                : existing.transform;
+            gaugeRoot.name = "LuckGuage";
+
+            if (gaugeRoot is RectTransform gaugeRect)
+            {
+                gaugeRect.SetParent(canvasTransform, false);
+                gaugeRect.anchorMin = new Vector2(1f, 1f);
+                gaugeRect.anchorMax = new Vector2(1f, 1f);
+                gaugeRect.pivot = new Vector2(1f, 1f);
+                gaugeRect.anchoredPosition = new Vector2(-48f, -48f);
+                gaugeRect.sizeDelta = new Vector2(100f, 100f);
+            }
+
+            return existing;
+        }
+
+        private static LuckGaugeView FindLuckGaugeView(Transform parent)
+        {
+            foreach (LuckGaugeView gaugeView in parent.GetComponentsInChildren<LuckGaugeView>(includeInactive: true))
+            {
+                return gaugeView;
+            }
+
+            return null;
+        }
+
         private static HpView ConfigurePlayerHpView(Transform canvasTransform)
         {
             HpView existing = FindHpView(canvasTransform);
@@ -212,7 +266,70 @@ namespace TechC.Core.Editor
             return null;
         }
 
-        private static void ConfigureController(MapController controller, RectTransform nodeContent, ScrollRect scrollRect, MapNodeView nodeTemplate, HpView playerHpView)
+        private static void ConfigureSystemButtons(MapController controller, Transform canvasTransform)
+        {
+            Button settingButton = ConfigureSystemButton(
+                canvasTransform,
+                "SettingButton",
+                SettingIconPath,
+                new Vector2(430f, -52f),
+                new Vector2(200f, 100f),
+                new Vector2(0f, 1f));
+
+            Button pauseButton = ConfigureSystemButton(
+                canvasTransform,
+                "PauseButton",
+                PauseIconPath,
+                new Vector2(-250f, -52f),
+                new Vector2(200f, 100f),
+                new Vector2(1f, 1f));
+
+            MapSystemButtons systemButtons = controller.GetComponent<MapSystemButtons>()
+                ?? controller.gameObject.AddComponent<MapSystemButtons>();
+            SerializedObject serializedButtons = new(systemButtons);
+            serializedButtons.FindProperty("pauseButton").objectReferenceValue = pauseButton;
+            serializedButtons.FindProperty("settingButton").objectReferenceValue = settingButton;
+            serializedButtons.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static Button ConfigureSystemButton(
+            Transform parent,
+            string objectName,
+            string spritePath,
+            Vector2 position,
+            Vector2 size,
+            Vector2 anchor)
+        {
+            Transform existing = parent.Find(objectName);
+            GameObject buttonObject = existing != null
+                ? existing.gameObject
+                : new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+
+            RectTransform rect = buttonObject.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            rect.anchorMin = anchor;
+            rect.anchorMax = anchor;
+            rect.pivot = anchor;
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+
+            Image image = buttonObject.GetComponent<Image>() ?? buttonObject.AddComponent<Image>();
+            image.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+            image.color = Color.white;
+            image.preserveAspect = true;
+
+            Button button = buttonObject.GetComponent<Button>() ?? buttonObject.AddComponent<Button>();
+            button.targetGraphic = image;
+            return button;
+        }
+
+        private static void ConfigureController(
+            MapController controller,
+            RectTransform nodeContent,
+            ScrollRect scrollRect,
+            MapNodeView nodeTemplate,
+            LuckGaugeView luckGaugeView,
+            HpView playerHpView)
         {
             SerializedObject serializedController = new(controller);
             serializedController.FindProperty("nodeViewPrefab").objectReferenceValue = nodeTemplate;
@@ -225,6 +342,7 @@ namespace TechC.Core.Editor
             serializedController.FindProperty("centerCurrentNodeOnRefresh").boolValue = true;
             serializedController.FindProperty("animateCurrentNodeScroll").boolValue = true;
             serializedController.FindProperty("currentNodeScrollDuration").floatValue = 0.35f;
+            serializedController.FindProperty("luckGaugeView").objectReferenceValue = luckGaugeView;
             serializedController.FindProperty("playerHpView").objectReferenceValue = playerHpView;
             serializedController.ApplyModifiedPropertiesWithoutUndo();
         }
