@@ -46,13 +46,17 @@ namespace TechC.ODDESEY.Core.Manager
 
         private void OnReturnToTitle()
         {
-            Resume(); // timeScale を戻してからシーン遷移
+            pauseView.HidePauseMenu();
+            pauseView.HideSettingsMenu();
+            IsPaused = false;
+            Time.timeScale = 1f;
             GameManager.I.LoadSceneAsync(0);
         }
 
         public void OnOpenSettings()
         {
-            // TODO:SettingsView を開く
+            pauseView.HidePauseMenu();
+            pauseView.ShowSettingsMenu();
         }
     }
 }

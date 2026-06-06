@@ -14,6 +14,7 @@ namespace TechC.Core.Setup
         [SerializeField] private GameManager gameManager;
         [SerializeField] private AudioManager audioManager;
         [SerializeField] private PauseManager pauseManager;
+        [SerializeField] private FadeManager fadeManager;
         /// <summary>
         /// ManagerSceneの初期化処理
         /// </summary>
@@ -22,6 +23,7 @@ namespace TechC.Core.Setup
             gameManager.Init();
             audioManager.Init();
             pauseManager.Init();
+            fadeManager.Init();
         }
     }
 }

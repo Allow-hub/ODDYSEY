@@ -50,6 +50,7 @@ namespace TechC.ODDESEY.Battle
         // private int lastDamage;
 
         private bool isPlaced = false;
+        private bool isBreaking = false;
 
         private void Awake()
         {
@@ -127,6 +128,8 @@ namespace TechC.ODDESEY.Battle
             isDealing = false;
         }
 
+        public void MarkAsBreaking() => isBreaking = true;
+
         public async UniTask PlayBreakAnimationAsync()
         {
             await UniTask.Delay(1);
@@ -166,6 +169,8 @@ namespace TechC.ODDESEY.Battle
                 CustomLogger.Info($"カード配置確定: {cardData.CardName} (InstanceId: {instanceId})", LogTagUtil.TagCard);
                 return;
             }
+
+            if (isBreaking) return;
 
             cardImage.raycastTarget = true;
             transform.SetParent(originalParent, true);

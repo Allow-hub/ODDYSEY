@@ -90,6 +90,7 @@ namespace TechC.ODDESEY.Battle
         {
             float luckGain = cardView.CardData.LuckConversionRate;
             CustomLogger.Info($"カードを砕く: {cardView.CardData.CardName} → 運ゲージ +{luckGain}", LogTagUtil.TagCard);
+            cardView.MarkAsBreaking();
             PlayBreakAndNotify(cardView, luckGain).Forget();
         }
 

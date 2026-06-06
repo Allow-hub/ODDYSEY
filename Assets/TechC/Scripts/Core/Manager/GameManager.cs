@@ -1,4 +1,4 @@
-﻿using System.Collections;
+﻿using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -31,37 +31,29 @@ namespace TechC.Core.Manager
         }
 
         /// <summary>
-        /// 非同期でシーンをロード
+        /// 非同期でシーンをロード（フェードイン・アウト付き）
         /// </summary>
-        /// <param name="sceneIndex"></param>
         public void LoadSceneAsync(int sceneIndex)
         {
-            StartCoroutine(LoadSceneCoroutine(sceneIndex));
+            LoadSceneWithFadeAsync(sceneIndex).Forget();
         }
 
-        /// <summary>
-        /// 非同期でシーンをロードするコルーチン
-        /// </summary>
-        /// <param name="sceneIndex"></param>
-        /// <returns></returns>
-        private IEnumerator LoadSceneCoroutine(int sceneIndex)
+        private async UniTaskVoid LoadSceneWithFadeAsync(int sceneIndex)
         {
-            AsyncOperation asyncOperation = SceneManager.LoadSceneAsync(sceneIndex);
+            if (FadeManager.IsValid())
+                await FadeManager.I.FadeOutAsync();
+
+            var asyncOperation = SceneManager.LoadSceneAsync(sceneIndex);
             asyncOperation.allowSceneActivation = false;
 
-            // シーンのロードが終わるまで待機
-            while (!asyncOperation.isDone)
-            {
-                // ロードが進んだら進行状況を表示
-                float progress = Mathf.Clamp01(asyncOperation.progress / 0.9f);
-                Debug.Log("Loading progress: " + (progress * 100) + "%");
+            while (asyncOperation.progress < 0.9f)
+                await UniTask.Yield(PlayerLoopTiming.Update);
 
-                // ロードが完了したらシーンをアクティブ化
-                if (asyncOperation.progress >= 0.9f)
-                    asyncOperation.allowSceneActivation = true;
+            asyncOperation.allowSceneActivation = true;
+            await UniTask.WaitUntil(() => asyncOperation.isDone);
 
-                yield return null;
-            }
+            if (FadeManager.IsValid())
+                await FadeManager.I.FadeInAsync();
         }
 
         /// <summary> ゲームの難易度を設定するメソッド</summary>

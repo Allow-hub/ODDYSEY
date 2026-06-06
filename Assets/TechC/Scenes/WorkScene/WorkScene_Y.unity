@@ -129,6 +129,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 463641695346436515, guid: a581df6dba48b2c449bc6e850af49eb3,
+        type: 3}
+      propertyPath: m_Alpha
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2238316583143234438, guid: a581df6dba48b2c449bc6e850af49eb3,
         type: 3}
       propertyPath: m_AnchorMax.x
@@ -286,7 +291,7 @@ PrefabInstance:
     - target: {fileID: -7023583498812918162, guid: be6b8ca34b5bfd54bbc5e333611be71c,
         type: 3}
       propertyPath: debugStartPhase
-      value: 4
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -7023583498812918162, guid: be6b8ca34b5bfd54bbc5e333611be71c,
         type: 3}

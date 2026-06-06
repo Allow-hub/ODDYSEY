@@ -14,6 +14,7 @@ namespace TechC.ODDESEY
     {
         [SerializeField] private CanvasGroup settingPanel;
         [SerializeField] private Button resumeSettingButton;
+        [SerializeField] private SettingsView settingsView;
 
         [SerializeField] private CanvasGroup pausePanel;
         [SerializeField] private Button resumeButton;
@@ -27,6 +28,12 @@ namespace TechC.ODDESEY
             resumeButton.onClick.AddListener(() => onResume?.Invoke());
             returnToTitleButton.onClick.AddListener(() => onReturnToTitle?.Invoke());
             settingsButton.onClick.AddListener(() => onOpenSettings?.Invoke());
+            resumeSettingButton.onClick.AddListener(() =>
+            {
+                HideSettingsMenu();
+                ShowPauseMenu();
+            });
+            settingsView.Init();
         }
 
         public void ShowPauseMenu() => CanvasGroupUtil.SetInteractable(pausePanel, true);
