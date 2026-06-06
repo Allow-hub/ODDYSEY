@@ -16,6 +16,8 @@ MonoBehaviour:
   CardSprite: {fileID: 21300000, guid: 965dc76e84e460947bab5fb6cfb7c16a, type: 3}
   Description: "75\uFF5E85%\u306E\u78BA\u7387\u30674\uFF5E6\u30C0\u30E1\u30FC\u30B8"
   Effects:
-  - {fileID: 11400000, guid: 6a91ef4e5b2e8a742bc681de2999ca99, type: 2}
+  - {fileID: 11400000, guid: 5af7c9c96207cc848bf9f3922767cdf2, type: 2}
   AnimationType: 0
   LuckConversionRate: 15
+  RemoveFromBattleAfterUse: 0
+  RemoveFromBattleAfterScrap: 0

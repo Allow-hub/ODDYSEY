@@ -13,53 +13,85 @@ MonoBehaviour:
   m_Name: StageMapData
   m_EditorClassIdentifier: 
   nodes:
-  - choices: 0000000001000000
-    EventData: {fileID: 11400000, guid: 2caa1f394fd969241a292c8f5f67a14f, type: 2}
-    RewardData: {fileID: 11400000, guid: 0194802b1296d8d4c8ca640c69ef49f7, type: 2}
+  - nodeType: 2
+    nextNodeIndices:
+    - 1
+    - 2
+    choices: 02000000
+    EventData: {fileID: 0}
+    RewardData: {fileID: 0}
     IsBossNode: 0
     EnemyData: {fileID: 11400000, guid: 4c700648c5e5ada408c3b33c685f8978, type: 2}
-  - choices: 00000000
+  - nodeType: 0
+    nextNodeIndices:
+    - 3
+    choices: 00000000
     EventData: {fileID: 0}
     RewardData: {fileID: 11400000, guid: 0194802b1296d8d4c8ca640c69ef49f7, type: 2}
     IsBossNode: 0
     EnemyData: {fileID: 11400000, guid: be29afbf598b4d5409c2a1c8946f8a28, type: 2}
-  - choices: 00000000
-    EventData: {fileID: 0}
+  - nodeType: 1
+    nextNodeIndices:
+    - 3
+    choices: 01000000
+    EventData: {fileID: 11400000, guid: 14532dd983680ed469248ba6f360bdb3, type: 2}
     RewardData: {fileID: 0}
     IsBossNode: 0
     EnemyData: {fileID: 11400000, guid: c08757bff707be0459ca7d04cae01593, type: 2}
-  - choices: 00000000
+  - nodeType: 0
+    nextNodeIndices:
+    - 4
+    - 5
+    choices: 00000000
     EventData: {fileID: 0}
-    RewardData: {fileID: 0}
+    RewardData: {fileID: 11400000, guid: 0194802b1296d8d4c8ca640c69ef49f7, type: 2}
     IsBossNode: 0
     EnemyData: {fileID: 11400000, guid: 3a0f1a678f6e3c44e8b32fb0187443ac, type: 2}
-  - choices: 0000000001000000
+  - nodeType: 1
+    nextNodeIndices:
+    - 6
+    choices: 01000000
     EventData: {fileID: 11400000, guid: 2caa1f394fd969241a292c8f5f67a14f, type: 2}
     RewardData: {fileID: 0}
     IsBossNode: 0
     EnemyData: {fileID: 11400000, guid: b7887243c51b31c48a396f497c293e0c, type: 2}
-  - choices: 00000000
+  - nodeType: 1
+    nextNodeIndices:
+    - 6
+    choices: 01000000
+    EventData: {fileID: 11400000, guid: 7a80d38910a11ec44b6565d12c4515c2, type: 2}
+    RewardData: {fileID: 0}
+    IsBossNode: 0
+    EnemyData: {fileID: 0}
+  - nodeType: 2
+    nextNodeIndices:
+    - 7
+    - 8
+    choices: 02000000
     EventData: {fileID: 0}
     RewardData: {fileID: 0}
     IsBossNode: 0
     EnemyData: {fileID: 0}
-  - choices: 00000000
+  - nodeType: 0
+    nextNodeIndices:
+    - 9
+    choices: 00000000
     EventData: {fileID: 0}
+    RewardData: {fileID: 11400000, guid: 0194802b1296d8d4c8ca640c69ef49f7, type: 2}
+    IsBossNode: 0
+    EnemyData: {fileID: 0}
+  - nodeType: 1
+    nextNodeIndices:
+    - 9
+    choices: 01000000
+    EventData: {fileID: 11400000, guid: 2caa1f394fd969241a292c8f5f67a14f, type: 2}
     RewardData: {fileID: 0}
     IsBossNode: 0
     EnemyData: {fileID: 0}
-  - choices: 00000000
+  - nodeType: 0
+    nextNodeIndices: []
+    choices: 00000000
     EventData: {fileID: 0}
-    RewardData: {fileID: 0}
-    IsBossNode: 0
-    EnemyData: {fileID: 0}
-  - choices: 00000000
-    EventData: {fileID: 0}
-    RewardData: {fileID: 0}
-    IsBossNode: 0
-    EnemyData: {fileID: 0}
-  - choices: 00000000
-    EventData: {fileID: 0}
-    RewardData: {fileID: 0}
-    IsBossNode: 0
+    RewardData: {fileID: 11400000, guid: 0194802b1296d8d4c8ca640c69ef49f7, type: 2}
+    IsBossNode: 1
     EnemyData: {fileID: 0}

@@ -13,7 +13,18 @@ MonoBehaviour:
   m_Name: BattleRewardData
   m_EditorClassIdentifier: 
   CardPool:
-  - {fileID: 11400000, guid: 39fd9b79d05006244afe273766b9c94f, type: 2}
-  - {fileID: 11400000, guid: cb9d077bad7863d4596898a4d8dde585, type: 2}
   - {fileID: 11400000, guid: 11c5e614257c58e44883cc078821d898, type: 2}
+  - {fileID: 11400000, guid: d81946b5d8b4acf49a683882f7db982c, type: 2}
+  - {fileID: 11400000, guid: 8470fda4821535344a20ffe84cad5f17, type: 2}
+  - {fileID: 11400000, guid: b0588f26d3954b14ea7abaa7412c6082, type: 2}
+  - {fileID: 11400000, guid: 8e109af4dcdc56b4686c912942cac38c, type: 2}
+  - {fileID: 11400000, guid: 7452e2cb0f3fb024b98732354f7fc958, type: 2}
+  - {fileID: 11400000, guid: e54dbe3491e6b9b4eb0eb9e34b839f33, type: 2}
+  - {fileID: 11400000, guid: 6420565054ccb4d449917b46365bad87, type: 2}
+  - {fileID: 11400000, guid: 4e60fdc7017520e418fc29ed936067cb, type: 2}
+  - {fileID: 11400000, guid: aa71b9867fa131c4db70e175a881aba0, type: 2}
+  - {fileID: 11400000, guid: 97eeb16c12c3b424db3e3acd929b4bac, type: 2}
+  - {fileID: 11400000, guid: e0d8e323b4347ea4bab9bfff6d4a76a0, type: 2}
+  - {fileID: 11400000, guid: 54f79a98b326c54468f56788c66410d7, type: 2}
+  - {fileID: 11400000, guid: 61889e25f23aa9e4ba46efcbde1d016e, type: 2}
   OfferCount: 3
