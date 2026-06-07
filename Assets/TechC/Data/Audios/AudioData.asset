@@ -14,22 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bgmList:
   - id: 0
-    clip: {fileID: 0}
-    volume: 1
+    clip: {fileID: 8300000, guid: 06456aaa662fb8845ac7ea36f212e4a7, type: 3}
+    volume: 0.75
     pitch: 1
     loop: 1
     fadeInTime: 0.5
     fadeOutTime: 0.5
   - id: 1
     clip: {fileID: 8300000, guid: b07fe08c94ea0a943a7df84f6fcef74e, type: 3}
-    volume: 1
+    volume: 0.3
     pitch: 1
     loop: 1
     fadeInTime: 0.5
     fadeOutTime: 0.5
   - id: 2
     clip: {fileID: 8300000, guid: 90de54aa834bdbd4481ee28e45d2c3a6, type: 3}
-    volume: 1
+    volume: 0.6
     pitch: 1
     loop: 1
     fadeInTime: 0.5
