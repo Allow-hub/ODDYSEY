@@ -36,10 +36,11 @@ namespace TechC.ODDESEY.Core.Manager
         /// <summary>ポーズを閉じる</summary>
         public void Resume()
         {
+            pauseView.HidePauseMenu();
+            pauseView.HideSettingsMenu();
             if (!IsPaused) return;
             IsPaused = false;
             Time.timeScale = 1f;
-            pauseView.HidePauseMenu();
         }
 
         private void OnResume() => Resume();

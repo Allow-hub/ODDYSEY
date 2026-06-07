@@ -111,6 +111,8 @@ namespace TechC.ODDESEY.Battle
             cardToSlotIndex[cardView.InstanceId] = slotIndex;
 
             CustomLogger.Info($"カード配置確定: {instance.OriginalData.CardName} (InstanceId: {instance.InstanceId}) → Slot {slotIndex}", LogTagUtil.TagBattle);
+
+            BattleEventBus.Publish(new CardPlacedClickedEvent(cardView));
         }
 
         /// <summary>

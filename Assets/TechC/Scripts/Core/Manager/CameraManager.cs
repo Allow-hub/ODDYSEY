@@ -3,6 +3,8 @@ using System.Threading;
 using Cinemachine;
 using Cysharp.Threading.Tasks;
 using TechC.Core.Manager;
+using TechC.ODDESEY.Util;
+using TechC.VBattle.Core.Extensions;
 using UnityEngine;
 
 namespace TechC.ODDESEY.Core.Manager
@@ -36,7 +38,6 @@ namespace TechC.ODDESEY.Core.Manager
         [SerializeField] private int activePriority = 20;
         [SerializeField] private int inactivePriority = 10;
 
-        private CancellationTokenSource attackCts;
         private Dictionary<CameraState, CinemachineVirtualCamera> vcamMap;
         private Dictionary<CameraState, float> blendDurationMap;
         private CinemachineBrain brain;
@@ -93,10 +94,10 @@ namespace TechC.ODDESEY.Core.Manager
             SwitchTo(state);
             await UniTask.Yield(PlayerLoopTiming.Update);
 
-            int frameCount = 0;
-            while (brain != null && brain.IsBlending)
+            float elapsed = 0f;
+            while (brain != null && brain.IsBlending && elapsed < 3f)
             {
-                frameCount++;
+                elapsed += Time.unscaledDeltaTime;
                 await UniTask.Yield(PlayerLoopTiming.Update);
             }
         }
@@ -106,10 +107,10 @@ namespace TechC.ODDESEY.Core.Manager
             SwitchTo(CameraState.Default);
             await UniTask.Yield(PlayerLoopTiming.Update);
 
-            int frameCount = 0;
-            while (brain != null && brain.IsBlending)
+            float elapsed = 0f;
+            while (brain != null && brain.IsBlending && elapsed < 3f)
             {
-                frameCount++;
+                elapsed += Time.unscaledDeltaTime;
                 await UniTask.Yield(PlayerLoopTiming.Update);
             }
         }
@@ -127,40 +128,33 @@ namespace TechC.ODDESEY.Core.Manager
         {
             if (data == null) return;
 
-            attackCts?.Cancel();
-            attackCts?.Dispose();
-            attackCts = new CancellationTokenSource();
-            var token = attackCts.Token;
-
             var vcam = GetCurrentVCam();
-            var animator = vcam?.GetComponent<Animator>();
+            var camAnimator = vcam?.GetComponent<Animator>();
+            if (camAnimator == null) return;
 
-            if (animator != null)
+            var localCts = new CancellationTokenSource();
+            localCts.CancelAfter(System.TimeSpan.FromSeconds(10f));
+            var token = localCts.Token;
+
+            camAnimator.SetBool(data.AnimTriggerHash, true);
+            try
             {
-                // ① トリガーをセット
-                animator.SetBool(data.AnimTriggerHash, true);
-
-                // ② 遷移が開始するまで待つ（IsInTransition が true になるまで）
-                await UniTask.WaitUntil(() =>
-                    animator.IsInTransition(0),
+                await UniTask.WaitUntil(() => camAnimator.IsInTransition(0), cancellationToken: token);
+                await UniTask.WaitUntil(() => !camAnimator.IsInTransition(0), cancellationToken: token);
+                await UniTask.WaitUntil(
+                    () => camAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f,
                     cancellationToken: token);
-
-
-                // ③ 遷移が完了するまで待つ（IsInTransition が false になるまで）
-                await UniTask.WaitUntil(() =>
-                    !animator.IsInTransition(0),
-                    cancellationToken: token);
-
-
-                // ④ アニメが終わるまで待つ（normalizedTime >= 1f）
-                await UniTask.WaitUntil(() =>
-                    animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f,
-                    cancellationToken: token);
-
-                animator.SetBool(data.AnimTriggerHash, false);
+                await UniTask.WaitForSeconds(data.returnDelay, cancellationToken: token);
             }
-
-            await UniTask.WaitForSeconds(data.returnDelay, cancellationToken: token);
+            catch (System.OperationCanceledException)
+            {
+                CustomLogger.Warning("[CameraManager] PlayAttackCameraAsync タイムアウト", LogTagUtil.TagBattle);
+            }
+            finally
+            {
+                camAnimator.SetBool(data.AnimTriggerHash, false);
+                localCts.Dispose();
+            }
         }
 
         private void ApplyBlendDuration(CameraState state)

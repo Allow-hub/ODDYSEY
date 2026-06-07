@@ -451,10 +451,15 @@ namespace TechC.ODDESEY.Battle
 
         private void HandleHotModeChanged(bool enable)
         {
-            HotModeHandEffect.ApplyToHand(hand, enable);
-            CustomLogger.Info(
-                enable ? "[BattleLogic] 激アツ開始！手札を最大化" : "[BattleLogic] 激アツ解除。ボーナスリセット",
-                LogTagUtil.TagBattle);
+            if (enable)
+            {
+                HotModeHandEffect.ApplyToHand(hand, enable);
+                CustomLogger.Info("[BattleLogic] 激アツ開始！手札を最大化", LogTagUtil.TagBattle);
+            }
+            else
+            {
+                CustomLogger.Info("[BattleLogic] 激アツ解除。以降のカードはノーマル値", LogTagUtil.TagBattle);
+            }
         }
 
         public bool TryCounter(CardResolveResult result)

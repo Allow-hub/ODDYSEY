@@ -174,7 +174,6 @@ namespace TechC.ODDESEY.Battle
                 if (result.IsBattleEnd && result.IsWon && result.IsHit)
                     await PlayWinSlowAsync();
 
-                currentEnemyView.PlayDamageAnimationAsync(result.IsHit).Forget();
                 damagePopupManager.Show(
                     result.DamageDealt,
                     isHit: result.IsHit,
@@ -209,7 +208,6 @@ namespace TechC.ODDESEY.Battle
             {
                 await currentEnemyView.BeginAttackAnimationAsync(animType);
 
-                playerView.PlayDamageAnimationAsync(result.IsHit).Forget();
                 damagePopupManager.Show(
                     result.DamageDealt,
                     isHit: result.IsHit,

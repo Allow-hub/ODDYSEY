@@ -80,37 +80,33 @@ namespace TechC.ODDESEY.Battle
                 ? CameraManager.I.PlayAttackCameraAsync(camData)
                 : UniTask.CompletedTask;
 
-            // ④ ヒット判定フレームまで待つ
-            await hitTimingTcs.Task;
+            // ④ ヒット判定フレームまで待つ（タイムアウト付き）
+            var hitTimeout = UniTask.Delay(System.TimeSpan.FromSeconds(5f), ignoreTimeScale: true);
+            await UniTask.WhenAny(hitTimingTcs.Task, hitTimeout);
         }
 
         public async UniTask WaitAttackFinishedAsync(
             CardAnimationType animType = CardAnimationType.Attack,
             bool skipCameraReturn = false)
         {
-            // ① 攻撃アニメ完了とカメラアニメ完了を待つ（タイムアウト付き）
-            var timeout = UniTask.Delay(System.TimeSpan.FromSeconds(8f), ignoreTimeScale: true);
-            var allTasks = UniTask.WhenAll(attackFinishedTcs.Task, cameraTask);
-            var completedTask = await UniTask.WhenAny(allTasks, timeout);
-
-            if (completedTask == 1) // timeout が完了した場合
-            {
-                CustomLogger.Warning(
-                    $"プレイヤー攻撃完了がタイムアウト",
-                    LogTagUtil.TagBattle);
-            }
-            else
-            {
-                CustomLogger.Info(
-                    $"プレイヤー攻撃完了（アニメ+カメラ） animType={animType}",
-                    LogTagUtil.TagBattle);
-            }
-
-            // ② アニメハッシュをリセット
             var (animHash, _) = ResolveParams(animType);
-            animator?.SetBool(animHash, false);
+            try
+            {
+                var timeout = UniTask.Delay(System.TimeSpan.FromSeconds(8f), ignoreTimeScale: true);
+                var allTasks = UniTask.WhenAll(attackFinishedTcs.Task, cameraTask);
+                var completedTask = await UniTask.WhenAny(allTasks, timeout);
 
-            // ③ カメラ復帰
+                if (completedTask == 1)
+                    CustomLogger.Warning($"プレイヤー攻撃完了がタイムアウト", LogTagUtil.TagBattle);
+                else
+                    CustomLogger.Info($"プレイヤー攻撃完了（アニメ+カメラ） animType={animType}", LogTagUtil.TagBattle);
+            }
+            finally
+            {
+                // タイムアウト・例外問わず必ずリセット
+                animator?.SetBool(animHash, false);
+            }
+
             if (!skipCameraReturn)
                 await CameraManager.I.ReturnToDefaultAsync();
         }
@@ -122,7 +118,8 @@ namespace TechC.ODDESEY.Battle
             var type = isHit ? PlayerAnimationType.Hit : PlayerAnimationType.Miss;
             var task = WaitStateAsync(type);
             animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, true);
-            await task;
+            var timeout = UniTask.Delay(System.TimeSpan.FromSeconds(5f), ignoreTimeScale: true);
+            await UniTask.WhenAny(task, timeout);
             CustomLogger.Info($"プレイヤー被ダメアニメーション完了 (isHit={isHit})", LogTagUtil.TagBattle);
             animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, false);
         }

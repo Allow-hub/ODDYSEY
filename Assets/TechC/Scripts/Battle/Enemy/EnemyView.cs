@@ -101,23 +101,22 @@ namespace TechC.ODDESEY.Battle
             CardAnimationType animType = CardAnimationType.Attack,
             bool skipCameraReturn = false)
         {
-            // ① 攻撃アニメ完了とカメラアニメ完了を待つ（タイムアウト付き）
-            var timeout = UniTask.Delay(System.TimeSpan.FromSeconds(8f), ignoreTimeScale: true);
-            var allTasks = UniTask.WhenAll(attackFinishedTcs.Task, cameraTask);
-            var completedTask = await UniTask.WhenAny(allTasks, timeout);
-
-            if (completedTask == 1) // timeout が完了した場合
+            var (animHash, _) = ResolveParams(animType);
+            try
             {
-                CustomLogger.Warning(
-                    $"敵攻撃完了がタイムアウト",
-                    LogTagUtil.TagBattle);
+                var timeout = UniTask.Delay(System.TimeSpan.FromSeconds(8f), ignoreTimeScale: true);
+                var allTasks = UniTask.WhenAll(attackFinishedTcs.Task, cameraTask);
+                var completedTask = await UniTask.WhenAny(allTasks, timeout);
+
+                if (completedTask == 1)
+                    CustomLogger.Warning($"敵攻撃完了がタイムアウト", LogTagUtil.TagBattle);
+            }
+            finally
+            {
+                // タイムアウト・例外問わず必ずリセット
+                animator?.SetBool(animHash, false);
             }
 
-            // ② アニメハッシュをリセット
-            var (animHash, _) = ResolveParams(animType);
-            animator?.SetBool(animHash, false);
-
-            // ③ カメラ復帰
             if (!skipCameraReturn)
                 await CameraManager.I.ReturnToDefaultAsync();
         }
@@ -127,7 +126,8 @@ namespace TechC.ODDESEY.Battle
             var type = isHit ? EnemyStateNotifier.StateType.Hit : EnemyStateNotifier.StateType.Miss;
             var task = WaitStateAsync(type);
             animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, true);
-            await task;
+            var timeout = UniTask.Delay(System.TimeSpan.FromSeconds(5f), ignoreTimeScale: true);
+            await UniTask.WhenAny(task, timeout);
             CustomLogger.Info($"敵被ダメアニメーション完了 (isHit={isHit})", LogTagUtil.TagBattle);
             animator?.SetBool(isHit ? AnimUtil.HitHash : AnimUtil.MissHash, false);
         }
