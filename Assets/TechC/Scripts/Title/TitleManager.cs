@@ -14,6 +14,8 @@ namespace TechC.ODDESEY.Title
 
         void Start()
         {
+            AudioManager.I?.PlayBGM(BGMID.Title);
+
             if (startButton == null)
             {
                 Debug.LogError("startButton が設定されていません");

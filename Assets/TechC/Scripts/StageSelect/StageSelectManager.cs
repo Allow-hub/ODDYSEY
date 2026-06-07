@@ -15,6 +15,8 @@ namespace TechC.ODDESEY.StageSelect
 
         void Start()
         {
+            AudioManager.I?.PlayBGM(BGMID.StageSelect);
+
             if (normalButton == null || hardButton == null)
             {
                 Debug.LogError("Buttonが設定されていません");
