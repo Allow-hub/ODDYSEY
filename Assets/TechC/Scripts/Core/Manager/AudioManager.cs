@@ -26,6 +26,7 @@ namespace TechC.Core.Manager
         private AudioSource bgmSource;
         private AudioSource bgmCrossSource;
         private List<AudioSource> seSources = new List<AudioSource>();
+        private readonly HashSet<BGMID> missingBgmWarnings = new HashSet<BGMID>();
 
         [SerializeField] private int seSourceCount = 10;
 
@@ -77,10 +78,12 @@ namespace TechC.Core.Manager
             var info = audioData.GetBGM(id);
             if (info == null || info.clip == null)
             {
-                Debug.LogWarning($"BGM の ID {id} が見つかりません");
+                if (missingBgmWarnings.Add(id))
+                    Debug.LogWarning($"BGM の ID {id} に AudioClip が設定されていません");
                 return;
             }
 
+            missingBgmWarnings.Remove(id);
             currentBGM = id;
 
             if (isCrossFade && bgmSource.isPlaying)

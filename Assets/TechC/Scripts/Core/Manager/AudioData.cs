@@ -8,9 +8,14 @@ namespace TechC.Core.Manager
     public enum BGMID
     {
         None = -1,
-        Title,
-        Stage1,
-        Stage2,
+        Title = 0,
+        Map = 1,
+        Battle = 2,
+        StageSelect = 3,
+        BossBattle = 4,
+        Event = 5,
+        Reward = 6,
+        Result = 7,
     }
 
     public enum SEID

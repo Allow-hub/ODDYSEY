@@ -15,18 +15,60 @@ MonoBehaviour:
   bgmList:
   - id: 0
     clip: {fileID: 0}
-    volume: 0
-    pitch: 0
-    loop: 0
-    fadeInTime: 0
-    fadeOutTime: 0
+    volume: 1
+    pitch: 1
+    loop: 1
+    fadeInTime: 0.5
+    fadeOutTime: 0.5
+  - id: 1
+    clip: {fileID: 8300000, guid: b07fe08c94ea0a943a7df84f6fcef74e, type: 3}
+    volume: 1
+    pitch: 1
+    loop: 1
+    fadeInTime: 0.5
+    fadeOutTime: 0.5
   - id: 2
+    clip: {fileID: 8300000, guid: 90de54aa834bdbd4481ee28e45d2c3a6, type: 3}
+    volume: 1
+    pitch: 1
+    loop: 1
+    fadeInTime: 0.5
+    fadeOutTime: 0.5
+  - id: 3
     clip: {fileID: 0}
-    volume: 0
-    pitch: 0
-    loop: 0
-    fadeInTime: 0
-    fadeOutTime: 0
+    volume: 1
+    pitch: 1
+    loop: 1
+    fadeInTime: 0.5
+    fadeOutTime: 0.5
+  - id: 4
+    clip: {fileID: 8300000, guid: 745da34d15ea5e044a0529eecdb94da1, type: 3}
+    volume: 1
+    pitch: 1
+    loop: 1
+    fadeInTime: 0.5
+    fadeOutTime: 0.5
+  - id: 5
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    loop: 1
+    fadeInTime: 0.5
+    fadeOutTime: 0.5
+  - id: 6
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    loop: 1
+    fadeInTime: 0.5
+    fadeOutTime: 0.5
+  - id: 7
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    loop: 1
+    fadeInTime: 0.5
+    fadeOutTime: 0.5
   seList:
   - id: 0
     clip: {fileID: 0}

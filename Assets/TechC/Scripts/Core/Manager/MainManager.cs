@@ -70,6 +70,8 @@ namespace TechC.Core.Manager
         public void EnterPhase(StartPhase phase)
         {
             DestroyCurrentPrefab();
+            PlayPhaseBGM(phase);
+
             switch (phase)
             {
                 case StartPhase.Map: EnterMap(); break;
@@ -78,6 +80,22 @@ namespace TechC.Core.Manager
                 case StartPhase.Result: EnterResult(); break;
                 case StartPhase.Event: EnterEvent(); break;
             }
+        }
+
+        private void PlayPhaseBGM(StartPhase phase)
+        {
+            BGMID bgmId = phase switch
+            {
+                StartPhase.Map => BGMID.Map,
+                StartPhase.Battle => pendingIsBoss ? BGMID.BossBattle : BGMID.Battle,
+                StartPhase.CardReward => BGMID.Reward,
+                StartPhase.Result => BGMID.Result,
+                StartPhase.Event => BGMID.Event,
+                _ => BGMID.None,
+            };
+
+            if (bgmId != BGMID.None)
+                AudioManager.I?.PlayBGM(bgmId);
         }
 
         private void EnterMap()
