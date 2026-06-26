@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: S-06_GaugeUpCardData
   m_EditorClassIdentifier: 
   CardName: "\u30C9\u30FC\u30DE\u30F3\u30C8"
-  CardSprite: {fileID: 0}
+  CardSprite: {fileID: 21300000, guid: f084bc735673a5248a532f7ab7797c8b, type: 3}
   Description: "\u6B21\u306E\u30BF\u30FC\u30F3\u3001\u30B2\u30FC\u30B8\u306E\u84C4\u7A4D\u91CF\u304C30\uFF5E50%\u5897\u52A0\u3059\u308B\u3002"
   Effects:
   - {fileID: 11400000, guid: 0c18b7bc606e243429dd0cc90572f901, type: 2}
